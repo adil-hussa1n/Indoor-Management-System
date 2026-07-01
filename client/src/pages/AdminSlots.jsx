@@ -186,7 +186,7 @@ export const AdminSlots = () => {
         </CardHeader>
         
         {/* Navigation Tabs */}
-        <div className="px-6 border-b border-zinc-150 dark:border-zinc-800 flex gap-2">
+        <div className="px-6 border-b border-zinc-150 dark:border-zinc-800 flex flex-nowrap gap-2 overflow-x-auto custom-scrollbar">
           {[
             { id: 'general', label: 'General Daily', icon: <Clock className="w-4 h-4" /> },
             { id: 'weekly', label: 'Weekly Days', icon: <Calendar className="w-4 h-4" /> },
