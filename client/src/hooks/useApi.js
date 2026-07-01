@@ -26,7 +26,10 @@ export const useUpdateSettings = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (updatedData) => {
-      const response = await API.patch('/settings', updatedData);
+      const isFormData = updatedData instanceof FormData;
+      const response = await API.patch('/settings', updatedData, {
+        headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : {},
+      });
       return response.data.settings;
     },
     onSuccess: () => {
