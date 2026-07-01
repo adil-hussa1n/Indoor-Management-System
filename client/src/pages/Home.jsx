@@ -41,8 +41,25 @@ export const Home = () => {
   return (
     <div className="overflow-hidden">
       {/* Hero Section */}
-      <section className="relative min-h-[90vh] flex items-center justify-center pt-24 pb-16 px-4 bg-gradient-to-br from-purple-900/10 via-indigo-900/5 to-transparent">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.18),rgba(255,255,255,0))]" />
+      <section 
+        className="relative min-h-[90vh] flex items-center justify-center pt-24 pb-16 px-4"
+        style={settings?.heroBanner ? {
+          backgroundImage: `url(${settings.heroBanner})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        } : {}}
+      >
+        <div className={`absolute inset-0 ${
+          settings?.heroBanner 
+            ? 'bg-white/90 dark:bg-zinc-950/90 backdrop-blur-[2px]' 
+            : 'bg-gradient-to-br from-purple-900/10 via-indigo-900/5 to-transparent'
+        }`} />
+        {!settings?.heroBanner && (
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.18),rgba(255,255,255,0))]" />
+        )}
+        {settings?.heroBanner && (
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.15),rgba(255,255,255,0))] dark:bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.15),rgba(255,255,255,0))]" />
+        )}
         
         <div className="max-w-5xl mx-auto text-center relative z-10">
           <motion.div

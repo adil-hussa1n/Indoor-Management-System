@@ -38,9 +38,13 @@ export const PublicLayout = () => {
       <header className="sticky top-0 z-40 w-full border-b border-zinc-200/50 dark:border-zinc-800/80 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-purple-600 flex items-center justify-center text-white font-bold text-lg shadow-md shadow-purple-500/20">
-              A
-            </div>
+            {settings?.logo ? (
+              <img src={settings.logo} alt="Logo" className="w-9 h-9 object-contain rounded-lg" />
+            ) : (
+              <div className="w-9 h-9 rounded-xl bg-purple-600 flex items-center justify-center text-white font-bold text-lg shadow-md shadow-purple-500/20">
+                A
+              </div>
+            )}
             <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
               {settings?.businessName || 'Apex Arena'}
             </span>
