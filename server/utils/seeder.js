@@ -30,11 +30,14 @@ const mockReviews = [
   { customerName: 'John Doe', rating: 5, comment: 'Amazing facility! The court is clean, booking is seamless, and prices are fair.', isApproved: true, isFeatured: true },
   { customerName: 'Sarah Jenkins', rating: 4, comment: 'Great place to play futsal with friends. Lighting is perfect.', isApproved: true, isFeatured: true },
   { customerName: 'Mike Ross', rating: 5, comment: 'Extremely professional dashboard. Booking via mobile took me less than a minute!', isApproved: true, isFeatured: false },
+  { customerName: 'Tariq Islam', rating: 5, comment: 'Best indoor playground in Dhaka! Highly recommended for weekend sessions.', isApproved: true, isFeatured: true },
+  { customerName: 'Sania Mirza', rating: 4, comment: 'Clean court, cooperative staff, and very easy online slot booking experience.', isApproved: true, isFeatured: false },
 ];
 
 const mockContacts = [
   { name: 'David Miller', email: 'david@example.com', message: 'Do you offer seasonal passes or discounts for regular bookings?', isRead: false },
   { name: 'Emily Watson', email: 'emily@example.com', message: 'I would like to host a corporate event next month. Can we book the entire day?', isRead: true, replyStatus: 'Replied' },
+  { name: 'Sajid Khan', email: 'sajid@example.com', message: 'Is there a parking space available for cars?', isRead: false },
 ];
 
 const seedDB = async () => {
@@ -85,6 +88,15 @@ const seedDB = async () => {
     const year = new Date().getFullYear();
     const todayStr = new Date().toISOString().split('T')[0];
 
+    // Generate dates for some days ago and tomorrow
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
     const mockBookings = [
       {
         bookingId: `IND-${year}-0001`,
@@ -128,6 +140,48 @@ const seedDB = async () => {
         price: 1500,
         status: 'Pending',
       },
+      {
+        bookingId: `IND-${year}-0004`,
+        customerName: 'Kazi Nabil',
+        phone: '555-0455',
+        email: 'nabil@example.com',
+        sport: 'Cricket',
+        bookingDate: new Date(yesterdayStr),
+        startTime: '16:00',
+        endTime: '19:00',
+        duration: 3,
+        players: 14,
+        price: 4500,
+        status: 'Completed',
+      },
+      {
+        bookingId: `IND-${year}-0005`,
+        customerName: 'Fahim Anjum',
+        phone: '555-0678',
+        email: 'fahim@example.com',
+        sport: 'Futsal',
+        bookingDate: new Date(tomorrowStr),
+        startTime: '09:00',
+        endTime: '10:00',
+        duration: 1,
+        players: 10,
+        price: 1500,
+        status: 'Confirmed',
+      },
+      {
+        bookingId: `IND-${year}-0006`,
+        customerName: 'Zayed Khan',
+        phone: '555-0789',
+        email: 'zayed@example.com',
+        sport: 'Cricket',
+        bookingDate: new Date(yesterdayStr),
+        startTime: '08:00',
+        endTime: '11:00',
+        duration: 3,
+        players: 16,
+        price: 4500,
+        status: 'Completed',
+      }
     ];
     await Booking.insertMany(mockBookings);
     console.log('Mock bookings seeded.');
