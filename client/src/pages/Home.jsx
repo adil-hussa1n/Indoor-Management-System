@@ -1,0 +1,241 @@
+import React from 'react';
+import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
+import { Calendar, Shield, Users, Clock, Award, Star, ArrowRight, Check, Trophy, Target, Dribbble, Activity, Swords } from 'lucide-react';
+import { usePublicSettings, usePublicReviews } from '../hooks/useApi';
+import { Button } from '../components/ui/Button';
+
+const getSportIcon = (sportName) => {
+  const name = sportName.toLowerCase();
+  if (name.includes('soccer') || name.includes('futsal') || name.includes('football')) {
+    return <Trophy className="w-6 h-6 text-purple-600" />;
+  }
+  if (name.includes('basketball')) {
+    return <Dribbble className="w-6 h-6 text-orange-500" />;
+  }
+  if (name.includes('badminton')) {
+    return <Activity className="w-6 h-6 text-emerald-500" />;
+  }
+  if (name.includes('volleyball')) {
+    return <Target className="w-6 h-6 text-sky-500" />;
+  }
+  if (name.includes('cricket')) {
+    return <Swords className="w-6 h-6 text-amber-500" />;
+  }
+  return <Star className="w-6 h-6 text-purple-650" />;
+};
+
+export const Home = () => {
+  const { data: settings } = usePublicSettings();
+  const { data: reviews } = usePublicReviews();
+
+  const features = [
+    { title: 'Premium Hardwood Flooring', desc: 'Professional grade playing surfaces tailored for safety and performance.', icon: <Award className="w-6 h-6 text-purple-500" /> },
+    { title: 'Climate Controlled', desc: 'Fully air-conditioned indoor playground to play comfortably all year round.', icon: <Shield className="w-6 h-6 text-indigo-500" /> },
+    { title: 'Smart Booking System', desc: 'Reserve slots instantly. Real-time scheduling prevents double-booking.', icon: <Clock className="w-6 h-6 text-pink-500" /> },
+    { title: 'Perfect for Teams', desc: 'Ample space, changing rooms, and guest seating for team events.', icon: <Users className="w-6 h-6 text-blue-500" /> },
+  ];
+
+  const sports = settings?.availableSports || ['Futsal', 'Basketball', 'Badminton', 'Volleyball'];
+
+  return (
+    <div className="overflow-hidden">
+      {/* Hero Section */}
+      <section className="relative min-h-[90vh] flex items-center justify-center pt-24 pb-16 px-4 bg-gradient-to-br from-purple-900/10 via-indigo-900/5 to-transparent">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.18),rgba(255,255,255,0))]" />
+        
+        <div className="max-w-5xl mx-auto text-center relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-500/10 text-purple-600 dark:text-purple-400 mb-6 uppercase tracking-widest border border-purple-500/20">
+              ⚡ Premium Indoor Court
+            </span>
+            <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-zinc-900 dark:text-white mb-6">
+              Experience Sports <br />
+              <span className="bg-gradient-to-r from-purple-600 via-violet-500 to-indigo-600 bg-clip-text text-transparent">
+                Like Never Before
+              </span>
+            </h1>
+            <p className="text-lg md:text-xl text-zinc-650 dark:text-zinc-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+              Book our state-of-the-art climate-controlled indoor arena. Designed for futsal, basketball, badminton, and more. Clean, professional, and ready.
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-4"
+          >
+            <Link to="/booking">
+              <Button size="large" variant="primary" className="px-8 py-3.5 text-base">
+                Book Court Now <ArrowRight className="w-5 h-5" />
+              </Button>
+            </Link>
+            <Link to="/about">
+              <Button size="large" variant="secondary" className="px-8 py-3.5 text-base">
+                Explore Arena
+              </Button>
+            </Link>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Available Sports */}
+      <section className="py-20 px-4 max-w-7xl mx-auto text-center">
+        <h2 className="text-3xl md:text-5xl font-extrabold mb-4 text-zinc-900 dark:text-white">
+          Choose Your Sport
+        </h2>
+        <p className="text-zinc-500 dark:text-zinc-450 mb-12 max-w-md mx-auto">
+          One court, endless possibilities. Pick your sport and dominate.
+        </p>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          {sports.map((sport, index) => (
+            <motion.div
+              key={sport}
+              whileHover={{ y: -8, scale: 1.02 }}
+              className="p-6 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-150 dark:border-zinc-800/80 shadow-sm flex flex-col items-center justify-center gap-4"
+            >
+              <div className="w-12 h-12 rounded-xl bg-zinc-50 dark:bg-zinc-800 flex items-center justify-center shadow-inner">
+                {getSportIcon(sport)}
+              </div>
+              <span className="font-bold text-lg text-zinc-800 dark:text-zinc-200">{sport}</span>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* Features Grid */}
+      <section className="py-20 bg-zinc-100/50 dark:bg-zinc-900/30 px-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-5xl font-extrabold text-zinc-900 dark:text-white mb-4">
+              Designed For Athletes
+            </h2>
+            <p className="text-zinc-500 dark:text-zinc-450 max-w-md mx-auto">
+              Our facilities represent the gold standard of indoor recreation.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {features.map((feat) => (
+              <div
+                key={feat.title}
+                className="bg-white dark:bg-zinc-900/60 border border-zinc-150 dark:border-zinc-800/50 rounded-2xl p-6 shadow-sm flex flex-col gap-4 text-left"
+              >
+                <div className="w-12 h-12 rounded-xl bg-zinc-50 dark:bg-zinc-850 flex items-center justify-center shadow-inner">
+                  {feat.icon}
+                </div>
+                <h3 className="font-bold text-lg text-zinc-900 dark:text-white">{feat.title}</h3>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">{feat.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing / Booking Promo */}
+      <section className="py-20 px-4 max-w-7xl mx-auto">
+        <div className="bg-gradient-to-r from-purple-900 to-indigo-900 rounded-3xl p-8 md:p-16 text-white text-center relative overflow-hidden shadow-xl">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(168,85,247,0.3),transparent)]" />
+          <div className="relative z-10 max-w-2xl mx-auto">
+            <h2 className="text-3xl md:text-5xl font-extrabold mb-6 leading-tight">
+              Flexible Hourly Rates
+            </h2>
+            <p className="text-purple-200 mb-8 leading-relaxed">
+              Rent the court for team sessions or friendly matches. Pricing adjusted based on peak weekend and holiday schedules.
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-8 mb-10">
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <Check className="w-5 h-5 text-emerald-400" /> Weekday Rate: ৳{settings?.pricing?.hourlyRate || 1500}/hr
+              </div>
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <Check className="w-5 h-5 text-emerald-400" /> Weekend Rate: ৳{settings?.pricing?.weekendRate || 1500}/hr
+              </div>
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <Check className="w-5 h-5 text-emerald-400" /> Holiday Rate: ৳{settings?.pricing?.holidayRate || 1500}/hr
+              </div>
+            </div>
+            <Link to="/booking">
+              <Button variant="secondary" className="px-8 py-3.5 text-base font-bold text-indigo-900 bg-white hover:bg-zinc-100">
+                Book Available Slot <ArrowRight className="w-5 h-5 text-indigo-900" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      {reviews && reviews.filter(r => r.isFeatured).length > 0 && (
+        <section className="py-20 bg-zinc-50 dark:bg-zinc-950 px-4 max-w-7xl mx-auto text-center">
+          <h2 className="text-3xl font-extrabold text-zinc-900 dark:text-white mb-12">
+            What Players Say
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {reviews.filter(r => r.isFeatured).map((rev) => (
+              <div
+                key={rev._id}
+                className="bg-white dark:bg-zinc-900 border border-zinc-150 dark:border-zinc-800/80 rounded-2xl p-6 shadow-sm text-left flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-center gap-1 mb-4">
+                    {[...Array(rev.rating)].map((_, i) => (
+                      <Star key={i} className="w-4.5 h-4.5 fill-amber-400 text-amber-400" />
+                    ))}
+                  </div>
+                  <p className="text-sm text-zinc-655 dark:text-zinc-350 italic mb-6">
+                    "{rev.comment}"
+                  </p>
+                </div>
+                <div className="font-bold text-sm text-zinc-900 dark:text-white">
+                  - {rev.customerName}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Google Maps / Contact CTA */}
+      <section className="py-20 px-4 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <div className="text-left">
+            <h2 className="text-3xl md:text-5xl font-extrabold mb-6 text-zinc-900 dark:text-white">
+              Visit Us Today
+            </h2>
+            <p className="text-zinc-550 dark:text-zinc-400 mb-8 leading-relaxed">
+              We are conveniently located in downtown. Fully equipped with parking, player lockers, and restrooms. Drop by or shoot us a booking online!
+            </p>
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-bold text-sm text-zinc-500 uppercase tracking-wider">Address</h4>
+                <p className="text-zinc-800 dark:text-zinc-200 font-semibold">{settings?.contactAddress}</p>
+              </div>
+              <div>
+                <h4 className="font-bold text-sm text-zinc-500 uppercase tracking-wider">Hours of Operation</h4>
+                <p className="text-zinc-800 dark:text-zinc-200 font-semibold">
+                  Mon-Fri: {settings?.businessHours?.weekday} | Sat-Sun: {settings?.businessHours?.weekend}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="h-96 rounded-3xl overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-md">
+            <iframe
+              title="Apex Map Location"
+              src={settings?.googleMapUrl}
+              width="100%"
+              height="100%"
+              style={{ border: 0 }}
+              allowFullScreen=""
+              loading="lazy"
+            />
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+};

@@ -1,0 +1,220 @@
+import React, { useState, useEffect } from 'react';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import {
+  LayoutDashboard,
+  CalendarDays,
+  Clock,
+  Images,
+  MessageSquare,
+  Settings as SettingsIcon,
+  LogOut,
+  Menu,
+  X,
+  Sparkles,
+  Inbox,
+  UserCheck,
+  DollarSign,
+  Sun,
+  Moon,
+  ChevronRight,
+} from 'lucide-react';
+import { Loader } from '../components/ui/Loader';
+
+export const AdminLayout = () => {
+  const { isAdmin, logout, loading } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    return localStorage.getItem('theme') === 'dark' || 
+      (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  });
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [darkMode]);
+
+  // Protect route
+  useEffect(() => {
+    if (!loading && !isAdmin) {
+      navigate('/admin/login');
+    }
+  }, [isAdmin, loading, navigate]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
+        <Loader size="large" />
+      </div>
+    );
+  }
+
+  if (!isAdmin) return null;
+
+  const menuItems = [
+    { name: 'Dashboard', path: '/admin/dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
+    { name: 'Bookings', path: '/admin/bookings', icon: <UserCheck className="w-5 h-5" /> },
+    { name: 'Calendar', path: '/admin/calendar', icon: <CalendarDays className="w-5 h-5" /> },
+    { name: 'Slots', path: '/admin/slots', icon: <Clock className="w-5 h-5" /> },
+    { name: 'Reviews', path: '/admin/reviews', icon: <Sparkles className="w-5 h-5" /> },
+    { name: 'Messages', path: '/admin/messages', icon: <Inbox className="w-5 h-5" /> },
+    { name: 'Gallery', path: '/admin/gallery', icon: <Images className="w-5 h-5" /> },
+    { name: 'Settings', path: '/admin/settings', icon: <SettingsIcon className="w-5 h-5" /> },
+  ];
+
+  const handleLogout = () => {
+    logout();
+    navigate('/admin/login');
+  };
+
+  const isActive = (path) => location.pathname === path;
+
+  return (
+    <div className="min-h-screen flex bg-zinc-50 dark:bg-zinc-950 transition-colors duration-300">
+      {/* Sidebar for Desktop */}
+      <aside className="hidden lg:flex flex-col w-64 border-r border-zinc-200/50 dark:border-zinc-900 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
+        <div className="h-16 flex items-center gap-2 px-6 border-b border-zinc-100 dark:border-zinc-900">
+          <div className="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center text-white font-bold text-sm">
+            A
+          </div>
+          <span className="font-extrabold text-md tracking-wider bg-gradient-to-r from-purple-500 to-indigo-500 bg-clip-text text-transparent uppercase">
+            Admin Console
+          </span>
+        </div>
+
+        <nav className="flex-1 px-4 py-6 space-y-1">
+          {menuItems.map((item) => (
+            <Link
+              key={item.name}
+              to={item.path}
+              className={`flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                isActive(item.path)
+                  ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20'
+                  : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-105/10 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-white'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                {item.icon}
+                {item.name}
+              </div>
+              <ChevronRight className={`w-4 h-4 opacity-50 ${isActive(item.path) ? 'block' : 'hidden'}`} />
+            </Link>
+          ))}
+        </nav>
+
+        <div className="p-4 border-t border-zinc-100 dark:border-zinc-900">
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all cursor-pointer"
+          >
+            <LogOut className="w-5 h-5" />
+            Sign Out
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Header */}
+        <header className="h-16 border-b border-zinc-200/50 dark:border-zinc-900 bg-white dark:bg-zinc-950 px-4 flex items-center justify-between sticky top-0 z-30">
+          <div className="flex items-center gap-3">
+            {/* Sidebar toggle button (Mobile Only) */}
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="lg:hidden p-2 rounded-xl border border-zinc-200 dark:border-zinc-800 text-zinc-650 dark:text-zinc-350 cursor-pointer"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <h1 className="font-extrabold text-lg text-zinc-900 dark:text-white hidden sm:block">
+              {menuItems.find((item) => isActive(item.path))?.name || 'Admin'}
+            </h1>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {/* Dark Mode Toggle */}
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              className="p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800/80 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-150 transition-colors cursor-pointer bg-white dark:bg-zinc-900"
+            >
+              {darkMode ? <Sun className="w-4.5 h-4.5" /> : <Moon className="w-4.5 h-4.5" />}
+            </button>
+
+            {/* View Website Link */}
+            <Link
+              to="/"
+              className="px-4 py-2 text-xs font-semibold rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:text-purple-600 dark:hover:text-purple-450 hover:border-purple-300 dark:hover:border-purple-900 transition-colors"
+            >
+              View Site
+            </Link>
+          </div>
+        </header>
+
+        {/* Inner Content */}
+        <main className="flex-1 p-6 md:p-8 overflow-y-auto custom-scrollbar">
+          <Outlet />
+        </main>
+      </div>
+
+      {/* Mobile Sidebar overlay */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden flex">
+          {/* Backdrop */}
+          <div
+            onClick={() => setSidebarOpen(false)}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+          />
+
+          {/* Drawer */}
+          <div className="relative w-64 bg-white dark:bg-zinc-950 flex flex-col z-10 border-r border-zinc-200/50 dark:border-zinc-900">
+            <div className="h-16 flex items-center justify-between px-6 border-b border-zinc-100 dark:border-zinc-900">
+              <span className="font-extrabold text-md tracking-wider bg-gradient-to-r from-purple-500 to-indigo-500 bg-clip-text text-transparent uppercase">
+                Admin Console
+              </span>
+              <button
+                onClick={() => setSidebarOpen(false)}
+                className="p-1 rounded-lg text-zinc-400 hover:text-zinc-650 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <nav className="flex-1 px-4 py-6 space-y-1">
+              {menuItems.map((item) => (
+                <Link
+                  key={item.name}
+                  to={item.path}
+                  onClick={() => setSidebarOpen(false)}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${
+                    isActive(item.path)
+                      ? 'bg-purple-600 text-white shadow-md'
+                      : 'text-zinc-600 dark:text-zinc-450 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-900'
+                  }`}
+                >
+                  {item.icon}
+                  {item.name}
+                </Link>
+              ))}
+            </nav>
+
+            <div className="p-4 border-t border-zinc-150 dark:border-zinc-900">
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-rose-650 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all cursor-pointer"
+              >
+                <LogOut className="w-5 h-5" />
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};

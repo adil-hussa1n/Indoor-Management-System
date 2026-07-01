@@ -1,0 +1,126 @@
+# Apex Arena - Indoor Sports Booking System
+
+A premium, production-ready MERN Stack Indoor Sports Booking System designed for a single playground/court. Features dynamic week-wise schedules, holiday/date overrides, automated pricing calculations formatted in Bangladesh Taka (৳/BDT), real-time slot state changes using Socket.IO, and a comprehensive admin management panel.
+
+---
+
+## 📂 Project Structure
+
+```
+Indoor-Management-System/
+├── client/                     # Frontend Vite + React 19 App
+│   ├── src/
+│   │   ├── components/         # Reusable UI components (Card, Button, Input, Loader, Toast)
+│   │   ├── contexts/           # Global Contexts (AuthContext, SocketContext)
+│   │   ├── hooks/              # Custom Hooks & API Queries (TanStack Query / useApi.js)
+│   │   ├── layouts/            # Application layouts (PublicLayout, AdminLayout)
+│   │   ├── pages/              # Routing pages (Home, Booking, Gallery, Admin Dashboard, etc.)
+│   │   ├── services/           # Services (Axios setup / api.js)
+│   │   ├── index.css           # Tailwind CSS base styles & custom dark mode configurations
+│   │   └── main.jsx            # React app entry point
+│   ├── tailwind.config.js      # Tailwind configurations
+│   └── vite.config.js          # Vite configuration
+│
+└── server/                     # Backend Node.js + Express API
+    ├── config/                 # Configurations (db.js, socket.js)
+    ├── controllers/            # Controller layer (auth, booking, slot, settings, gallery, review, contact)
+    ├── middleware/             # Middlewares (auth validation, error handling, rate limiter)
+    ├── models/                 # Mongoose schemas (Admin, Booking, Slot, Settings, Gallery, Review, Message)
+    ├── routes/                 # Express REST endpoint maps
+    ├── utils/                  # Utility functions (seeder.js, validators)
+    ├── server.js               # Application entry point & Socket server configuration
+    ├── app.js                  # Express app setup (security, CORS, rate limits, static folders)
+    └── .env                    # Environment configurations
+```
+
+---
+
+## ⚡ API Endpoint Reference
+
+All endpoints are prefixed with `/api/v1`.
+
+### 1. Authentication (`/auth`)
+* `POST /auth/login` - Authenticate admin credentials and retrieve JWT token.
+* `POST /auth/logout` - Clear session.
+
+### 2. Available Court Slots (`/available-slots`)
+* `GET /available-slots?date=YYYY-MM-DD` - Query bookable slots for a date. Resolves dynamically through:
+  1. Special date override slots.
+  2. Weekday-specific overrides.
+  3. Daily default slot configurations.
+
+### 3. Bookings (`/bookings` & `/booking`)
+* `POST /booking` - Customer court booking reservation request.
+* `GET /bookings` - Admin list all bookings (supports search, status, sport, and date range query parameters).
+* `POST /bookings` - Admin add manual booking (auto-confirmed).
+* `GET /bookings/:id` - Admin view specific booking details.
+* `PATCH /bookings/:id` - Admin update booking details.
+* `PATCH /booking-status/:id` - Admin change booking status (`Pending`, `Confirmed`, `Completed`, `Cancelled`).
+* `DELETE /bookings/:id` - Admin delete booking records.
+
+### 4. Slot Management (`/slots`)
+* `GET /slots` - Fetch all slot configurations.
+* `POST /slots` - Create a slot.
+* `PATCH /slots/:id` - Update slot (toggle `isActive`, modify times, weekly days, or date parameters).
+* `DELETE /slots/:id` - Delete a slot.
+
+### 5. Settings Management (`/settings` & `/info`)
+* `GET /info` - Public-facing settings details (business metadata, logo, banner, rates).
+* `GET /settings` - Admin settings configuration fetch.
+* `PATCH /settings` - Admin update configurations (supports Logo and Banner file uploads).
+
+### 6. Media Gallery (`/gallery`)
+* `GET /gallery` - Fetch all gallery images.
+* `POST /gallery` - Admin upload image (saves to Cloudinary or base64 fallback).
+* `DELETE /gallery/:id` - Admin delete image from database and Cloudinary storage.
+
+### 7. Reviews & Messages
+* `POST /reviews` - Customer submit feedback rating.
+* `GET /reviews` - Fetch approved customer reviews.
+* `GET /reviews/all` - Admin view all reviews.
+* `PATCH /reviews/:id` - Admin approve / hide review.
+* `POST /contact` - Customer submit contact message.
+* `GET /messages` - Admin fetch contact messages.
+
+---
+
+## 🚀 Deployment Instructions
+
+### 1. Deploying the Backend on Render
+[Render](https://render.com/) is ideal for hosting Node.js/Express web services.
+
+1. **Create an account** on Render and connect your GitHub repository.
+2. Click **New +** -> **Web Service**.
+3. Choose your repository.
+4. Configure the Web Service:
+   * **Name**: `indoor-sports-booking-api`
+   * **Language**: `Node`
+   * **Build Command**: `npm install` (inside the `server/` directory)
+   * **Start Command**: `node server.js`
+5. Set the Root Directory to `server`.
+6. Add your Environment Variables in the **Environment** tab:
+   * `PORT` = `10000` (Render allocates this automatically, but standardise if needed)
+   * `NODE_ENV` = `production`
+   * `MONGO_URI` = `mongodb+srv://...` (your MongoDB Atlas connection string)
+   * `JWT_SECRET` = `your_strong_secret`
+   * `CLIENT_URL` = `https://your-frontend.vercel.app` (your Vercel URL, set after deploying frontend)
+   * `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` (obtained from Cloudinary dashboard)
+7. Click **Deploy Web Service**. Render will output a URL (e.g., `https://indoor-sports-booking-api.onrender.com`).
+
+---
+
+### 2. Deploying the Frontend on Vercel
+[Vercel](https://vercel.com/) provides premium, high-speed CDN hosting for React/Vite builds.
+
+1. Create a free account on Vercel and connect your GitHub repository.
+2. Click **Add New** -> **Project**.
+3. Select your repository.
+4. Configure Project settings:
+   * **Framework Preset**: `Vite`
+   * **Root Directory**: `client`
+   * **Build Command**: `npm run build`
+   * **Output Directory**: `dist`
+5. Open the **Environment Variables** block and add:
+   * `VITE_API_URL` = `https://indoor-sports-booking-api.onrender.com/api/v1` (the Render URL pointing to your backend API)
+6. Click **Deploy**. Vercel will output your production-ready public URL.
+7. *Note*: Make sure to copy your Vercel URL back to your Render environment configurations under `CLIENT_URL` to enable secure CORS requests!
