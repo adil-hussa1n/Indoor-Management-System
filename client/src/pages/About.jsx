@@ -10,14 +10,14 @@ export const About = () => {
     'Bookings are strict. Please vacate the court immediately when your session ends.',
     'No food or sugary beverages on the main hardwood floor (bottled water only).',
     'Proper sports attire must be worn at all times.',
-    'Apex Arena is not responsible for any lost or stolen personal belongings.',
+    `${settings?.businessName || 'Apex Arena'} is not responsible for any lost or stolen personal belongings.`,
     'Damaging facilities or equipment will result in replacement fines.',
   ];
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-16 text-left">
       <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-zinc-900 dark:text-white mb-6 text-center">
-        About <span className="bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">Apex Arena</span>
+        About <span className="bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">{settings?.businessName || 'Apex Arena'}</span>
       </h1>
       
       <p className="text-lg text-zinc-650 dark:text-zinc-400 mb-12 text-center max-w-2xl mx-auto leading-relaxed">

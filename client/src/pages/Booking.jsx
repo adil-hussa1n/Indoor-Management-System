@@ -169,7 +169,7 @@ export const Booking = () => {
           Booking Confirmed!
         </h1>
         <p className="text-zinc-500 dark:text-zinc-400 mb-8">
-          Thank you for reserving Apex Court. Show this ID at check-in.
+          Thank you for reserving {settings?.businessName || 'Apex Arena'}. Show this ID at check-in.
         </p>
 
         <Card className="mb-8 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800">
@@ -280,7 +280,7 @@ export const Booking = () => {
                 <Loader className="py-8" />
               ) : slotData?.isBlocked ? (
                 <div className="p-8 text-center text-rose-500 border border-rose-200/50 bg-rose-50/50 rounded-xl font-bold">
-                  ⚠️ Apex Arena is Closed today ({slotData.reason})
+                  ⚠️ {settings?.businessName || 'Apex Arena'} is Closed today ({slotData.reason})
                 </div>
               ) : (
                 <div className="space-y-6">

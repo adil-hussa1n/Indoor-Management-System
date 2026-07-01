@@ -22,6 +22,12 @@ export const PublicLayout = () => {
     }
   }, [darkMode]);
 
+  useEffect(() => {
+    if (settings) {
+      document.title = settings.seo?.title || settings.businessName || 'Apex Arena';
+    }
+  }, [settings]);
+
   const navLinks = [
     { name: 'Home', path: '/', icon: <Info className="w-4 h-4" /> },
     { name: 'About', path: '/about', icon: <Info className="w-4 h-4" /> },
