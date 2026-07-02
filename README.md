@@ -73,8 +73,9 @@ All endpoints are prefixed with `/api/v1`.
   2. Weekday-specific overrides.
   3. Daily default slot configurations.
 
-### 3. Bookings (`/bookings` & `/booking`)
+### 3. Bookings & Dashboard (`/bookings`, `/booking` & `/dashboard`)
 * `POST /booking` - Customer court booking reservation request.
+* `GET /dashboard` - Admin fetch dashboard overview, peak slots, and occupancy rates (supports custom date filters).
 * `GET /bookings` - Admin list all bookings (supports search, status, sport, and date range query parameters).
 * `POST /bookings` - Admin add manual booking (auto-confirmed).
 * `GET /bookings/:id` - Admin view specific booking details.
@@ -96,6 +97,7 @@ All endpoints are prefixed with `/api/v1`.
 ### 6. Media Gallery (`/gallery`)
 * `GET /gallery` - Fetch all gallery images.
 * `POST /gallery` - Admin upload image (saves to Cloudinary or base64 fallback).
+* `POST /gallery/reorder` - Admin update ordering sequence of media assets.
 * `DELETE /gallery/:id` - Admin delete image from database and Cloudinary storage.
 
 ### 7. Reviews & Messages
@@ -103,8 +105,11 @@ All endpoints are prefixed with `/api/v1`.
 * `GET /reviews` - Fetch approved customer reviews.
 * `GET /reviews/all` - Admin view all reviews.
 * `PATCH /reviews/:id` - Admin approve / hide review.
+* `DELETE /reviews/:id` - Admin delete feedback review database record.
 * `POST /contact` - Customer submit contact message.
 * `GET /messages` - Admin fetch contact messages.
+* `PATCH /messages/:id` - Admin update inquiry read/unread or reply status.
+* `DELETE /messages/:id` - Admin delete message database record.
 
 ---
 
