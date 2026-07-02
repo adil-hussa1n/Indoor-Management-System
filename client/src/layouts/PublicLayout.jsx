@@ -9,8 +9,18 @@ export const PublicLayout = () => {
       (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
   });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showPreloader, setShowPreloader] = useState(true);
   const location = useLocation();
   const { data: settings, isLoading } = usePublicSettings();
+
+  useEffect(() => {
+    if (!isLoading) {
+      const timer = setTimeout(() => {
+        setShowPreloader(false);
+      }, 1500); // 1.5 seconds minimum load view
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading]);
 
   useEffect(() => {
     if (darkMode) {
@@ -47,7 +57,7 @@ export const PublicLayout = () => {
 
   const isActive = (path) => location.pathname === path;
 
-  if (isLoading) {
+  if (isLoading || showPreloader) {
     return (
       <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-zinc-50 dark:bg-zinc-950 transition-colors duration-300">
         <div className="relative flex flex-col items-center gap-6">
