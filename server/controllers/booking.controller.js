@@ -1,5 +1,6 @@
 import Booking from '../models/Booking.js';
 import Settings from '../models/Settings.js';
+import Slot from '../models/Slot.js';
 import { bookingSchema } from '../validators/booking.validator.js';
 
 // Helper to generate unique booking reference: IND-YYYY-XXXX
@@ -13,28 +14,73 @@ const generateBookingId = async () => {
   return `${prefix}${serial}`;
 };
 
-// Helper to calculate price based on day type (Weekend, Holiday, Regular)
-const calculatePrice = async (dateStr, duration) => {
+// Helper to calculate price based on slots and date type (Weekend, Holiday, Regular)
+const calculatePrice = async (dateStr, startTime, endTime) => {
   const settings = await Settings.findOne() || {
-    pricing: { hourlyRate: 40, weekendRate: 55, holidayRate: 65 },
+    pricing: {
+      weekdayDay: 1500,
+      weekdayNight: 1500,
+      weekendDay: 1500,
+      weekendNight: 1500,
+      holidayDay: 1500,
+      holidayNight: 1500,
+    },
   };
 
   const bookingDate = new Date(dateStr);
   const dateString = dateStr.split('T')[0];
-
-  // 1. Check Holiday
-  if (settings.holidays && settings.holidays.includes(dateString)) {
-    return duration * settings.pricing.holidayRate;
-  }
-
-  // 2. Check Weekend (Saturday=6, Sunday=0)
   const day = bookingDate.getUTCDay();
-  if (day === 0 || day === 6) {
-    return duration * settings.pricing.weekendRate;
+
+  // Determine day type: 'holiday' | 'weekend' | 'weekday'
+  let dayType = 'weekday';
+  if (settings.holidays && settings.holidays.includes(dateString)) {
+    dayType = 'holiday';
+  } else if (day === 0 || day === 6) {
+    dayType = 'weekend';
   }
 
-  // 3. Regular Rate
-  return duration * settings.pricing.hourlyRate;
+  // Find all slots for this date category to determine their rateType ('day' or 'night')
+  let activeSlots = await Slot.find({ specificDate: dateString, isActive: true });
+  if (activeSlots.length === 0) {
+    activeSlots = await Slot.find({ dayOfWeek: day, specificDate: null, isActive: true });
+  }
+  if (activeSlots.length === 0) {
+    activeSlots = await Slot.find({ dayOfWeek: -1, specificDate: null, isActive: true });
+  }
+
+  // Filter slots overlapping the requested range [startTime, endTime]
+  const overlappingSlots = activeSlots.filter(slot => {
+    return slot.startTime >= startTime && slot.endTime <= endTime;
+  });
+
+  let totalPrice = 0;
+  if (overlappingSlots.length > 0) {
+    for (const slot of overlappingSlots) {
+      const rateType = slot.rateType || 'day';
+      const pricing = settings.pricing || {};
+      if (dayType === 'holiday') {
+        totalPrice += rateType === 'night' ? (pricing.holidayNight || 1500) : (pricing.holidayDay || 1500);
+      } else if (dayType === 'weekend') {
+        totalPrice += rateType === 'night' ? (pricing.weekendNight || 1500) : (pricing.weekendDay || 1500);
+      } else {
+        totalPrice += rateType === 'night' ? (pricing.weekdayNight || 1500) : (pricing.weekdayDay || 1500);
+      }
+    }
+  } else {
+    // Fallback if no matching slots are found
+    const [sh, sm] = startTime.split(':').map(Number);
+    const [eh, em] = endTime.split(':').map(Number);
+    const duration = (eh * 60 + em - (sh * 60 + sm)) / 60;
+    const pricing = settings.pricing || {};
+    const rate = dayType === 'holiday' 
+      ? (pricing.holidayDay || 1500)
+      : dayType === 'weekend' 
+      ? (pricing.weekendDay || 1500) 
+      : (pricing.weekdayDay || 1500);
+    totalPrice = duration * rate;
+  }
+
+  return totalPrice;
 };
 
 // Helper to check for double bookings
@@ -79,7 +125,7 @@ export const createBooking = async (req, res, next) => {
       });
     }
 
-    const calculatedPrice = await calculatePrice(data.bookingDate, data.duration);
+    const calculatedPrice = await calculatePrice(data.bookingDate, data.startTime, data.endTime);
     const bookingId = await generateBookingId();
 
     const booking = await Booking.create({
@@ -186,7 +232,7 @@ export const createManualBooking = async (req, res, next) => {
       });
     }
 
-    const calculatedPrice = await calculatePrice(data.bookingDate, data.duration);
+    const calculatedPrice = await calculatePrice(data.bookingDate, data.startTime, data.endTime);
     const bookingId = await generateBookingId();
 
     const booking = await Booking.create({
@@ -220,9 +266,10 @@ export const updateBooking = async (req, res, next) => {
     // Update details (excluding key unique constraint fields if needed, or allowing updates)
     Object.assign(booking, req.body);
     
-    // Re-calculate price if date/duration changed
-    if (req.body.bookingDate || req.body.duration) {
-      booking.price = await calculatePrice(booking.bookingDate.toISOString(), booking.duration);
+    // Re-calculate price if date/time range changed
+    if (req.body.bookingDate || req.body.startTime || req.body.endTime) {
+      const bDate = booking.bookingDate ? booking.bookingDate.toISOString() : new Date().toISOString();
+      booking.price = await calculatePrice(bDate, booking.startTime, booking.endTime);
     }
 
     await booking.save();

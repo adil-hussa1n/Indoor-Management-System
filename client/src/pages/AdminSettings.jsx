@@ -36,9 +36,12 @@ export const AdminSettings = () => {
           weekend: settings.businessHours?.weekend || '09:00 - 23:00',
         },
         pricing: {
-          hourlyRate: settings.pricing?.hourlyRate || 40,
-          weekendRate: settings.pricing?.weekendRate || 55,
-          holidayRate: settings.pricing?.holidayRate || 65,
+          weekdayDay: settings.pricing?.weekdayDay ?? 1500,
+          weekdayNight: settings.pricing?.weekdayNight ?? 1500,
+          weekendDay: settings.pricing?.weekendDay ?? 1500,
+          weekendNight: settings.pricing?.weekendNight ?? 1500,
+          holidayDay: settings.pricing?.holidayDay ?? 1500,
+          holidayNight: settings.pricing?.holidayNight ?? 1500,
         },
         seo: {
           title: settings.seo?.title || '',
@@ -269,27 +272,45 @@ export const AdminSettings = () => {
         {/* Pricing tier details */}
         <Card>
           <CardHeader>
-            <CardTitle>Pricing Rates Configuration</CardTitle>
-            <CardDescription>Determine hourly rates charged to players dynamically.</CardDescription>
+            <CardTitle>Pricing Rates Configuration (BDT)</CardTitle>
+            <CardDescription>Determine hourly rates charged to players dynamically for Day and Night shifts.</CardDescription>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <Input
-              label="Hourly Regular Rate (৳)"
+              label="Weekday Day Shift Rate (৳)"
               type="number"
-              value={formData.pricing.hourlyRate}
-              onChange={(e) => handleChange('pricing', 'hourlyRate', Number(e.target.value))}
+              value={formData.pricing.weekdayDay}
+              onChange={(e) => handleChange('pricing', 'weekdayDay', Number(e.target.value))}
             />
             <Input
-              label="Hourly Weekend Rate (৳)"
+              label="Weekday Night Shift Rate (৳)"
               type="number"
-              value={formData.pricing.weekendRate}
-              onChange={(e) => handleChange('pricing', 'weekendRate', Number(e.target.value))}
+              value={formData.pricing.weekdayNight}
+              onChange={(e) => handleChange('pricing', 'weekdayNight', Number(e.target.value))}
             />
             <Input
-              label="Hourly Holiday Rate (৳)"
+              label="Weekend Day Shift Rate (৳)"
               type="number"
-              value={formData.pricing.holidayRate}
-              onChange={(e) => handleChange('pricing', 'holidayRate', Number(e.target.value))}
+              value={formData.pricing.weekendDay}
+              onChange={(e) => handleChange('pricing', 'weekendDay', Number(e.target.value))}
+            />
+            <Input
+              label="Weekend Night Shift Rate (৳)"
+              type="number"
+              value={formData.pricing.weekendNight}
+              onChange={(e) => handleChange('pricing', 'weekendNight', Number(e.target.value))}
+            />
+            <Input
+              label="Holiday Day Shift Rate (৳)"
+              type="number"
+              value={formData.pricing.holidayDay}
+              onChange={(e) => handleChange('pricing', 'holidayDay', Number(e.target.value))}
+            />
+            <Input
+              label="Holiday Night Shift Rate (৳)"
+              type="number"
+              value={formData.pricing.holidayNight}
+              onChange={(e) => handleChange('pricing', 'holidayNight', Number(e.target.value))}
             />
           </CardContent>
         </Card>

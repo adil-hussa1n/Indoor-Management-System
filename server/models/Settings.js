@@ -31,9 +31,12 @@ const settingsSchema = new mongoose.Schema(
       weekend: { type: String, default: '09:00 - 23:00' },
     },
     pricing: {
-      hourlyRate: { type: Number, default: 1500 },
-      weekendRate: { type: Number, default: 1500 },
-      holidayRate: { type: Number, default: 1500 },
+      weekdayDay: { type: Number, default: 1500 },
+      weekdayNight: { type: Number, default: 1500 },
+      weekendDay: { type: Number, default: 1500 },
+      weekendNight: { type: Number, default: 1500 },
+      holidayDay: { type: Number, default: 1500 },
+      holidayNight: { type: Number, default: 1500 },
     },
     socialLinks: {
       facebook: { type: String, default: 'https://facebook.com' },

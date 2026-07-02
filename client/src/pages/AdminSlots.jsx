@@ -17,6 +17,17 @@ const WEEKDAYS = [
   { value: '6', label: 'Saturday' },
 ];
 
+const format12Hour = (time24) => {
+  if (!time24) return '';
+  const [hourStr, minStr] = time24.split(':');
+  let hour = parseInt(hourStr, 10);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  hour = hour % 12;
+  hour = hour ? hour : 12;
+  const displayHour = String(hour).padStart(2, '0');
+  return `${displayHour}:${minStr} ${ampm}`;
+};
+
 export const AdminSlots = () => {
   const toast = useToast();
   const [startTime, setStartTime] = useState('');
@@ -24,6 +35,7 @@ export const AdminSlots = () => {
   const [slotType, setSlotType] = useState('general'); // "general" | "weekly" | "special"
   const [dayOfWeek, setDayOfWeek] = useState('0');
   const [specificDate, setSpecificDate] = useState('');
+  const [rateType, setRateType] = useState('day');
   const [activeTab, setActiveTab] = useState('general'); // "general" | "weekly" | "special"
 
   const { data: slots, isLoading, refetch } = useAdminSlots();
@@ -48,6 +60,7 @@ export const AdminSlots = () => {
       endTime,
       dayOfWeek: slotType === 'weekly' ? Number(dayOfWeek) : -1,
       specificDate: slotType === 'special' ? specificDate : null,
+      rateType,
     };
 
     createSlotMutation.mutate(payload, {
@@ -165,6 +178,17 @@ export const AdminSlots = () => {
               />
             </div>
 
+            <Select
+              label="Shift / Rate Type"
+              value={rateType}
+              onChange={(e) => setRateType(e.target.value)}
+              placeholder=""
+              options={[
+                { value: 'day', label: 'Day Shift' },
+                { value: 'night', label: 'Night Shift' },
+              ]}
+            />
+
             <Button
               type="submit"
               disabled={createSlotMutation.isPending}
@@ -238,10 +262,10 @@ export const AdminSlots = () => {
                   >
                     <div className="space-y-1">
                       <span className="font-extrabold text-md text-zinc-900 dark:text-zinc-200">
-                        {slot.startTime} - {slot.endTime}
+                        {format12Hour(slot.startTime)} - {format12Hour(slot.endTime)}
                       </span>
                       <div className="text-xs font-semibold text-purple-650">
-                        Category: {dayLabel}
+                        Category: {dayLabel} ({slot.rateType === 'night' ? 'Night Shift' : 'Day Shift'})
                       </div>
                       <div className="text-[10px] text-zinc-400 font-semibold">
                         Status: {slot.isActive ? 'Active' : 'Disabled'}

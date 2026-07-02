@@ -10,7 +10,7 @@ services:
     env_file:
       - ./server/.env
     environment:
-      - MONGO_URI=mongodb://mongo:27017/indoor_sports
+      - MONGO_URI=mongodb+srv://adil1267:%40pass20022735822@cluster0.wgduujg.mongodb.net/indoor_sports?retryWrites=true&w=majority
     depends_on:
       - mongo
 

@@ -18,6 +18,17 @@ import {
   UserCheck,
 } from 'lucide-react';
 
+const format12Hour = (time24) => {
+  if (!time24) return '';
+  const [hourStr, minStr] = time24.split(':');
+  let hour = parseInt(hourStr, 10);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  hour = hour % 12;
+  hour = hour ? hour : 12;
+  const displayHour = String(hour).padStart(2, '0');
+  return `${displayHour}:${minStr} ${ampm}`;
+};
+
 export const AdminDashboard = () => {
   const toast = useToast();
   const socket = useSocket();
@@ -279,7 +290,7 @@ export const AdminDashboard = () => {
                     <td className="py-3.5 px-4">
                       <div className="text-zinc-800 dark:text-zinc-200 font-semibold">{new Date(b.bookingDate).toLocaleDateString('en-BD')}</div>
                       <div className="text-xs text-zinc-500">
-                        {b.startTime} - {b.endTime}
+                        {format12Hour(b.startTime)} - {format12Hour(b.endTime)}
                       </div>
                     </td>
                     <td className="py-3.5 px-4 font-bold">৳{b.price}</td>

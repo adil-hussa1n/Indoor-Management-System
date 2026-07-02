@@ -12,6 +12,17 @@ import { useToast } from '../components/ui/Toast';
 import { useSocket } from '../contexts/SocketContext';
 import { Search, Plus, Trash2, Edit3, ArrowLeft, ArrowRight, UserCheck } from 'lucide-react';
 
+const format12Hour = (time24) => {
+  if (!time24) return '';
+  const [hourStr, minStr] = time24.split(':');
+  let hour = parseInt(hourStr, 10);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  hour = hour % 12;
+  hour = hour ? hour : 12;
+  const displayHour = String(hour).padStart(2, '0');
+  return `${displayHour}:${minStr} ${ampm}`;
+};
+
 const manualBookingSchema = z.object({
   customerName: z.string().min(2, 'Name is required'),
   phone: z.string().min(7, 'Phone number is required'),
@@ -197,7 +208,7 @@ export const AdminBookings = () => {
                     <td className="py-3.5 px-4 font-medium">{b.sport}</td>
                     <td className="py-3.5 px-4">
                       <div className="font-semibold">{new Date(b.bookingDate).toLocaleDateString('en-BD')}</div>
-                      <div className="text-xs text-zinc-550">{b.startTime} - {b.endTime} ({b.duration} hr)</div>
+                      <div className="text-xs text-zinc-555">{format12Hour(b.startTime)} - {format12Hour(b.endTime)} ({b.duration} hr)</div>
                     </td>
                     <td className="py-3.5 px-4 font-bold">৳{b.price}</td>
                     <td className="py-3.5 px-4">

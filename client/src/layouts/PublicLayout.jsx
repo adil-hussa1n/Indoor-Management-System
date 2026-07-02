@@ -25,6 +25,15 @@ export const PublicLayout = () => {
   useEffect(() => {
     if (settings) {
       document.title = settings.seo?.title || settings.businessName || 'Apex Arena';
+      if (settings.logo) {
+        let link = document.querySelector("link[rel~='icon']");
+        if (!link) {
+          link = document.createElement('link');
+          link.rel = 'icon';
+          document.getElementsByTagName('head')[0].appendChild(link);
+        }
+        link.href = settings.logo;
+      }
     }
   }, [settings]);
 
@@ -141,9 +150,13 @@ export const PublicLayout = () => {
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center text-white font-bold">
-                A
-              </div>
+              {settings?.logo ? (
+                <img src={settings.logo} alt="Logo" className="w-8 h-8 object-contain rounded-lg" />
+              ) : (
+                <div className="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center text-white font-bold">
+                  A
+                </div>
+              )}
               <span className="font-extrabold text-lg text-zinc-900 dark:text-white">
                 {settings?.businessName || 'Apex Arena'}
               </span>

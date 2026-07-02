@@ -166,15 +166,21 @@ export const Home = () => {
             <p className="text-purple-200 mb-8 leading-relaxed">
               Rent the court for team sessions or friendly matches. Pricing adjusted based on peak weekend and holiday schedules.
             </p>
-            <div className="flex flex-wrap items-center justify-center gap-8 mb-10">
-              <div className="flex items-center gap-2 text-sm font-semibold">
-                <Check className="w-5 h-5 text-emerald-400" /> Weekday Rate: ৳{settings?.pricing?.hourlyRate || 1500}/hr
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-4xl mx-auto mb-10 text-left bg-white/5 dark:bg-black/10 backdrop-blur-md p-6 rounded-2xl border border-white/10">
+              <div className="space-y-2">
+                <h4 className="font-extrabold text-sm uppercase tracking-wider text-purple-300">Weekday Rates</h4>
+                <div className="flex items-center gap-2 text-sm font-semibold"><Check className="w-4 h-4 text-emerald-400" /> Day Shift: ৳{settings?.pricing?.weekdayDay || 1500}/hr</div>
+                <div className="flex items-center gap-2 text-sm font-semibold"><Check className="w-4 h-4 text-emerald-400" /> Night Shift: ৳{settings?.pricing?.weekdayNight || 1500}/hr</div>
               </div>
-              <div className="flex items-center gap-2 text-sm font-semibold">
-                <Check className="w-5 h-5 text-emerald-400" /> Weekend Rate: ৳{settings?.pricing?.weekendRate || 1500}/hr
+              <div className="space-y-2">
+                <h4 className="font-extrabold text-sm uppercase tracking-wider text-purple-300">Weekend Rates</h4>
+                <div className="flex items-center gap-2 text-sm font-semibold"><Check className="w-4 h-4 text-emerald-400" /> Day Shift: ৳{settings?.pricing?.weekendDay || 1500}/hr</div>
+                <div className="flex items-center gap-2 text-sm font-semibold"><Check className="w-4 h-4 text-emerald-400" /> Night Shift: ৳{settings?.pricing?.weekendNight || 1500}/hr</div>
               </div>
-              <div className="flex items-center gap-2 text-sm font-semibold">
-                <Check className="w-5 h-5 text-emerald-400" /> Holiday Rate: ৳{settings?.pricing?.holidayRate || 1500}/hr
+              <div className="space-y-2">
+                <h4 className="font-extrabold text-sm uppercase tracking-wider text-purple-300">Holiday Rates</h4>
+                <div className="flex items-center gap-2 text-sm font-semibold"><Check className="w-4 h-4 text-emerald-400" /> Day Shift: ৳{settings?.pricing?.holidayDay || 1500}/hr</div>
+                <div className="flex items-center gap-2 text-sm font-semibold"><Check className="w-4 h-4 text-emerald-400" /> Night Shift: ৳{settings?.pricing?.holidayNight || 1500}/hr</div>
               </div>
             </div>
             <Link to="/booking">

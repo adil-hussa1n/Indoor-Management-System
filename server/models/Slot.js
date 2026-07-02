@@ -24,6 +24,11 @@ const slotSchema = new mongoose.Schema(
       default: null,
       index: true,
     },
+    rateType: {
+      type: String,
+      enum: ['day', 'night'],
+      default: 'day',
+    },
   },
   { timestamps: true }
 );

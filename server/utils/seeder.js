@@ -10,20 +10,20 @@ import Booking from '../models/Booking.js';
 dotenv.config();
 
 const defaultSlots = [
-  { startTime: '08:00', endTime: '09:00' },
-  { startTime: '09:00', endTime: '10:00' },
-  { startTime: '10:00', endTime: '11:00' },
-  { startTime: '11:00', endTime: '12:00' },
-  { startTime: '12:00', endTime: '13:00' },
-  { startTime: '13:00', endTime: '14:00' },
-  { startTime: '14:00', endTime: '15:00' },
-  { startTime: '15:00', endTime: '16:00' },
-  { startTime: '16:00', endTime: '17:00' },
-  { startTime: '17:00', endTime: '18:00' },
-  { startTime: '18:00', endTime: '19:00' },
-  { startTime: '19:00', endTime: '20:00' },
-  { startTime: '20:00', endTime: '21:00' },
-  { startTime: '21:00', endTime: '22:00' },
+  { startTime: '08:00', endTime: '09:00', rateType: 'day' },
+  { startTime: '09:00', endTime: '10:00', rateType: 'day' },
+  { startTime: '10:00', endTime: '11:00', rateType: 'day' },
+  { startTime: '11:00', endTime: '12:00', rateType: 'day' },
+  { startTime: '12:00', endTime: '13:00', rateType: 'day' },
+  { startTime: '13:00', endTime: '14:00', rateType: 'day' },
+  { startTime: '14:00', endTime: '15:00', rateType: 'day' },
+  { startTime: '15:00', endTime: '16:00', rateType: 'day' },
+  { startTime: '16:00', endTime: '17:00', rateType: 'day' },
+  { startTime: '17:00', endTime: '18:00', rateType: 'night' },
+  { startTime: '18:00', endTime: '19:00', rateType: 'night' },
+  { startTime: '19:00', endTime: '20:00', rateType: 'night' },
+  { startTime: '20:00', endTime: '21:00', rateType: 'night' },
+  { startTime: '21:00', endTime: '22:00', rateType: 'night' },
 ];
 
 const mockReviews = [
@@ -71,9 +71,12 @@ const seedDB = async () => {
       contactPhone: '+880 1712-345678',
       contactAddress: 'Sector 11, Uttara, Dhaka, Bangladesh',
       pricing: {
-        hourlyRate: 1500,
-        weekendRate: 1500,
-        holidayRate: 1500,
+        weekdayDay: 1500,
+        weekdayNight: 1500,
+        weekendDay: 1500,
+        weekendNight: 1500,
+        holidayDay: 1500,
+        holidayNight: 1500,
       }
     });
     console.log('Default settings seeded.');

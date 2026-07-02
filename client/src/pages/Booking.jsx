@@ -11,6 +11,17 @@ import { Input, Select } from '../components/ui/Input';
 import { Loader } from '../components/ui/Loader';
 import { useToast } from '../components/ui/Toast';
 
+const format12Hour = (time24) => {
+  if (!time24) return '';
+  const [hourStr, minStr] = time24.split(':');
+  let hour = parseInt(hourStr, 10);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  hour = hour % 12;
+  hour = hour ? hour : 12;
+  const displayHour = String(hour).padStart(2, '0');
+  return `${displayHour}:${minStr} ${ampm}`;
+};
+
 const bookingFormSchema = z.object({
   customerName: z.string().min(2, 'Full Name is required'),
   phone: z.string().min(7, 'Valid phone number is required'),
@@ -70,28 +81,35 @@ export const Booking = () => {
     },
   });
 
-  // Calculate pricing based on date type (Weekend/Weekday/Holiday)
-  const getHourlyRate = () => {
-    if (!settings) return 1500;
+  // Calculate pricing based on selected slots shifts
+  const calculateEstimatedTotal = () => {
+    if (!settings || selectedSlots.length === 0) return 0;
     const dateObj = new Date(selectedDate);
-    
-    // Check Holiday
-    if (settings.holidays && settings.holidays.includes(selectedDate)) {
-      return settings.pricing.holidayRate;
-    }
-    
-    // Check Weekend (Sat=6, Sun=0)
     const day = dateObj.getUTCDay();
-    if (day === 0 || day === 6) {
-      return settings.pricing.weekendRate;
+    let dayType = 'weekday';
+    if (settings.holidays && settings.holidays.includes(selectedDate)) {
+      dayType = 'holiday';
+    } else if (day === 0 || day === 6) {
+      dayType = 'weekend';
     }
-    
-    return settings.pricing.hourlyRate;
+
+    let total = 0;
+    for (const slot of selectedSlots) {
+      const rateType = slot.rateType || 'day';
+      const pricing = settings.pricing || {};
+      if (dayType === 'holiday') {
+        total += rateType === 'night' ? (pricing.holidayNight || 1500) : (pricing.holidayDay || 1500);
+      } else if (dayType === 'weekend') {
+        total += rateType === 'night' ? (pricing.weekendNight || 1500) : (pricing.weekendDay || 1500);
+      } else {
+        total += rateType === 'night' ? (pricing.weekdayNight || 1500) : (pricing.weekdayDay || 1500);
+      }
+    }
+    return total;
   };
 
   const duration = selectedSlots.length;
-  const hourlyRate = getHourlyRate();
-  const totalPrice = hourlyRate * duration;
+  const totalPrice = calculateEstimatedTotal();
 
   const handleDateChange = (e) => {
     setSelectedDate(e.target.value);
@@ -199,9 +217,9 @@ export const Booking = () => {
               </span>
             </div>
             <div className="flex justify-between items-center text-sm">
-              <span className="text-zinc-500">Time Selected</span>
-              <span className="font-semibold text-zinc-800 dark:text-zinc-200">
-                {confirmedBooking.startTime} - {confirmedBooking.endTime} ({confirmedBooking.duration} hr)
+              <span className="text-zinc-550">Time Selected</span>
+              <span className="font-semibold text-zinc-805 dark:text-zinc-200">
+                {format12Hour(confirmedBooking.startTime)} - {format12Hour(confirmedBooking.endTime)} ({confirmedBooking.duration} hr)
               </span>
             </div>
             <div className="flex justify-between items-center border-t border-zinc-150 dark:border-zinc-800 pt-3">
@@ -284,42 +302,8 @@ export const Booking = () => {
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {/* Duration Slider */}
-                  <div className="flex flex-col gap-2">
-                    <label className="text-xs font-semibold text-zinc-500 uppercase">Duration (Hours)</label>
-                    <div className="flex items-center gap-4">
-                      <input
-                        type="range"
-                        min="1"
-                        max="4"
-                        value={duration}
-                        onChange={(e) => {
-                          setDuration(Number(e.target.value));
-                          setSelectedSlot(null); // Reset selection
-                        }}
-                        className="w-full h-2 bg-zinc-200 dark:bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-purple-650"
-                      />
-                      <span className="font-extrabold text-lg text-purple-650 min-w-16 text-right">
-                        {duration} hr{duration > 1 ? 's' : ''}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-6">
-                    {/* Status Legend */}
-                    <div className="flex gap-4 text-xs font-semibold mb-4">
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                        <span className="text-zinc-600 dark:text-zinc-400">Available</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-                        <span className="text-zinc-600 dark:text-zinc-400">Booked / Occupied</span>
-                      </div>
-                    </div>
-
-                    {/* Time Slots Grid */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {/* Time Slots Grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       {slotData?.slots?.map((slot) => {
                         const isSelected = selectedSlots.some((s) => s.id === slot.id);
                         return (
@@ -334,7 +318,7 @@ export const Booking = () => {
                                 : 'bg-white hover:bg-zinc-50 dark:bg-zinc-900 dark:hover:bg-zinc-850 border-zinc-200 dark:border-zinc-800/80 text-zinc-700 dark:text-zinc-350 cursor-pointer active:scale-[0.98]'
                             }`}
                           >
-                            <span className="text-base font-extrabold">{slot.startTime}</span>
+                            <span className="text-base font-extrabold">{format12Hour(slot.startTime)}</span>
                             <span className={`text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider font-bold ${
                               !slot.isAvailable
                                 ? 'bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-455'
@@ -342,13 +326,12 @@ export const Booking = () => {
                                 ? 'bg-purple-500/30 text-white'
                                 : 'bg-emerald-100 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-400'
                             }`}>
-                              {slot.isAvailable ? 'Available' : 'Booked'}
+                              {slot.isAvailable ? `${slot.rateType === 'night' ? 'Night Shift' : 'Day Shift'}` : 'Booked'}
                             </span>
                           </div>
                         );
                       })}
                     </div>
-                  </div>
                 </div>
               )}
             </CardContent>
@@ -422,17 +405,17 @@ export const Booking = () => {
                   <span className="font-semibold">{selectedDate}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-zinc-550">Time Slots</span>
+                  <span className="text-zinc-555">Time Slots</span>
                   <span className="font-semibold text-purple-650">
                     {selectedSlots.length > 0
-                      ? `${selectedSlots[0].startTime} - ${selectedSlots[selectedSlots.length - 1].endTime} (${duration} hr)`
+                      ? `${format12Hour(selectedSlots[0].startTime)} - ${format12Hour(selectedSlots[selectedSlots.length - 1].endTime)} (${duration} hr)`
                       : 'None Selected'}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-zinc-550">Rate Tier</span>
+                  <span className="text-zinc-555">Rate Details</span>
                   <span className="font-semibold text-zinc-700 dark:text-zinc-300">
-                    ৳{hourlyRate}/hour
+                    Shift-Based Rates
                   </span>
                 </div>
                 <div className="flex justify-between border-t border-zinc-150 dark:border-zinc-800 pt-3 text-base">
