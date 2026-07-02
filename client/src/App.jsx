@@ -27,6 +27,7 @@ import { AdminReviews } from './pages/AdminReviews';
 import { AdminMessages } from './pages/AdminMessages';
 import { AdminGallery } from './pages/AdminGallery';
 import { AdminSettings } from './pages/AdminSettings';
+import { ScrollToTop } from './components/ScrollToTop';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -44,6 +45,7 @@ function App() {
         <SocketProvider>
           <ToastProvider>
             <BrowserRouter>
+              <ScrollToTop />
               <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={<PublicLayout />}>
