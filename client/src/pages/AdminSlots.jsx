@@ -120,33 +120,33 @@ export const AdminSlots = () => {
   const filteredSlots = getFilteredSlots();
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start text-left">
-      {/* Create Slot Card */}
-      <Card className="lg:col-span-4">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start text-left animate-fade-in">
+      {/* Create slot card */}
+      <div className="lg:col-span-4 glass-card p-6 rounded-3xl shadow-sm space-y-4">
         <form onSubmit={handleCreate}>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+          <div className="mb-4">
+            <h3 className="text-lg font-bold text-zinc-900 dark:text-white flex items-center gap-2">
               <Plus className="w-5 h-5 text-purple-650" />
               Add Time Slot
-            </CardTitle>
-            <CardDescription>Create daily default, weekly, or special override slots.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+            </h3>
+            <p className="text-xs text-zinc-400 mt-1">Configure slot type, timings and rates.</p>
+          </div>
+          <div className="space-y-4">
             <Select
-              label="Slot Classification Type"
+              label="Slot Classification"
               value={slotType}
               onChange={(e) => setSlotType(e.target.value)}
               placeholder=""
               options={[
-                { value: 'general', label: 'General Default (Daily)' },
-                { value: 'weekly', label: 'Week-Wise Day Slot' },
-                { value: 'special', label: 'Special Override Date' },
+                { value: 'general', label: 'General Default Daily' },
+                { value: 'weekly', label: 'Weekly Schedule Day' },
+                { value: 'special', label: 'Special Date Override' },
               ]}
             />
 
             {slotType === 'weekly' && (
               <Select
-                label="Select Day of the Week"
+                label="Target Weekday"
                 value={dayOfWeek}
                 onChange={(e) => setDayOfWeek(e.target.value)}
                 placeholder=""
@@ -192,25 +192,25 @@ export const AdminSlots = () => {
             <Button
               type="submit"
               disabled={createSlotMutation.isPending}
-              className="w-full mt-2"
+              className="w-full mt-2 font-bold"
             >
               {createSlotMutation.isPending ? 'Creating...' : 'Create Time Slot'}
             </Button>
-          </CardContent>
+          </div>
         </form>
-      </Card>
+      </div>
 
       {/* Slots List Card */}
-      <Card className="lg:col-span-8">
-        <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="lg:col-span-8 glass-card rounded-3xl shadow-sm border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+        <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <CardTitle>Daily Scheduling Slots</CardTitle>
-            <CardDescription>Manage active slots shown on the public calendar.</CardDescription>
+            <h3 className="text-xl font-bold text-zinc-850 dark:text-zinc-200">Daily Scheduling Slots</h3>
+            <p className="text-xs text-zinc-450 mt-1">Manage active slots shown on the public calendar.</p>
           </div>
-        </CardHeader>
+        </div>
         
         {/* Navigation Tabs */}
-        <div className="px-6 border-b border-zinc-150 dark:border-zinc-800 flex flex-nowrap gap-2 overflow-x-auto custom-scrollbar">
+        <div className="px-6 border-b border-zinc-150 dark:border-zinc-800 flex flex-nowrap gap-6 overflow-x-auto custom-scrollbar">
           {[
             { id: 'general', label: 'General Daily', icon: <Clock className="w-4 h-4" /> },
             { id: 'weekly', label: 'Weekly Days', icon: <Calendar className="w-4 h-4" /> },
@@ -219,9 +219,9 @@ export const AdminSlots = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-3 border-b-2 text-sm font-semibold flex items-center gap-1.5 cursor-pointer transition-colors ${
+              className={`py-4 border-b-2 text-sm font-bold flex items-center gap-1.5 cursor-pointer transition-colors ${
                 activeTab === tab.id
-                  ? 'border-purple-600 text-purple-600 dark:text-purple-400'
+                  ? 'border-purple-650 text-purple-650 dark:text-purple-400'
                   : 'border-transparent text-zinc-500 hover:text-zinc-850 dark:hover:text-zinc-200'
               }`}
             >
@@ -231,7 +231,7 @@ export const AdminSlots = () => {
           ))}
         </div>
 
-        <CardContent className="pt-6">
+        <div className="p-6">
           {isLoading ? (
             <Loader size="medium" className="py-12" />
           ) : filteredSlots.length === 0 ? (
@@ -241,7 +241,6 @@ export const AdminSlots = () => {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {filteredSlots.map((slot) => {
-                // Determine display label for specific date or week days
                 let dayLabel = '';
                 if (slot.dayOfWeek !== -1) {
                   dayLabel = WEEKDAYS.find((d) => d.value === String(slot.dayOfWeek))?.label || '';
@@ -254,7 +253,7 @@ export const AdminSlots = () => {
                 return (
                   <div
                     key={slot._id}
-                    className={`p-4 rounded-xl border flex items-center justify-between transition-all ${
+                    className={`p-4 rounded-xl border flex items-center justify-between transition-all hover-glow ${
                       slot.isActive
                         ? 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm'
                         : 'border-zinc-150 bg-zinc-50/50 text-zinc-400 dark:bg-zinc-900/10'
@@ -297,8 +296,8 @@ export const AdminSlots = () => {
               })}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };
