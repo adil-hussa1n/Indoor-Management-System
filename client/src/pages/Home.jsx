@@ -244,8 +244,8 @@ export const Home = () => {
               </div>
             </div>
           </div>
-          <div className="relative p-[3px] rounded-[26px] bg-gradient-to-tr from-purple-600 via-pink-500/80 to-indigo-600 shadow-[0_0_50px_rgba(147,51,234,0.25)] dark:shadow-[0_0_60px_rgba(147,51,234,0.35)] transition-all duration-300 hover:shadow-[0_0_70px_rgba(147,51,234,0.45)]">
-            <div className="relative h-96 rounded-[23px] overflow-hidden border border-white/10 shadow-2xl group">
+          <div className="relative p-2 rounded-[30px] border border-white/20 dark:border-white/10 bg-white/5 dark:bg-zinc-950/20 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)] shadow-[inset_0_0_20px_rgba(255,255,255,0.05)] transition-all duration-300">
+            <div className="relative h-96 rounded-[22px] overflow-hidden border border-white/10 shadow-2xl group">
               {/* Liquid Gloss/Shine Sweep Effect */}
               <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out pointer-events-none z-20" />
               
