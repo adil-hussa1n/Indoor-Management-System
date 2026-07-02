@@ -83,7 +83,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"customerName\": \"John Doe\",\n  \"customerEmail\": \"johndoe@example.com\",\n  \"customerPhone\": \"+8801700000000\",\n  \"sport\": \"Futsal\",\n  \"bookingDate\": \"2026-07-10T00:00:00.000Z\",\n  \"slots\": [\n    {\n      \"startTime\": \"10:00\",\n      \"endTime\": \"11:00\",\n      \"price\": 1200\n    }\n  ],\n  \"totalAmount\": 1200,\n  \"paymentMethod\": \"bkash\",\n  \"transactionId\": \"TRX1234567\"\n}"
+              "raw": "{\n  \"customerName\": \"John Doe\",\n  \"phone\": \"+8801700000000\",\n  \"email\": \"johndoe@example.com\",\n  \"sport\": \"Futsal\",\n  \"bookingDate\": \"2026-07-10T00:00:00.000Z\",\n  \"startTime\": \"10:00\",\n  \"endTime\": \"11:00\",\n  \"duration\": 1,\n  \"players\": 10,\n  \"notes\": \"Please provide a tournament ball.\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/booking",
@@ -142,7 +142,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/bookings?status=pending&sport=Futsal",
+              "raw": "{{baseUrl}}/bookings?status=Pending&sport=Futsal",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -152,7 +152,7 @@
               "query": [
                 {
                   "key": "status",
-                  "value": "pending"
+                  "value": "Pending"
                 },
                 {
                   "key": "sport",
@@ -186,7 +186,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"customerName\": \"Walk-in Guest\",\n  \"customerEmail\": \"walkin@example.com\",\n  \"customerPhone\": \"+8801800000000\",\n  \"sport\": \"Basketball\",\n  \"bookingDate\": \"2026-07-15T00:00:00.000Z\",\n  \"slots\": [\n    {\n      \"startTime\": \"18:00\",\n      \"endTime\": \"19:00\",\n      \"price\": 1400\n    }\n  ],\n  \"totalAmount\": 1400,\n  \"paymentMethod\": \"cash\",\n  \"paymentStatus\": \"paid\"\n}"
+              "raw": "{\n  \"customerName\": \"Walk-in Guest\",\n  \"phone\": \"+8801800000000\",\n  \"email\": \"walkin@example.com\",\n  \"sport\": \"Basketball\",\n  \"bookingDate\": \"2026-07-15T00:00:00.000Z\",\n  \"startTime\": \"18:00\",\n  \"endTime\": \"19:00\",\n  \"duration\": 1,\n  \"players\": 10,\n  \"notes\": \"Cash booking on site.\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/bookings",
@@ -259,7 +259,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"customerName\": \"Johnathan Doe\",\n  \"customerPhone\": \"+8801799999999\"\n}"
+              "raw": "{\n  \"customerName\": \"Johnathan Doe\",\n  \"phone\": \"+8801799999999\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/bookings/:id",
@@ -303,7 +303,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"status\": \"confirmed\",\n  \"paymentStatus\": \"paid\"\n}"
+              "raw": "{\n  \"status\": \"Confirmed\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/booking-status/:id",
@@ -321,7 +321,7 @@
                 }
               ]
             },
-            "description": "Approve or decline a booking, or update its payment status."
+            "description": "Approve or decline a booking by setting status to 'Pending', 'Confirmed', 'Completed', or 'Cancelled'."
           },
           "response": []
         },
@@ -371,7 +371,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/available-slots?date=2026-07-10&sport=Futsal",
+              "raw": "{{baseUrl}}/available-slots?date=2026-07-10",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -382,14 +382,10 @@
                 {
                   "key": "date",
                   "value": "2026-07-10"
-                },
-                {
-                  "key": "sport",
-                  "value": "Futsal"
                 }
               ]
             },
-            "description": "Retrieve available time slots for a specific date and sport discipline."
+            "description": "Retrieve available time slots for a specific date."
           },
           "response": []
         },
@@ -409,18 +405,12 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/slots?sport=Futsal",
+              "raw": "{{baseUrl}}/slots",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "slots"
-              ],
-              "query": [
-                {
-                  "key": "sport",
-                  "value": "Futsal"
-                }
               ]
             },
             "description": "Fetch the master schedule time slots configured."
@@ -449,7 +439,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"sport\": \"Futsal\",\n  \"startTime\": \"08:00\",\n  \"endTime\": \"09:00\",\n  \"price\": 1200,\n  \"isActive\": true\n}"
+              "raw": "{\n  \"dayOfWeek\": 1,\n  \"startTime\": \"08:00\",\n  \"endTime\": \"09:00\",\n  \"rateType\": \"day\",\n  \"isActive\": true\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/slots",
@@ -460,7 +450,7 @@
                 "slots"
               ]
             },
-            "description": "Add a new slot to the master schedule."
+            "description": "Add a new slot to the master schedule (dayOfWeek: 0-6, or -1 for all, specificDate as YYYY-MM-DD)."
           },
           "response": []
         },
@@ -486,7 +476,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"price\": 1300,\n  \"isActive\": false\n}"
+              "raw": "{\n  \"rateType\": \"night\",\n  \"isActive\": false\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/slots/:id",
@@ -616,7 +606,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"businessName\": \"D-Box Indoor Sports Arena\",\n  \"contactPhone\": \"+880 1712-345678\",\n  \"theme\": \"green\",\n  \"hero\": {\n    \"tagline\": \"⚡ Professional Grade Arena\",\n    \"title1\": \"Experience Sports\",\n    \"title2\": \"Like Never Before\",\n    \"mediaType\": \"360\",\n    \"autoPlay360\": true,\n    \"useGlassBg\": true,\n    \"darkenOverlay\": true,\n    \"blurBackground\": false,\n    \"zoomAnimation\": false\n  }\n}"
+              "raw": "{\n  \"businessName\": \"D-Box Indoor Sports Arena\",\n  \"contactPhone\": \"+880 1712-345678\",\n  \"theme\": \"default\",\n  \"hero\": {\n    \"tagline\": \"⚡ Professional Grade Arena\",\n    \"title1\": \"Experience Sports\",\n    \"title2\": \"Like Never Before\",\n    \"description\": \"Book our state-of-the-art climate-controlled indoor arena. Designed for futsal, basketball, badminton, and more.\",\n    \"mediaType\": \"360\",\n    \"autoPlay360\": true,\n    \"useGlassBg\": true,\n    \"darkenOverlay\": true,\n    \"blurBackground\": false,\n    \"zoomAnimation\": false\n  }\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/settings",
