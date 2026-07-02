@@ -89,7 +89,7 @@ export const Booking = () => {
     let dayType = 'weekday';
     if (settings.holidays && settings.holidays.includes(selectedDate)) {
       dayType = 'holiday';
-    } else if (day === 0 || day === 6) {
+    } else if (day === 5) { // Friday is the weekend in Bangladesh
       dayType = 'weekend';
     }
 

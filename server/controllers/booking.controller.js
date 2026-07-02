@@ -35,7 +35,7 @@ const calculatePrice = async (dateStr, startTime, endTime) => {
   let dayType = 'weekday';
   if (settings.holidays && settings.holidays.includes(dateString)) {
     dayType = 'holiday';
-  } else if (day === 0 || day === 6) {
+  } else if (day === 5) { // Friday is the weekend in Bangladesh
     dayType = 'weekend';
   }
 
