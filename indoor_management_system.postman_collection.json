@@ -21,7 +21,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"password123\"\n}"
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"adminpassword123\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
@@ -33,7 +33,7 @@
                 "login"
               ]
             },
-            "description": "Log in as an administrator to receive a JWT access token."
+            "description": "Log in as an administrator using default username and password."
           },
           "response": []
         },
