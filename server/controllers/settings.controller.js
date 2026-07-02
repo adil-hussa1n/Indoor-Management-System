@@ -76,6 +76,11 @@ export const updateSettings = async (req, res, next) => {
     Object.assign(settings, body);
     await settings.save();
 
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('settings-updated');
+    }
+
     res.status(200).json({ success: true, settings });
   } catch (error) {
     next(error);

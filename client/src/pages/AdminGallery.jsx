@@ -1,17 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePublicGallery, useUploadGalleryImage, useDeleteGalleryImage, useReorderGallery } from '../hooks/useApi';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Loader } from '../components/ui/Loader';
 import { useToast } from '../components/ui/Toast';
 import { Trash2, Upload, ArrowUp, ArrowDown } from 'lucide-react';
+import { useSocket } from '../contexts/SocketContext';
 
 export const AdminGallery = () => {
   const toast = useToast();
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const socket = useSocket();
 
   const { data: images, isLoading, refetch } = usePublicGallery();
+
+  useEffect(() => {
+    if (socket) {
+      const handleGalleryUpdate = () => {
+        console.log('Realtime gallery update received in Admin');
+        refetch();
+      };
+      socket.on('gallery-updated', handleGalleryUpdate);
+      return () => {
+        socket.off('gallery-updated', handleGalleryUpdate);
+      };
+    }
+  }, [socket, refetch]);
+
   const uploadMutation = useUploadGalleryImage();
   const deleteMutation = useDeleteGalleryImage();
   const reorderMutation = useReorderGallery();

@@ -60,6 +60,11 @@ export const uploadImage = async (req, res, next) => {
       order: count,
     });
 
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('gallery-updated');
+    }
+
     res.status(201).json({ success: true, image: newImage });
   } catch (error) {
     next(error);
@@ -94,6 +99,12 @@ export const deleteImage = async (req, res, next) => {
     }
 
     await Gallery.findByIdAndDelete(id);
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('gallery-updated');
+    }
+
     res.status(200).json({ success: true, message: 'Image deleted successfully' });
   } catch (error) {
     next(error);
@@ -111,6 +122,11 @@ export const reorderGallery = async (req, res, next) => {
       Gallery.findByIdAndUpdate(item.id, { order: item.order })
     );
     await Promise.all(promises);
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('gallery-updated');
+    }
 
     res.status(200).json({ success: true, message: 'Gallery reordered successfully' });
   } catch (error) {

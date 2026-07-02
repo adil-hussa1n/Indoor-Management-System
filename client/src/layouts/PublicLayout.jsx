@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Sun, Moon, Menu, X, Calendar, Info, Phone, Image as ImageIcon, ShieldAlert } from 'lucide-react';
 import { usePublicSettings } from '../hooks/useApi';
+import { useSocket } from '../contexts/SocketContext';
 
 export const PublicLayout = () => {
   const [darkMode, setDarkMode] = useState(() => {
@@ -11,7 +12,21 @@ export const PublicLayout = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showPreloader, setShowPreloader] = useState(true);
   const location = useLocation();
-  const { data: settings, isLoading } = usePublicSettings();
+  const { data: settings, isLoading, refetch } = usePublicSettings();
+  const socket = useSocket();
+
+  useEffect(() => {
+    if (socket) {
+      const handleSettingsUpdate = () => {
+        console.log('Realtime settings update received');
+        refetch();
+      };
+      socket.on('settings-updated', handleSettingsUpdate);
+      return () => {
+        socket.off('settings-updated', handleSettingsUpdate);
+      };
+    }
+  }, [socket, refetch]);
 
   useEffect(() => {
     if (!isLoading) {

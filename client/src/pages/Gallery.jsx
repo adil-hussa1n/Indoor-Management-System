@@ -1,11 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePublicGallery } from '../hooks/useApi';
 import { Loader } from '../components/ui/Loader';
 import { Dialog } from '../components/ui/Dialog';
+import { useSocket } from '../contexts/SocketContext';
 
 export const Gallery = () => {
-  const { data: images, isLoading } = usePublicGallery();
+  const { data: images, isLoading, refetch } = usePublicGallery();
   const [activeImage, setActiveImage] = useState(null);
+  const socket = useSocket();
+
+  useEffect(() => {
+    if (socket) {
+      const handleGalleryUpdate = () => {
+        console.log('Realtime gallery update received');
+        refetch();
+      };
+      socket.on('gallery-updated', handleGalleryUpdate);
+      return () => {
+        socket.off('gallery-updated', handleGalleryUpdate);
+      };
+    }
+  }, [socket, refetch]);
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-16 text-left">
