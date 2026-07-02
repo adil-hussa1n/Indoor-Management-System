@@ -108,16 +108,14 @@ export const Home = () => {
         </h2>
         <p className="text-zinc-500 dark:text-zinc-450 mb-12 max-w-md mx-auto">
           One court, endless possibilities. Pick your sport and dominate.
-        </p>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        </p>        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {sports.map((sport, index) => (
             <motion.div
               key={sport}
               whileHover={{ y: -8, scale: 1.02 }}
-              className="p-6 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-150 dark:border-zinc-800/80 shadow-sm flex flex-col items-center justify-center gap-4"
+              className="p-6 rounded-2xl glass-card hover-glow shadow-sm flex flex-col items-center justify-center gap-4 cursor-pointer"
             >
-              <div className="w-12 h-12 rounded-xl bg-zinc-50 dark:bg-zinc-800 flex items-center justify-center shadow-inner">
+              <div className="w-12 h-12 rounded-xl bg-purple-500/10 dark:bg-purple-500/20 flex items-center justify-center shadow-inner">
                 {getSportIcon(sport)}
               </div>
               <span className="font-bold text-lg text-zinc-800 dark:text-zinc-200">{sport}</span>
@@ -127,7 +125,7 @@ export const Home = () => {
       </section>
 
       {/* Features Grid */}
-      <section className="py-20 bg-zinc-100/50 dark:bg-zinc-900/30 px-4">
+      <section className="py-20 bg-zinc-100/30 dark:bg-zinc-950/20 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-5xl font-extrabold text-zinc-900 dark:text-white mb-4">
@@ -142,9 +140,9 @@ export const Home = () => {
             {features.map((feat) => (
               <div
                 key={feat.title}
-                className="bg-white dark:bg-zinc-900/60 border border-zinc-150 dark:border-zinc-800/50 rounded-2xl p-6 shadow-sm flex flex-col gap-4 text-left"
+                className="glass-card hover-glow rounded-2xl p-6 shadow-sm flex flex-col gap-4 text-left"
               >
-                <div className="w-12 h-12 rounded-xl bg-zinc-50 dark:bg-zinc-850 flex items-center justify-center shadow-inner">
+                <div className="w-12 h-12 rounded-xl bg-purple-500/10 dark:bg-purple-500/20 flex items-center justify-center shadow-inner">
                   {feat.icon}
                 </div>
                 <h3 className="font-bold text-lg text-zinc-900 dark:text-white">{feat.title}</h3>
@@ -184,7 +182,7 @@ export const Home = () => {
               </div>
             </div>
             <Link to="/booking">
-              <Button variant="secondary" className="px-8 py-3.5 text-base font-bold text-indigo-900 bg-white hover:bg-zinc-100">
+              <Button variant="secondary" className="px-8 py-3.5 text-base font-bold text-indigo-900 bg-white hover:bg-zinc-100 transition-all shadow-lg hover:shadow-white/10">
                 Book Available Slot <ArrowRight className="w-5 h-5 text-indigo-900" />
               </Button>
             </Link>
@@ -194,7 +192,7 @@ export const Home = () => {
 
       {/* Testimonials */}
       {reviews && reviews.filter(r => r.isFeatured).length > 0 && (
-        <section className="py-20 bg-zinc-50 dark:bg-zinc-950 px-4 max-w-7xl mx-auto text-center">
+        <section className="py-20 px-4 max-w-7xl mx-auto text-center">
           <h2 className="text-3xl font-extrabold text-zinc-900 dark:text-white mb-12">
             What Players Say
           </h2>
@@ -202,19 +200,19 @@ export const Home = () => {
             {reviews.filter(r => r.isFeatured).map((rev) => (
               <div
                 key={rev._id}
-                className="bg-white dark:bg-zinc-900 border border-zinc-150 dark:border-zinc-800/80 rounded-2xl p-6 shadow-sm text-left flex flex-col justify-between"
+                className="glass-card hover-glow rounded-2xl p-6 shadow-sm text-left flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-center gap-1 mb-4">
                     {[...Array(rev.rating)].map((_, i) => (
-                      <Star key={i} className="w-4.5 h-4.5 fill-amber-400 text-amber-400" />
+                      <Star key={i} className="w-4 h-4 fill-amber-450 text-amber-450" />
                     ))}
                   </div>
-                  <p className="text-sm text-zinc-655 dark:text-zinc-350 italic mb-6">
+                  <p className="text-sm text-zinc-650 dark:text-zinc-350 italic mb-6 leading-relaxed">
                     "{rev.comment}"
                   </p>
                 </div>
-                <div className="font-bold text-sm text-zinc-900 dark:text-white">
+                <div className="font-extrabold text-xs uppercase tracking-wider text-purple-650 dark:text-purple-400">
                   - {rev.customerName}
                 </div>
               </div>
@@ -226,27 +224,27 @@ export const Home = () => {
       {/* Google Maps / Contact CTA */}
       <section className="py-20 px-4 max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          <div className="text-left">
-            <h2 className="text-3xl md:text-5xl font-extrabold mb-6 text-zinc-900 dark:text-white">
+          <div className="text-left space-y-6">
+            <h2 className="text-3xl md:text-5xl font-extrabold text-zinc-900 dark:text-white">
               Visit Us Today
             </h2>
-            <p className="text-zinc-550 dark:text-zinc-400 mb-8 leading-relaxed">
+            <p className="text-zinc-550 dark:text-zinc-400 leading-relaxed text-sm">
               We are conveniently located in downtown. Fully equipped with parking, player lockers, and restrooms. Drop by or shoot us a booking online!
             </p>
-            <div className="space-y-4">
+            <div className="space-y-4 pt-4 border-t border-zinc-200/50 dark:border-zinc-800">
               <div>
-                <h4 className="font-bold text-sm text-zinc-500 uppercase tracking-wider">Address</h4>
+                <h4 className="font-bold text-xs text-zinc-400 uppercase tracking-wider">Address</h4>
                 <p className="text-zinc-800 dark:text-zinc-200 font-semibold">{settings?.contactAddress}</p>
               </div>
               <div>
-                <h4 className="font-bold text-sm text-zinc-500 uppercase tracking-wider">Hours of Operation</h4>
+                <h4 className="font-bold text-xs text-zinc-400 uppercase tracking-wider">Hours of Operation</h4>
                 <p className="text-zinc-800 dark:text-zinc-200 font-semibold">
                   Weekdays: {settings?.businessHours?.weekday} | Weekends: {settings?.businessHours?.weekend}
                 </p>
               </div>
             </div>
           </div>
-          <div className="h-96 rounded-3xl overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-md">
+          <div className="h-96 rounded-3xl overflow-hidden border border-zinc-200/60 dark:border-zinc-800 shadow-md">
             <iframe
               title="Apex Map Location"
               src={settings?.googleMapUrl}
