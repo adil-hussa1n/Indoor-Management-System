@@ -32,6 +32,13 @@
   --color-violet-500: var(--theme-violet-500);
   --color-pink-500: var(--theme-pink-500);
   --color-pink-650: var(--theme-pink-650);
+
+  --color-zinc-650: var(--theme-zinc-650);
+  --color-zinc-550: var(--theme-zinc-550);
+  --color-zinc-450: var(--theme-zinc-450);
+  --color-zinc-350: var(--theme-zinc-350);
+  --color-zinc-250: var(--theme-zinc-250);
+  --color-zinc-150: var(--theme-zinc-150);
 }
 
 @layer base {
@@ -65,6 +72,14 @@
     --theme-violet-500: #8b5cf6;
     --theme-pink-500: #ec4899;
     --theme-pink-650: #db2777;
+
+    --theme-zinc-650: #4b5563;
+    --theme-zinc-550: #6b7280;
+    --theme-zinc-450: #9ca3af;
+    --theme-zinc-350: #d1d5db;
+    --theme-zinc-250: #e5e7eb;
+    --theme-zinc-150: #f3f4f6;
+
     --theme-glow-shadow: rgba(168, 85, 247, 0.15);
 
     --background: 0 0% 100%;
@@ -90,36 +105,43 @@
   }
 
   .dark {
-    --theme-purple-55: #faf5ff;
-    --theme-purple-50: #faf5ff;
-    --theme-purple-100: #f3e8ff;
-    --theme-purple-200: #e9d5ff;
-    --theme-purple-300: #d8b4fe;
-    --theme-purple-400: #c084fc;
+    --theme-purple-50: #0f0717;
+    --theme-purple-100: #230c33;
+    --theme-purple-200: #3b0e5c;
+    --theme-purple-300: #571085;
+    --theme-purple-400: #7e22ce;
     --theme-purple-500: #a855f7;
     --theme-purple-600: #9333ea;
     --theme-purple-650: #7c3aed;
-    --theme-purple-700: #7e22ce;
-    --theme-purple-800: #6b21a8;
-    --theme-purple-900: #581c87;
-    --theme-purple-950: #3b0764;
+    --theme-purple-700: #6b21a8;
+    --theme-purple-800: #581c87;
+    --theme-purple-900: #3b0764;
+    --theme-purple-950: #1d0036;
 
-    --theme-indigo-50: #eef2ff;
-    --theme-indigo-100: #e0e7ff;
-    --theme-indigo-200: #c7d2fe;
-    --theme-indigo-300: #a5b4fc;
-    --theme-indigo-400: #818cf8;
-    --theme-indigo-500: #6366f1;
-    --theme-indigo-600: #4f46e5;
+    --theme-indigo-50: #0a0b1c;
+    --theme-indigo-100: #141538;
+    --theme-indigo-200: #1f2154;
+    --theme-indigo-300: #2b2d75;
+    --theme-indigo-400: #3730a3;
+    --theme-indigo-500: #4f46e5;
+    --theme-indigo-600: #6366f1;
     --theme-indigo-650: #4338ca;
-    --theme-indigo-700: #3730a3;
-    --theme-indigo-800: #312e81;
-    --theme-indigo-900: #1e1b4b;
-    --theme-indigo-950: #0f172a;
+    --theme-indigo-700: #312e81;
+    --theme-indigo-800: #1e1b4b;
+    --theme-indigo-900: #0f172a;
+    --theme-indigo-950: #020617;
 
     --theme-violet-500: #8b5cf6;
     --theme-pink-500: #ec4899;
     --theme-pink-650: #db2777;
+
+    --theme-zinc-650: #e5e7eb;
+    --theme-zinc-550: #cbd5e1;
+    --theme-zinc-450: #94a3b8;
+    --theme-zinc-350: #64748b;
+    --theme-zinc-250: #334155;
+    --theme-zinc-150: #1e293b;
+
     --theme-glow-shadow: rgba(168, 85, 247, 0.15);
 
     --background: 224 71.4% 4.1%;
@@ -190,17 +212,17 @@
   .dark.theme-green,
   .theme-green .dark {
     --theme-purple-50: #022c22;
-    --theme-purple-100: #14532d;
-    --theme-purple-200: #166534;
-    --theme-purple-300: #15803d;
-    --theme-purple-400: #16a34a;
-    --theme-purple-500: #22c55e;
-    --theme-purple-600: #4ade80;
-    --theme-purple-650: #22c55e;
-    --theme-purple-700: #86efac;
-    --theme-purple-800: #bbf7d0;
-    --theme-purple-900: #dcfce7;
-    --theme-purple-950: #f0fdf4;
+    --theme-purple-100: #043e1c;
+    --theme-purple-200: #055426;
+    --theme-purple-300: #066d32;
+    --theme-purple-400: #15803d;
+    --theme-purple-500: #16a34a;
+    --theme-purple-600: #22c55e;
+    --theme-purple-650: #15803d;
+    --theme-purple-700: #14532d;
+    --theme-purple-800: #0f3d21;
+    --theme-purple-900: #052e16;
+    --theme-purple-950: #011c0b;
 
     --theme-indigo-50: #011c14;
     --theme-indigo-100: #022c22;
@@ -212,8 +234,8 @@
     --theme-indigo-650: #34d399;
     --theme-indigo-700: #6ee7b7;
     --theme-indigo-800: #a7f3d0;
-    --theme-indigo-900: #d1fae5;
-    --theme-indigo-950: #ecfdf5;
+    --theme-indigo-900: #022c22;
+    --theme-indigo-950: #011c14;
 
     --theme-violet-500: #6ee7b7;
     --theme-pink-500: #22d3ee;
