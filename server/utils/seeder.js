@@ -70,6 +70,12 @@ const seedDB = async () => {
       contactEmail: 'info@apexindoorsports.com',
       contactPhone: '+880 1712-345678',
       contactAddress: 'Sector 11, Uttara, Dhaka, Bangladesh',
+      hero: {
+        tagline: '⚡ Premium Indoor Court',
+        title1: 'Experience Sports',
+        title2: 'Like Never Before',
+        description: 'Book our state-of-the-art climate-controlled indoor arena. Designed for futsal, basketball, badminton, and more. Clean, professional, and ready.',
+      },
       pricing: {
         weekdayDay: 1200,
         weekdayNight: 1400,

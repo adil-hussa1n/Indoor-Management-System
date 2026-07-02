@@ -55,6 +55,12 @@ export const AdminSettings = () => {
           twitter: settings.socialLinks?.twitter || '',
           whatsapp: settings.socialLinks?.whatsapp || '',
         },
+        hero: {
+          tagline: settings.hero?.tagline || '⚡ Premium Indoor Court',
+          title1: settings.hero?.title1 || 'Experience Sports',
+          title2: settings.hero?.title2 || 'Like Never Before',
+          description: settings.hero?.description || 'Book our state-of-the-art climate-controlled indoor arena. Designed for futsal, basketball, badminton, and more. Clean, professional, and ready.',
+        },
       });
     }
   }, [settings]);
@@ -98,6 +104,7 @@ export const AdminSettings = () => {
     data.append('seo', JSON.stringify(formData.seo));
     data.append('weekendDays', JSON.stringify(formData.weekendDays));
     data.append('socialLinks', JSON.stringify(formData.socialLinks));
+    data.append('hero', JSON.stringify(formData.hero));
 
     updateSettingsMutation.mutate(data, {
       onSuccess: () => {
@@ -383,6 +390,42 @@ export const AdminSettings = () => {
               value={formData.socialLinks.whatsapp}
               onChange={(e) => handleChange('socialLinks', 'whatsapp', e.target.value)}
             />
+          </CardContent>
+        </Card>
+
+        {/* Hero Section Content */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Hero Section Content</CardTitle>
+            <CardDescription>Configure homepage hero banner texts.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Input
+              label="Hero Subtitle / Tagline"
+              value={formData.hero.tagline}
+              onChange={(e) => handleChange('hero', 'tagline', e.target.value)}
+            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input
+                label="Hero Title Line 1"
+                value={formData.hero.title1}
+                onChange={(e) => handleChange('hero', 'title1', e.target.value)}
+              />
+              <Input
+                label="Hero Title Line 2"
+                value={formData.hero.title2}
+                onChange={(e) => handleChange('hero', 'title2', e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5 text-left">
+              <label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Hero Description</label>
+              <textarea
+                value={formData.hero.description}
+                onChange={(e) => handleChange('hero', 'description', e.target.value)}
+                className="flex min-h-[80px] w-full rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-3 py-2 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-205"
+                rows={3}
+              />
+            </div>
           </CardContent>
         </Card>
 

@@ -68,16 +68,16 @@ export const Home = () => {
             transition={{ duration: 0.6 }}
           >
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-500/10 text-purple-600 dark:text-purple-400 mb-6 uppercase tracking-widest border border-purple-500/20">
-              ⚡ Premium Indoor Court
+              {settings?.hero?.tagline || '⚡ Premium Indoor Court'}
             </span>
             <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-zinc-900 dark:text-white mb-6">
-              Experience Sports <br />
+              {settings?.hero?.title1 || 'Experience Sports'} <br />
               <span className="bg-gradient-to-r from-purple-600 via-violet-500 to-indigo-600 bg-clip-text text-transparent">
-                Like Never Before
+                {settings?.hero?.title2 || 'Like Never Before'}
               </span>
             </h1>
             <p className="text-lg md:text-xl text-zinc-650 dark:text-zinc-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-              Book our state-of-the-art climate-controlled indoor arena. Designed for futsal, basketball, badminton, and more. Clean, professional, and ready.
+              {settings?.hero?.description || 'Book our state-of-the-art climate-controlled indoor arena. Designed for futsal, basketball, badminton, and more. Clean, professional, and ready.'}
             </p>
           </motion.div>
 

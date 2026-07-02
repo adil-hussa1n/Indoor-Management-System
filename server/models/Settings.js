@@ -10,6 +10,12 @@ const settingsSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    hero: {
+      tagline: { type: String, default: '⚡ Premium Indoor Court' },
+      title1: { type: String, default: 'Experience Sports' },
+      title2: { type: String, default: 'Like Never Before' },
+      description: { type: String, default: 'Book our state-of-the-art climate-controlled indoor arena. Designed for futsal, basketball, badminton, and more. Clean, professional, and ready.' },
+    },
     businessName: {
       type: String,
       default: 'Apex Indoor Sports Arena',
