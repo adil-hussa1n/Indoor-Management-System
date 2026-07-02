@@ -59,24 +59,44 @@ export const PublicLayout = () => {
 
   if (isLoading || showPreloader) {
     return (
-      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-zinc-50 dark:bg-zinc-950 transition-colors duration-300">
-        <div className="relative flex flex-col items-center gap-6">
-          {/* Animated Loader Circle */}
-          <div className="w-20 h-20 rounded-full border-2 border-purple-500/10 border-t-purple-650 animate-spin absolute" />
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-zinc-50 dark:bg-zinc-950 transition-colors duration-500">
+        <div className="relative flex flex-col items-center gap-8 max-w-md px-6 text-center">
+          {/* Outer glowing background orbits */}
+          <div className="absolute w-36 h-36 bg-purple-500/10 dark:bg-purple-650/10 blur-2xl rounded-full animate-pulse" />
           
-          {/* Pulsing logo icon */}
-          <div className="w-16 h-16 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800 flex items-center justify-center shadow-lg relative z-10">
-            {settings?.logo ? (
-              <img src={settings.logo} alt="Loading..." className="w-12 h-12 object-contain rounded-lg animate-pulse" />
-            ) : (
-              <div className="w-12 h-12 rounded-xl bg-purple-650 flex items-center justify-center text-white font-extrabold text-xl shadow-inner animate-pulse">
-                A
-              </div>
-            )}
+          {/* Logo container with dual gradient borders */}
+          <div className="relative flex items-center justify-center">
+            {/* Spinning gradient border */}
+            <div className="w-24 h-24 rounded-3xl border-2 border-transparent border-t-purple-600 border-r-indigo-500 animate-spin absolute" />
+            <div className="w-24 h-24 rounded-3xl border-2 border-transparent border-b-purple-400 border-l-indigo-300 animate-spin absolute [animation-duration:3s]" />
+            
+            {/* Main glassmorphic logo box */}
+            <div className="w-20 h-20 rounded-2xl bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/50 dark:border-zinc-800 backdrop-blur-md flex items-center justify-center shadow-2xl relative z-10 scale-[0.97]">
+              {settings?.logo ? (
+                <img src={settings.logo} alt="Loading..." className="w-14 h-14 object-contain rounded-lg animate-pulse" />
+              ) : (
+                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-650 to-indigo-600 flex items-center justify-center text-white font-extrabold text-2xl shadow-inner animate-pulse">
+                  A
+                </div>
+              )}
+            </div>
           </div>
-          <span className="text-xs font-bold uppercase tracking-widest text-zinc-500 animate-pulse">
-            Loading...
-          </span>
+
+          <div className="space-y-3">
+            {/* Dynamic business name with premium gradient */}
+            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-purple-650 via-violet-500 to-indigo-650 bg-clip-text text-transparent animate-pulse">
+              {settings?.businessName || 'Apex Arena'}
+            </h2>
+            
+            {/* Sleek progress bar */}
+            <div className="w-48 bg-zinc-200 dark:bg-zinc-800 rounded-full h-1 mx-auto overflow-hidden relative">
+              <div className="bg-gradient-to-r from-purple-600 to-indigo-600 h-1 rounded-full absolute left-0 top-0 w-full animate-loading-bar" />
+            </div>
+            
+            <p className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mt-2">
+              Preparing Your Arena
+            </p>
+          </div>
         </div>
       </div>
     );
