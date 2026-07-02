@@ -246,7 +246,7 @@ export const Booking = () => {
   ];
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-12 text-left">
+    <div className="max-w-6xl mx-auto px-4 py-16 text-left animate-fade-in">
       <h1 className="text-4xl font-extrabold tracking-tight text-zinc-900 dark:text-white mb-2 text-center">
         Reserve The <span className="bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">Court</span>
       </h1>
@@ -257,43 +257,42 @@ export const Booking = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Column: Calendar & Time Slots */}
         <div className="lg:col-span-7 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+          <div className="glass-card p-6 rounded-2xl shadow-sm space-y-4">
+            <div>
+              <h3 className="text-lg font-bold text-zinc-900 dark:text-white flex items-center gap-2">
                 <CalendarIcon className="w-5 h-5 text-purple-600" />
                 1. Select Booking Date
-              </CardTitle>
-              <CardDescription>We offer daily scheduling slots.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Input
-                type="date"
-                min={new Date().toISOString().split('T')[0]}
-                value={selectedDate}
-                onChange={handleDateChange}
-                className="w-full"
-              />
-            </CardContent>
-          </Card>
+              </h3>
+              <p className="text-xs text-zinc-400 mt-1">We offer daily scheduling slots.</p>
+            </div>
+            <Input
+              type="date"
+              min={new Date().toISOString().split('T')[0]}
+              value={selectedDate}
+              onChange={handleDateChange}
+              className="w-full"
+            />
+          </div>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+          <div className="glass-card p-6 rounded-2xl shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="flex items-center gap-2">
+                <h3 className="text-lg font-bold text-zinc-900 dark:text-white flex items-center gap-2">
                   <Clock className="w-5 h-5 text-indigo-600" />
                   2. Select Start Time & Duration
-                </CardTitle>
-                <CardDescription>Pick from active available slots.</CardDescription>
+                </h3>
+                <p className="text-xs text-zinc-400 mt-1">Pick from active available slots.</p>
               </div>
               <button
                 onClick={() => refetchSlots()}
                 className="p-2 text-zinc-400 hover:text-zinc-650 cursor-pointer"
                 title="Refresh slots"
               >
-                <RefreshCw className="w-4 h-4 animate-spin-slow" />
+                <RefreshCw className="w-4 h-4" />
               </button>
-            </CardHeader>
-            <CardContent>
+            </div>
+
+            <div>
               {slotsLoading ? (
                 <Loader className="py-8" />
               ) : slotData?.isBlocked ? (
@@ -304,52 +303,52 @@ export const Booking = () => {
                 <div className="space-y-6">
                   {/* Time Slots Grid */}
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                      {slotData?.slots?.map((slot) => {
-                        const isSelected = selectedSlots.some((s) => s.id === slot.id);
-                        return (
-                          <div
-                            key={slot.id}
-                            onClick={() => handleSlotClick(slot)}
-                            className={`p-4 rounded-xl border font-semibold text-sm transition-all duration-200 flex flex-col items-center justify-center gap-1.5 select-none ${
-                              !slot.isAvailable
-                                ? 'bg-rose-50/50 dark:bg-rose-950/5 border-rose-100 dark:border-rose-955/30 text-rose-800 dark:text-rose-400 cursor-not-allowed opacity-80'
-                                : isSelected
-                                ? 'bg-purple-600 border-purple-600 text-white shadow-md shadow-purple-500/25 cursor-pointer active:scale-[0.98]'
-                                : 'bg-white hover:bg-zinc-50 dark:bg-zinc-900 dark:hover:bg-zinc-850 border-zinc-200 dark:border-zinc-800/80 text-zinc-700 dark:text-zinc-350 cursor-pointer active:scale-[0.98]'
-                            }`}
-                          >
-                            <span className="text-base font-extrabold">{format12Hour(slot.startTime)}</span>
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider font-bold ${
-                              !slot.isAvailable
-                                ? 'bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-455'
-                                : isSelected
-                                ? 'bg-purple-500/30 text-white'
-                                : 'bg-emerald-100 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-400'
-                            }`}>
-                              {slot.isAvailable ? `${slot.rateType === 'night' ? 'Night Shift' : 'Day Shift'}` : 'Booked'}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
+                    {slotData?.slots?.map((slot) => {
+                      const isSelected = selectedSlots.some((s) => s.id === slot.id);
+                      return (
+                        <div
+                          key={slot.id}
+                          onClick={() => handleSlotClick(slot)}
+                          className={`p-4 rounded-xl border font-bold text-sm transition-all duration-200 flex flex-col items-center justify-center gap-1.5 select-none ${
+                            !slot.isAvailable
+                              ? 'bg-rose-50/20 dark:bg-rose-950/5 border-rose-200/50 dark:border-rose-900/30 text-rose-800 dark:text-rose-455 cursor-not-allowed opacity-80'
+                              : isSelected
+                              ? 'bg-purple-650 border-purple-650 text-white shadow-md shadow-purple-500/25 cursor-pointer active:scale-[0.98]'
+                              : 'bg-white hover:bg-zinc-50 dark:bg-zinc-900 dark:hover:bg-zinc-850 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-350 cursor-pointer active:scale-[0.98]'
+                          }`}
+                        >
+                          <span className="text-base font-extrabold">{format12Hour(slot.startTime)}</span>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider font-bold ${
+                            !slot.isAvailable
+                              ? 'bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400'
+                              : isSelected
+                              ? 'bg-purple-500/30 text-white'
+                              : 'bg-emerald-100 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-400'
+                          }`}>
+                            {slot.isAvailable ? `${slot.rateType === 'night' ? 'Night Shift' : 'Day Shift'}` : 'Booked'}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
 
         {/* Right Column: Booking Form & Summary */}
         <div className="lg:col-span-5 space-y-6">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+            <div className="glass-card p-6 rounded-2xl shadow-sm space-y-4">
+              <div>
+                <h3 className="text-lg font-bold text-zinc-900 dark:text-white flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-pink-500" />
                   3. Contact Information
-                </CardTitle>
-                <CardDescription>Fill in customer details.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
+                </h3>
+                <p className="text-xs text-zinc-400 mt-1">Fill in customer details.</p>
+              </div>
+              <div className="space-y-4">
                 <Input
                   label="Full Name"
                   placeholder="e.g. John Doe"
@@ -388,52 +387,50 @@ export const Booking = () => {
                   error={errors.notes?.message}
                   {...register('notes')}
                 />
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
             {/* Booking Summary */}
-            <Card className="border-t-4 border-t-purple-600">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-md">
-                  <Receipt className="w-5 h-5 text-zinc-700 dark:text-zinc-300" />
-                  Booking Summary
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm">
+            <div className="glass-card p-6 rounded-2xl shadow-sm border-t-4 border-t-purple-650 space-y-4">
+              <div className="flex items-center gap-2">
+                <Receipt className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
+                <h3 className="text-md font-bold text-zinc-850 dark:text-zinc-200">Booking Summary</h3>
+              </div>
+              <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-zinc-550">Date Selected</span>
-                  <span className="font-semibold">{selectedDate}</span>
+                  <span className="text-zinc-500">Date Selected</span>
+                  <span className="font-semibold text-zinc-850 dark:text-zinc-205">{selectedDate}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-zinc-555">Time Slots</span>
-                  <span className="font-semibold text-purple-650">
+                  <span className="text-zinc-500">Time Slots</span>
+                  <span className="font-bold text-purple-650 dark:text-purple-400">
                     {selectedSlots.length > 0
                       ? `${format12Hour(selectedSlots[0].startTime)} - ${format12Hour(selectedSlots[selectedSlots.length - 1].endTime)} (${duration} hr)`
                       : 'None Selected'}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-zinc-555">Rate Details</span>
+                  <span className="text-zinc-500">Rate Details</span>
                   <span className="font-semibold text-zinc-700 dark:text-zinc-300">
                     Shift-Based Rates
                   </span>
                 </div>
-                <div className="flex justify-between border-t border-zinc-150 dark:border-zinc-800 pt-3 text-base">
+                <div className="flex justify-between border-t-2 border-dashed border-zinc-200 dark:border-zinc-800 pt-3 text-base">
                   <span className="font-extrabold text-zinc-900 dark:text-white">Estimated Total</span>
-                  <span className="font-extrabold text-xl text-purple-650">৳{totalPrice}</span>
+                  <span className="font-extrabold text-2xl text-purple-655 dark:text-purple-400">৳{totalPrice}</span>
                 </div>
-              </CardContent>
-              <CardContent className="pt-0">
+              </div>
+              <div className="pt-2">
                 <Button
                   type="submit"
                   disabled={createBookingMutation.isPending || selectedSlots.length === 0}
-                  className="w-full"
+                  className="w-full font-bold"
                 >
                   {createBookingMutation.isPending ? 'Processing Booking...' : 'Submit Booking Reservation'}
                   <ArrowRight className="w-4 h-4" />
                 </Button>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </form>
         </div>
       </div>
