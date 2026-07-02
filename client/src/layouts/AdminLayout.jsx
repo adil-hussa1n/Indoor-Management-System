@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useAdminSettings } from '../hooks/useApi';
 import {
   LayoutDashboard,
   CalendarDays,
@@ -23,6 +24,7 @@ import { Loader } from '../components/ui/Loader';
 
 export const AdminLayout = () => {
   const { isAdmin, logout, loading } = useAuth();
+  const { data: settings } = useAdminSettings();
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -40,6 +42,21 @@ export const AdminLayout = () => {
       localStorage.setItem('theme', 'light');
     }
   }, [darkMode]);
+
+  useEffect(() => {
+    if (settings) {
+      document.title = `Admin | ${settings.seo?.title || settings.businessName || 'Apex Arena'}`;
+      if (settings.logo) {
+        let link = document.querySelector("link[rel~='icon']");
+        if (!link) {
+          link = document.createElement('link');
+          link.rel = 'icon';
+          document.getElementsByTagName('head')[0].appendChild(link);
+        }
+        link.href = settings.logo;
+      }
+    }
+  }, [settings]);
 
   // Protect route
   useEffect(() => {
@@ -81,9 +98,13 @@ export const AdminLayout = () => {
       {/* Sidebar for Desktop */}
       <aside className="hidden lg:flex flex-col w-64 border-r border-zinc-200/50 dark:border-zinc-900 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
         <div className="h-16 flex items-center gap-2 px-6 border-b border-zinc-100 dark:border-zinc-900">
-          <div className="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center text-white font-bold text-sm">
-            A
-          </div>
+          {settings?.logo ? (
+            <img src={settings.logo} alt="Logo" className="w-8 h-8 object-contain rounded-lg" />
+          ) : (
+            <div className="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center text-white font-bold text-sm">
+              A
+            </div>
+          )}
           <span className="font-extrabold text-md tracking-wider bg-gradient-to-r from-purple-500 to-indigo-500 bg-clip-text text-transparent uppercase">
             Admin Console
           </span>
@@ -174,9 +195,18 @@ export const AdminLayout = () => {
           {/* Drawer */}
           <div className="relative w-64 bg-white dark:bg-zinc-950 flex flex-col z-10 border-r border-zinc-200/50 dark:border-zinc-900">
             <div className="h-16 flex items-center justify-between px-6 border-b border-zinc-100 dark:border-zinc-900">
-              <span className="font-extrabold text-md tracking-wider bg-gradient-to-r from-purple-500 to-indigo-500 bg-clip-text text-transparent uppercase">
-                Admin Console
-              </span>
+              <div className="flex items-center gap-2">
+                {settings?.logo ? (
+                  <img src={settings.logo} alt="Logo" className="w-6 h-6 object-contain rounded-lg" />
+                ) : (
+                  <div className="w-6 h-6 rounded-lg bg-purple-600 flex items-center justify-center text-white font-bold text-xs">
+                    A
+                  </div>
+                )}
+                <span className="font-extrabold text-md tracking-wider bg-gradient-to-r from-purple-500 to-indigo-500 bg-clip-text text-transparent uppercase">
+                  Admin Console
+                </span>
+              </div>
               <button
                 onClick={() => setSidebarOpen(false)}
                 className="p-1 rounded-lg text-zinc-400 hover:text-zinc-650 cursor-pointer"
