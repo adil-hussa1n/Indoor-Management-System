@@ -35,6 +35,7 @@ export const AdminSettings = () => {
           weekday: settings.businessHours?.weekday || '08:00 - 22:00',
           weekend: settings.businessHours?.weekend || '09:00 - 23:00',
         },
+        weekendDays: settings.weekendDays || [5],
         pricing: {
           weekdayDay: settings.pricing?.weekdayDay ?? 1500,
           weekdayNight: settings.pricing?.weekdayNight ?? 1500,
@@ -89,6 +90,7 @@ export const AdminSettings = () => {
     data.append('businessHours', JSON.stringify(formData.businessHours));
     data.append('pricing', JSON.stringify(formData.pricing));
     data.append('seo', JSON.stringify(formData.seo));
+    data.append('weekendDays', JSON.stringify(formData.weekendDays));
 
     updateSettingsMutation.mutate(data, {
       onSuccess: () => {
@@ -234,6 +236,38 @@ export const AdminSettings = () => {
                 value={formData.businessHours.weekend}
                 onChange={(e) => handleChange('businessHours', 'weekend', e.target.value)}
               />
+            </div>
+            <div className="flex flex-col gap-2 border-t border-zinc-100 dark:border-zinc-900 pt-4 text-left">
+              <label className="text-xs font-semibold text-zinc-650 dark:text-zinc-400 uppercase tracking-wider">Configure Weekend Days</label>
+              <div className="flex flex-wrap gap-4 mt-2">
+                {[
+                  { id: 0, label: 'Sunday' },
+                  { id: 1, label: 'Monday' },
+                  { id: 2, label: 'Tuesday' },
+                  { id: 3, label: 'Wednesday' },
+                  { id: 4, label: 'Thursday' },
+                  { id: 5, label: 'Friday' },
+                  { id: 6, label: 'Saturday' },
+                ].map((d) => {
+                  const isChecked = formData.weekendDays.includes(d.id);
+                  return (
+                    <label key={d.id} className="flex items-center gap-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={(e) => {
+                          const updated = e.target.checked
+                            ? [...formData.weekendDays, d.id]
+                            : formData.weekendDays.filter((val) => val !== d.id);
+                          handleChange(null, 'weekendDays', updated);
+                        }}
+                        className="rounded border-zinc-350 text-purple-600 focus:ring-purple-500 w-4 h-4 cursor-pointer"
+                      />
+                      {d.label}
+                    </label>
+                  );
+                })}
+              </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-zinc-100 dark:border-zinc-900 pt-4">
               <div className="flex flex-col gap-1.5 text-left">

@@ -38,6 +38,10 @@ const settingsSchema = new mongoose.Schema(
       holidayDay: { type: Number, default: 2000 },
       holidayNight: { type: Number, default: 2200 },
     },
+    weekendDays: {
+      type: [Number],
+      default: [5],
+    },
     socialLinks: {
       facebook: { type: String, default: 'https://facebook.com' },
       instagram: { type: String, default: 'https://instagram.com' },
