@@ -49,6 +49,12 @@ export const AdminSettings = () => {
           description: settings.seo?.description || '',
           keywords: settings.seo?.keywords || '',
         },
+        socialLinks: {
+          facebook: settings.socialLinks?.facebook || '',
+          instagram: settings.socialLinks?.instagram || '',
+          twitter: settings.socialLinks?.twitter || '',
+          whatsapp: settings.socialLinks?.whatsapp || '',
+        },
       });
     }
   }, [settings]);
@@ -91,6 +97,7 @@ export const AdminSettings = () => {
     data.append('pricing', JSON.stringify(formData.pricing));
     data.append('seo', JSON.stringify(formData.seo));
     data.append('weekendDays', JSON.stringify(formData.weekendDays));
+    data.append('socialLinks', JSON.stringify(formData.socialLinks));
 
     updateSettingsMutation.mutate(data, {
       onSuccess: () => {
@@ -345,6 +352,36 @@ export const AdminSettings = () => {
               type="number"
               value={formData.pricing.holidayNight}
               onChange={(e) => handleChange('pricing', 'holidayNight', Number(e.target.value))}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Social Media Links */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Social Media Links</CardTitle>
+            <CardDescription>Configure external business handles.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input
+              label="Facebook Page URL"
+              value={formData.socialLinks.facebook}
+              onChange={(e) => handleChange('socialLinks', 'facebook', e.target.value)}
+            />
+            <Input
+              label="Instagram Profile URL"
+              value={formData.socialLinks.instagram}
+              onChange={(e) => handleChange('socialLinks', 'instagram', e.target.value)}
+            />
+            <Input
+              label="Twitter Profile URL"
+              value={formData.socialLinks.twitter}
+              onChange={(e) => handleChange('socialLinks', 'twitter', e.target.value)}
+            />
+            <Input
+              label="WhatsApp Link URL"
+              value={formData.socialLinks.whatsapp}
+              onChange={(e) => handleChange('socialLinks', 'whatsapp', e.target.value)}
             />
           </CardContent>
         </Card>
