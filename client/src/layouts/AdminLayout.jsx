@@ -96,7 +96,7 @@ export const AdminLayout = () => {
   return (
     <div className="min-h-screen flex bg-zinc-50 dark:bg-zinc-950 transition-colors duration-300">
       {/* Sidebar for Desktop */}
-      <aside className="hidden lg:flex flex-col w-64 border-r border-zinc-200/50 dark:border-zinc-900 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
+      <aside className="hidden lg:flex flex-col w-64 h-screen sticky top-0 border-r border-zinc-200/50 dark:border-zinc-900 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
         <div className="h-16 flex items-center gap-2 px-6 border-b border-zinc-100 dark:border-zinc-900">
           {settings?.logo ? (
             <img src={settings.logo} alt="Logo" className="w-8 h-8 object-contain rounded-lg" />
