@@ -439,7 +439,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"dayOfWeek\": 1,\n  \"startTime\": \"08:00\",\n  \"endTime\": \"09:00\",\n  \"rateType\": \"day\",\n  \"isActive\": true\n}"
+              "raw": "{\n  \"dayOfWeek\": 1,\n  \"startTime\": \"08:00\",\n  \"endTime\": \"09:00\",\n  \"isActive\": true\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/slots",
@@ -450,7 +450,7 @@
                 "slots"
               ]
             },
-            "description": "Add a new slot to the master schedule (dayOfWeek: 0-6, or -1 for all, specificDate as YYYY-MM-DD)."
+            "description": "Add a new slot to the master schedule (dayOfWeek: 0-6, or -1 for all daily default, specificDate as YYYY-MM-DD)."
           },
           "response": []
         },
@@ -476,7 +476,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"rateType\": \"night\",\n  \"isActive\": false\n}"
+              "raw": "{\n  \"isActive\": false\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/slots/:id",
@@ -867,7 +867,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"status\": \"approved\"\n}"
+              "raw": "{\n  \"isApproved\": true,\n  \"isFeatured\": false\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/reviews/:id",
@@ -885,7 +885,7 @@
                 }
               ]
             },
-            "description": "Approve or decline customer reviews."
+            "description": "Approve or decline customer reviews (isApproved, isFeatured)."
           },
           "response": []
         },
@@ -1006,7 +1006,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"status\": \"read\"\n}"
+              "raw": "{\n  \"isRead\": true,\n  \"replyStatus\": \"replied\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/messages/:id",
@@ -1024,7 +1024,7 @@
                 }
               ]
             },
-            "description": "Toggle message status between 'unread' and 'read'."
+            "description": "Toggle message status (isRead: true/false, replyStatus: 'pending'/'replied')."
           },
           "response": []
         },
