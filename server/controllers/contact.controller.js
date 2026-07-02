@@ -13,6 +13,12 @@ export const submitContact = async (req, res, next) => {
     }
 
     const contact = await Contact.create(validation.data);
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('new-message', contact);
+    }
+
     res.status(201).json({
       success: true,
       message: 'Message sent successfully. We will get back to you soon!',

@@ -22,6 +22,12 @@ export const createReview = async (req, res, next) => {
     }
 
     const review = await Review.create(validation.data);
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('new-review', review);
+    }
+
     res.status(201).json({
       success: true,
       message: 'Review submitted and pending approval.',

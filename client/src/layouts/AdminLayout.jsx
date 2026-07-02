@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useAdminSettings } from '../hooks/useApi';
+import { useSocket } from '../contexts/SocketContext';
+import { useToast } from '../components/ui/Toast';
 import {
   LayoutDashboard,
   CalendarDays,
@@ -27,10 +29,18 @@ export const AdminLayout = () => {
   const { data: settings } = useAdminSettings();
   const location = useLocation();
   const navigate = useNavigate();
+  const socket = useSocket();
+  const toast = useToast();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem('theme') === 'dark' || 
       (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  });
+
+  const [alerts, setAlerts] = useState({
+    bookings: false,
+    reviews: false,
+    messages: false,
   });
 
   useEffect(() => {
@@ -65,6 +75,45 @@ export const AdminLayout = () => {
     }
   }, [isAdmin, loading, navigate]);
 
+  useEffect(() => {
+    if (socket) {
+      const handleNewBooking = (booking) => {
+        setAlerts((prev) => ({ ...prev, bookings: true }));
+        toast.info(`🔔 New Booking! ID: ${booking.bookingId} by ${booking.customerName}`);
+      };
+      const handleNewMessage = (msg) => {
+        setAlerts((prev) => ({ ...prev, messages: true }));
+        toast.info(`✉️ New Message from ${msg.name}`);
+      };
+      const handleNewReview = (rev) => {
+        setAlerts((prev) => ({ ...prev, reviews: true }));
+        toast.info(`⭐ New Review Submitted (${rev.rating} stars)`);
+      };
+
+      socket.on('new-booking', handleNewBooking);
+      socket.on('new-message', handleNewMessage);
+      socket.on('new-review', handleNewReview);
+
+      return () => {
+        socket.off('new-booking', handleNewBooking);
+        socket.off('new-message', handleNewMessage);
+        socket.off('new-review', handleNewReview);
+      };
+    }
+  }, [socket, toast]);
+
+  useEffect(() => {
+    if (location.pathname === '/admin/bookings') {
+      setAlerts((prev) => ({ ...prev, bookings: false }));
+    }
+    if (location.pathname === '/admin/reviews') {
+      setAlerts((prev) => ({ ...prev, reviews: false }));
+    }
+    if (location.pathname === '/admin/messages') {
+      setAlerts((prev) => ({ ...prev, messages: false }));
+    }
+  }, [location.pathname]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
@@ -77,11 +126,11 @@ export const AdminLayout = () => {
 
   const menuItems = [
     { name: 'Dashboard', path: '/admin/dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
-    { name: 'Bookings', path: '/admin/bookings', icon: <UserCheck className="w-5 h-5" /> },
+    { name: 'Bookings', path: '/admin/bookings', icon: <UserCheck className="w-5 h-5" />, hasAlert: alerts.bookings },
     { name: 'Calendar', path: '/admin/calendar', icon: <CalendarDays className="w-5 h-5" /> },
     { name: 'Slots', path: '/admin/slots', icon: <Clock className="w-5 h-5" /> },
-    { name: 'Reviews', path: '/admin/reviews', icon: <Sparkles className="w-5 h-5" /> },
-    { name: 'Messages', path: '/admin/messages', icon: <Inbox className="w-5 h-5" /> },
+    { name: 'Reviews', path: '/admin/reviews', icon: <Sparkles className="w-5 h-5" />, hasAlert: alerts.reviews },
+    { name: 'Messages', path: '/admin/messages', icon: <Inbox className="w-5 h-5" />, hasAlert: alerts.messages },
     { name: 'Gallery', path: '/admin/gallery', icon: <Images className="w-5 h-5" /> },
     { name: 'Settings', path: '/admin/settings', icon: <SettingsIcon className="w-5 h-5" /> },
   ];
@@ -124,6 +173,9 @@ export const AdminLayout = () => {
               <div className="flex items-center gap-3">
                 {item.icon}
                 {item.name}
+                {item.hasAlert && (
+                  <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
+                )}
               </div>
               <ChevronRight className={`w-4 h-4 opacity-50 ${isActive(item.path) ? 'block' : 'hidden'}`} />
             </Link>
@@ -227,8 +279,13 @@ export const AdminLayout = () => {
                       : 'text-zinc-600 dark:text-zinc-450 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-900'
                   }`}
                 >
-                  {item.icon}
-                  {item.name}
+                  <div className="flex items-center gap-3">
+                    {item.icon}
+                    {item.name}
+                    {item.hasAlert && (
+                      <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
+                    )}
+                  </div>
                 </Link>
               ))}
             </nav>

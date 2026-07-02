@@ -141,6 +141,7 @@ export const createBooking = async (req, res, next) => {
       io.emit('slot-status-changed', {
         date: data.bookingDate.split('T')[0],
       });
+      io.emit('new-booking', booking);
     }
 
     res.status(201).json({ success: true, booking });
@@ -247,6 +248,7 @@ export const createManualBooking = async (req, res, next) => {
       io.emit('slot-status-changed', {
         date: data.bookingDate.split('T')[0],
       });
+      io.emit('new-booking', booking);
     }
 
     res.status(201).json({ success: true, booking });
