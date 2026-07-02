@@ -4,6 +4,30 @@ A premium, production-ready MERN Stack Indoor Sports Booking System designed for
 
 ---
 
+## ✨ Key Features & Recent Updates
+
+### 1. 🎨 Liquid Glass & Premium Aesthetics
+- **Core Glassmorphism System**: Implemented frosted backdrop blurs (`.glass-card`), soft lighting borders (`.glow-effect`), and hover transformations.
+- **Theme Filtering**: Configured Google Maps iframe preview cards with a liquid glass transparent border design and dark-theme inversion filters (`grayscale` and `invert` modifiers).
+- **Responsive Layout Overhaul**: All dashboard metrics, calendar listings, slot shifts, and booking tables have horizontal-scroll prevention wrappers to support mobile and tablet viewports.
+- **Scroll Restoration**: Implemented automatic window scroll-to-top behavior upon route transitions via a custom React hook component.
+
+### 2. 🔌 Real-time Syncing & Push Notification Alerts
+- **Broadcasting Socket Events**: Emits instant WebSocket alerts (`slot-status-changed`, `settings-updated`, `gallery-updated`) to synchronize frontend components without page reload delays.
+- **Admin Inbox Push Notifications**: Listeners in `AdminLayout` intercept incoming `new-booking`, `new-message`, and `new-review` socket triggers to play toast pop-ups.
+- **Sidebar Glowing Alert Badges**: Renders a red pulsing alert notification badge next to Bookings, Messages, or Reviews tabs to notify online admins immediately.
+
+### 3. 📸 360° Panorama Virtual Tour Player
+- **Pannellum Panorama Viewer**: Pinned 360° photos and videos to the top of the public Gallery using the official CDN Hosted Pannellum iframe viewer.
+- **Auto-Rotation & Video Autoplay**: Support is provided for `is360`, `mediaType`, and `autoPlay360` database options configurable in the Admin Media Dashboard.
+
+### 4. ⏰ Shift-Based Rates & Local Dhaka Formatting
+- **6-Tier Pricing Scheme**: Supports Day and Night shift rates for Weekdays, Weekends, and Holidays.
+- **12-Hour Time Display**: Formats all slot listings, calendars, and receipt booking tables in the local 12-hour AM/PM Dhaka time zone format.
+- **BDT Currency**: Set all currency formats to Bangladesh Taka (৳/BDT) and converted revenue metrics labels to "Sales".
+
+---
+
 ## 📂 Project Structure
 
 ```
