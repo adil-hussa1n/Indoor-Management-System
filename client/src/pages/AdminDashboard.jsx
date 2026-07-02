@@ -32,8 +32,33 @@ const format12Hour = (time24) => {
 export const AdminDashboard = () => {
   const toast = useToast();
   const socket = useSocket();
-  const [filterDate, setFilterDate] = React.useState(() => new Date().toISOString().split('T')[0]);
-  const { data: dashboard, isLoading, refetch } = useDashboardData(filterDate);
+  const [filterType, setFilterType] = React.useState('today');
+  const [customRange, setCustomRange] = React.useState({
+    startDate: new Date().toISOString().split('T')[0],
+    endDate: new Date().toISOString().split('T')[0],
+  });
+
+  const queryParams = React.useMemo(() => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (filterType === 'today') {
+      return { startDate: todayStr, endDate: todayStr };
+    }
+    if (filterType === 'yesterday') {
+      const yest = new Date();
+      yest.setDate(yest.getDate() - 1);
+      const yestStr = yest.toISOString().split('T')[0];
+      return { startDate: yestStr, endDate: yestStr };
+    }
+    if (filterType === 'last7') {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const startStr = sevenDaysAgo.toISOString().split('T')[0];
+      return { startDate: startStr, endDate: todayStr };
+    }
+    return { startDate: customRange.startDate, endDate: customRange.endDate };
+  }, [filterType, customRange]);
+
+  const { data: dashboard, isLoading, refetch } = useDashboardData(queryParams);
 
   React.useEffect(() => {
     if (socket) {
@@ -102,39 +127,75 @@ export const AdminDashboard = () => {
     { label: "Tomorrow's Bookings", val: metrics.tomorrowBookings, icon: <Clock className="w-5 h-5 text-indigo-500" />, desc: "Slots reserved for tomorrow" },
     { label: "Upcoming Bookings", val: metrics.upcomingBookings, icon: <UserCheck className="w-5 h-5 text-blue-500" />, desc: "Total future reservations" },
     { label: "Monthly Completed", val: metrics.completedBookings, icon: <CheckCircle className="w-5 h-5 text-emerald-500" />, desc: "Fully played sessions" },
-    { label: "Monthly Revenue", val: `৳${metrics.monthlyRevenue}`, icon: <TrendingUp className="w-5 h-5 text-pink-500" />, desc: "Completed sales this month" },
+    { label: "Monthly Sales", val: `৳${metrics.monthlyRevenue}`, icon: <TrendingUp className="w-5 h-5 text-pink-500" />, desc: "Completed sales this month" },
     { label: "Arena Occupancy", val: `${metrics.occupancyRate}%`, icon: <Percent className="w-5 h-5 text-amber-500" />, desc: "Utilization percentage" },
   ];
 
   return (
     <div className="space-y-8 text-left">
       {/* Date Filter Toolbar */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white dark:bg-zinc-950 p-6 rounded-2xl border border-zinc-150 dark:border-zinc-800 shadow-sm">
+      <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-6 bg-white dark:bg-zinc-950 p-6 rounded-2xl border border-zinc-150 dark:border-zinc-800 shadow-sm">
         <div>
           <h1 className="text-2xl font-extrabold text-zinc-900 dark:text-white">Admin Dashboard</h1>
-          <p className="text-sm text-zinc-500">Real-time venue performance overview.</p>
+          <p className="text-sm text-zinc-500 font-medium">Real-time venue performance overview.</p>
         </div>
-        <div className="flex items-center gap-3">
-          <label className="text-xs font-bold uppercase tracking-wider text-zinc-500 whitespace-nowrap">Filter Day:</label>
-          <input
-            type="date"
-            value={filterDate}
-            onChange={(e) => setFilterDate(e.target.value)}
-            className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-sm font-semibold text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-purple-650"
-          />
+        
+        <div className="flex flex-wrap items-center gap-4">
+          {/* Quick Filter Buttons */}
+          <div className="flex items-center bg-zinc-100 dark:bg-zinc-900 p-1 rounded-xl border border-zinc-250 dark:border-zinc-800">
+            {[
+              { id: 'today', label: 'Today' },
+              { id: 'yesterday', label: 'Yesterday' },
+              { id: 'last7', label: 'Last 7 Days' },
+              { id: 'custom', label: 'Custom' },
+            ].map((btn) => (
+              <button
+                key={btn.id}
+                onClick={() => setFilterType(btn.id)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer ${
+                  filterType === btn.id
+                    ? 'bg-white dark:bg-zinc-800 text-purple-650 shadow-sm'
+                    : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+                }`}
+              >
+                {btn.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Custom Date Inputs */}
+          {filterType === 'custom' && (
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={customRange.startDate}
+                onChange={(e) => setCustomRange((prev) => ({ ...prev, startDate: e.target.value }))}
+                className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs font-semibold text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-purple-650"
+              />
+              <span className="text-xs text-zinc-400 font-bold">to</span>
+              <input
+                type="date"
+                value={customRange.endDate}
+                onChange={(e) => setCustomRange((prev) => ({ ...prev, endDate: e.target.value }))}
+                className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs font-semibold text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-purple-650"
+              />
+            </div>
+          )}
         </div>
       </div>
 
       {/* Selected Day metrics */}
       <div className="space-y-4">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-purple-650">Filtered Day Performance ({new Date(filterDate).toLocaleDateString('en-BD')})</h3>
+        <h3 className="text-xs font-bold uppercase tracking-wider text-purple-650">
+          Filtered Performance ({new Date(queryParams.startDate).toLocaleDateString('en-BD')} - {new Date(queryParams.endDate).toLocaleDateString('en-BD')})
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="border-purple-200/40 dark:border-purple-900/20 bg-purple-50/10 dark:bg-purple-950/5">
             <CardContent className="pt-6 flex justify-between items-start">
               <div className="space-y-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-purple-600">Day's Bookings</span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-purple-600">Filtered Bookings</span>
                 <h2 className="text-3xl font-extrabold text-zinc-900 dark:text-white">{metrics.selectedDateCount || 0}</h2>
-                <p className="text-xs text-zinc-400">Total bookings on selected date</p>
+                <p className="text-xs text-zinc-400">Total bookings in filtered range</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/50 flex items-center justify-center border border-purple-150/30">
                 <CalendarDays className="w-5 h-5 text-purple-600" />
@@ -144,9 +205,9 @@ export const AdminDashboard = () => {
           <Card className="border-purple-200/40 dark:border-purple-900/20 bg-purple-50/10 dark:bg-purple-950/5">
             <CardContent className="pt-6 flex justify-between items-start">
               <div className="space-y-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-purple-600">Day's Revenue</span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-purple-600">Filtered Sales</span>
                 <h2 className="text-3xl font-extrabold text-zinc-900 dark:text-white">৳{metrics.selectedDateRevenue || 0}</h2>
-                <p className="text-xs text-zinc-400">Completed revenue on selected date</p>
+                <p className="text-xs text-zinc-400">Completed sales in filtered range</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/50 flex items-center justify-center border border-purple-150/30">
                 <TrendingUp className="w-5 h-5 text-purple-600" />
@@ -156,9 +217,9 @@ export const AdminDashboard = () => {
           <Card className="border-purple-200/40 dark:border-purple-900/20 bg-purple-50/10 dark:bg-purple-950/5">
             <CardContent className="pt-6 flex justify-between items-start">
               <div className="space-y-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-purple-600">Day's Occupancy</span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-purple-600">Filtered Occupancy</span>
                 <h2 className="text-3xl font-extrabold text-zinc-900 dark:text-white">{metrics.selectedDateOccupancy || 0}%</h2>
-                <p className="text-xs text-zinc-400">Utilization of 14 hours capacity</p>
+                <p className="text-xs text-zinc-400">Utilization of dynamic capacity</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/50 flex items-center justify-center border border-purple-150/30">
                 <Percent className="w-5 h-5 text-purple-600" />
@@ -230,7 +291,7 @@ export const AdminDashboard = () => {
                   <div key={stat._id} className="flex flex-col gap-1.5">
                     <div className="flex justify-between text-xs font-semibold text-zinc-500">
                       <span>{stat._id}</span>
-                      <span>{stat.count} Booking(s) | ${stat.revenue} Revenue</span>
+                      <span>{stat.count} Booking(s) | ৳{stat.revenue} Sales</span>
                     </div>
                     {/* Visual progress bar */}
                     <div className="w-full bg-zinc-100 dark:bg-zinc-900 rounded-full h-2">

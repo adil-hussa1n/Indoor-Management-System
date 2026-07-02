@@ -344,11 +344,11 @@ export const useReorderGallery = () => {
 };
 
 // --- DASHBOARD HOOKS ---
-export const useDashboardData = (date) => {
+export const useDashboardData = (params) => {
   return useQuery({
-    queryKey: ['dashboard', date],
+    queryKey: ['dashboard', params],
     queryFn: async () => {
-      const response = await API.get('/dashboard', { params: { date } });
+      const response = await API.get('/dashboard', { params });
       return response.data;
     },
     refetchInterval: 30000, // Autofetch dashboard every 30 seconds

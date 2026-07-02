@@ -335,27 +335,32 @@ export const deleteBooking = async (req, res, next) => {
 // Dashboard analytics
 export const getDashboardData = async (req, res, next) => {
   try {
-    const { date } = req.query;
-    let selectedDate = new Date();
-    if (date) {
-      const parsed = new Date(date);
-      if (!isNaN(parsed.getTime())) {
-        selectedDate = parsed;
-      }
+    const { date, startDate, endDate } = req.query;
+    let startRange = new Date();
+    let endRange = new Date();
+
+    if (startDate && endDate) {
+      startRange = new Date(startDate);
+      endRange = new Date(endDate);
+    } else if (date) {
+      startRange = new Date(date);
+      endRange = new Date(date);
     }
 
-    const selectedDateStr = selectedDate.toISOString().split('T')[0];
-    const startOfSelected = new Date(new Date(selectedDateStr).setUTCHours(0, 0, 0, 0));
-    const endOfSelected = new Date(new Date(selectedDateStr).setUTCHours(23, 59, 59, 999));
+    const startOfRange = new Date(new Date(startRange.toISOString().split('T')[0]).setUTCHours(0, 0, 0, 0));
+    const endOfRange = new Date(new Date(endRange.toISOString().split('T')[0]).setUTCHours(23, 59, 59, 999));
 
-    // Calculate metrics for selected date
-    const selectedDateCount = await Booking.countDocuments({ bookingDate: { $gte: startOfSelected, $lte: endOfSelected } });
+    const diffTime = Math.abs(endOfRange - startOfRange);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
+
+    // Calculate metrics for selected range
+    const selectedDateCount = await Booking.countDocuments({ bookingDate: { $gte: startOfRange, $lte: endOfRange } });
     const selectedDateRevenueData = await Booking.aggregate([
-      { $match: { status: 'Completed', bookingDate: { $gte: startOfSelected, $lte: endOfSelected } } },
+      { $match: { status: 'Completed', bookingDate: { $gte: startOfRange, $lte: endOfRange } } },
       { $group: { _id: null, total: { $sum: '$price' } } },
     ]);
     const selectedDateRevenue = selectedDateRevenueData[0]?.total || 0;
-    const selectedDateOccupancy = Math.round((selectedDateCount / 14) * 100);
+    const selectedDateOccupancy = Math.round((selectedDateCount / (14 * diffDays)) * 100);
 
     const todayStr = new Date().toISOString().split('T')[0];
     const today = new Date(todayStr);
@@ -378,10 +383,10 @@ export const getDashboardData = async (req, res, next) => {
     const completedCount = await Booking.countDocuments({ status: 'Completed' });
     const cancelledCount = await Booking.countDocuments({ status: 'Cancelled' });
 
-    // Recent bookings specifically for the filtered date, or fallback to all recent
+    // Recent bookings specifically for the filtered range
     let recentBookings = [];
-    if (date) {
-      recentBookings = await Booking.find({ bookingDate: { $gte: startOfSelected, $lte: endOfSelected } }).sort({ createdAt: -1 });
+    if (startDate || endDate || date) {
+      recentBookings = await Booking.find({ bookingDate: { $gte: startOfRange, $lte: endOfRange } }).sort({ createdAt: -1 });
     } else {
       recentBookings = await Booking.find().sort({ createdAt: -1 }).limit(5);
     }
