@@ -2,8 +2,22 @@
 @import "tailwindcss";
 @variant dark (&:where(.dark, .dark *));
 
+@theme {
+  --color-purple-600: var(--theme-purple-600);
+  --color-purple-650: var(--theme-purple-650);
+  --color-indigo-600: var(--theme-indigo-600);
+  --color-indigo-650: var(--theme-indigo-650);
+  --color-violet-500: var(--theme-violet-500);
+}
+
 @layer base {
   :root {
+    --theme-purple-600: #9333ea;
+    --theme-purple-650: #7c3aed;
+    --theme-indigo-600: #4f46e5;
+    --theme-indigo-650: #4338ca;
+    --theme-violet-500: #8b5cf6;
+
     --background: 0 0% 100%;
     --foreground: 224 71.4% 4.1%;
     --card: 0 0% 100%;
@@ -26,7 +40,32 @@
     --radius: 0.75rem;
   }
 
+  .theme-green {
+    --theme-purple-600: #16a34a;
+    --theme-purple-650: #15803d;
+    --theme-indigo-600: #059669;
+    --theme-indigo-650: #047857;
+    --theme-violet-500: #10b981;
+
+    --primary: 142.1 76.2% 36.3%;
+    --primary-foreground: 0 0% 100%;
+    --accent: 142.1 76.2% 45%;
+    --accent-foreground: 0 0% 100%;
+    --ring: 142.1 76.2% 45%;
+
+    --background: 0 0% 100%;
+    --foreground: 224 71.4% 4.1%;
+    --card: 0 0% 100%;
+    --card-foreground: 224 71.4% 4.1%;
+  }
+
   .dark {
+    --theme-purple-600: #9333ea;
+    --theme-purple-650: #7c3aed;
+    --theme-indigo-600: #4f46e5;
+    --theme-indigo-650: #4338ca;
+    --theme-violet-500: #8b5cf6;
+
     --background: 224 71.4% 4.1%;
     --foreground: 210 20% 98%;
     --card: 224 71.4% 8%;
@@ -46,6 +85,20 @@
     --border: 215 27.9% 16.9%;
     --input: 215 27.9% 16.9%;
     --ring: 263.4 70% 50.4%;
+  }
+
+  .dark.theme-green {
+    --theme-purple-600: #22c55e;
+    --theme-purple-650: #16a34a;
+    --theme-indigo-600: #10b981;
+    --theme-indigo-650: #059669;
+    --theme-violet-500: #34d399;
+
+    --primary: 142.1 70% 45%;
+    --primary-foreground: 210 20% 98%;
+    --accent: 142.1 70% 50%;
+    --accent-foreground: 210 20% 98%;
+    --ring: 142.1 70% 50%;
   }
 }
 

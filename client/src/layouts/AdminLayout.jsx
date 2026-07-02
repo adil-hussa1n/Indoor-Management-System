@@ -56,6 +56,13 @@ export const AdminLayout = () => {
   useEffect(() => {
     if (settings) {
       document.title = `Admin | ${settings.seo?.title || settings.businessName || 'Apex Arena'}`;
+      
+      if (settings.theme === 'green') {
+        document.documentElement.classList.add('theme-green');
+      } else {
+        document.documentElement.classList.remove('theme-green');
+      }
+
       if (settings.logo) {
         let link = document.querySelector("link[rel~='icon']");
         if (!link) {

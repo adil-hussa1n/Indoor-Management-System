@@ -77,6 +77,11 @@ const settingsSchema = new mongoose.Schema(
       type: [String],
       default: ['Futsal', 'Basketball', 'Badminton', 'Volleyball'],
     },
+    theme: {
+      type: String,
+      enum: ['default', 'green'],
+      default: 'default',
+    },
   },
   { timestamps: true }
 );

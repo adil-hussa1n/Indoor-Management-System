@@ -31,6 +31,7 @@ export const AdminSettings = () => {
         logo: settings.logo || '',
         heroBanner: settings.heroBanner || '',
         googleMapUrl: settings.googleMapUrl || '',
+        theme: settings.theme || 'default',
         businessHours: {
           weekday: settings.businessHours?.weekday || '08:00 - 22:00',
           weekend: settings.businessHours?.weekend || '09:00 - 23:00',
@@ -100,6 +101,7 @@ export const AdminSettings = () => {
     data.append('contactPhone', formData.contactPhone);
     data.append('contactAddress', formData.contactAddress);
     data.append('googleMapUrl', formData.googleMapUrl);
+    data.append('theme', formData.theme);
 
     data.append('businessHours', JSON.stringify(formData.businessHours));
     data.append('pricing', JSON.stringify(formData.pricing));
@@ -320,6 +322,17 @@ export const AdminSettings = () => {
               value={formData.googleMapUrl}
               onChange={(e) => handleChange(null, 'googleMapUrl', e.target.value)}
             />
+            <div className="flex flex-col gap-1.5 text-left border-t border-zinc-100 dark:border-zinc-900 pt-4">
+              <label className="text-xs font-semibold text-zinc-650 dark:text-zinc-450 uppercase tracking-wider">Website Color Theme & Template</label>
+              <select
+                value={formData.theme}
+                onChange={(e) => handleChange(null, 'theme', e.target.value)}
+                className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-3 py-2.5 text-sm text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-650 transition-all duration-200 cursor-pointer"
+              >
+                <option value="default">🔮 Default Theme (Purple & Indigo Glass)</option>
+                <option value="green">🌿 Emerald Green Theme (Green Primary & White Background)</option>
+              </select>
+            </div>
           </div>
         </div>
 

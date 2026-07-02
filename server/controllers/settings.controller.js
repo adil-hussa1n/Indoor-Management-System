@@ -109,6 +109,7 @@ export const getPublicInfo = async (req, res, next) => {
       heroBanner: settings.heroBanner,
       weekendDays: settings.weekendDays,
       hero: settings.hero,
+      theme: settings.theme,
     };
     res.status(200).json({ success: true, settings: publicSettings });
   } catch (error) {
