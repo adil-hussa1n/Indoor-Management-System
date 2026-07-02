@@ -60,6 +60,8 @@ export const AdminSettings = () => {
           title1: settings.hero?.title1 || 'Experience Sports',
           title2: settings.hero?.title2 || 'Like Never Before',
           description: settings.hero?.description || 'Book our state-of-the-art climate-controlled indoor arena. Designed for futsal, basketball, badminton, and more. Clean, professional, and ready.',
+          mediaType: settings.hero?.mediaType || 'image',
+          autoPlay360: settings.hero?.autoPlay360 ?? true,
         },
       });
     }
@@ -297,13 +299,17 @@ export const AdminSettings = () => {
                 />
               </div>
               <div className="flex flex-col gap-1.5 text-left">
-                <label className="text-xs font-semibold text-zinc-655 dark:text-zinc-450 uppercase tracking-wider">Hero Banner Image</label>
+                <label className="text-xs font-semibold text-zinc-655 dark:text-zinc-450 uppercase tracking-wider">Hero Banner Media File (Image or Video)</label>
                 {formData.heroBanner && (
-                  <img src={formData.heroBanner} alt="Banner preview" className="w-24 h-12 object-cover rounded-lg border bg-zinc-50 mb-1" />
+                  formData.heroBanner.includes('data:video/') || formData.heroBanner.match(/\.(mp4|webm|ogg|mov)$/i) ? (
+                    <video src={formData.heroBanner} className="w-24 h-12 object-cover rounded-lg border bg-zinc-50 mb-1" muted playsInline />
+                  ) : (
+                    <img src={formData.heroBanner} alt="Banner preview" className="w-24 h-12 object-cover rounded-lg border bg-zinc-50 mb-1" />
+                  )
                 )}
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/*,video/*"
                   onChange={(e) => setBannerFile(e.target.files[0])}
                   className="text-xs text-zinc-500 w-full cursor-pointer"
                 />
@@ -425,6 +431,36 @@ export const AdminSettings = () => {
                 className="flex min-h-[80px] w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-3 py-2 text-sm text-zinc-900 dark:text-white placeholder-zinc-450 focus:outline-none focus:ring-2 focus:ring-purple-650 transition-all duration-200"
                 rows={3}
               />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5 text-left">
+                <label className="text-xs font-semibold text-zinc-650 dark:text-zinc-450 uppercase tracking-wider">Hero Banner Media Type</label>
+                <select
+                  value={formData.hero.mediaType}
+                  onChange={(e) => handleChange('hero', 'mediaType', e.target.value)}
+                  className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-3 py-2.5 text-sm text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-650 transition-all duration-200 cursor-pointer"
+                >
+                  <option value="image">🖼️ Image</option>
+                  <option value="video">🎬 Video</option>
+                  <option value="360">🌐 360° Panorama</option>
+                </select>
+              </div>
+
+              {formData.hero.mediaType === '360' && (
+                <div className="flex items-center gap-3 pt-6">
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.hero.autoPlay360}
+                      onChange={(e) => handleChange('hero', 'autoPlay360', e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-zinc-200 dark:bg-zinc-800 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-600 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600" />
+                  </label>
+                  <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Auto-Rotate 360°</span>
+                </div>
+              )}
             </div>
           </div>
         </div>

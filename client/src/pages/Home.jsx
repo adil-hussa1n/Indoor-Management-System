@@ -41,17 +41,41 @@ export const Home = () => {
   return (
     <div className="overflow-hidden">
       {/* Hero Section */}
-      <section 
-        className="relative min-h-[90vh] flex items-center justify-center pt-24 pb-16 px-4"
-        style={settings?.heroBanner ? {
-          backgroundImage: `url(${settings.heroBanner})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        } : {}}
-      >
+      <section className="relative min-h-[90vh] flex items-center justify-center pt-24 pb-16 px-4 overflow-hidden">
+        {/* Background Media Layer */}
+        {settings?.heroBanner && settings?.hero?.mediaType === 'video' && (
+          <video
+            src={settings.heroBanner}
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        )}
+        {settings?.heroBanner && settings?.hero?.mediaType === '360' && (
+          <iframe
+            title="360° Hero Panorama"
+            src={`https://cdn.pannellum.org/2.5/pannellum.htm#panorama=${encodeURIComponent(settings.heroBanner)}&autoLoad=true&autoRotate=${settings?.hero?.autoPlay360 !== false ? '-2' : '0'}&showControls=false`}
+            className="absolute inset-0 w-full h-full border-0"
+            allowFullScreen
+          />
+        )}
+        {settings?.heroBanner && (!settings?.hero?.mediaType || settings?.hero?.mediaType === 'image') && (
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `url(${settings.heroBanner})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }}
+          />
+        )}
+
+        {/* Overlay */}
         <div className={`absolute inset-0 ${
           settings?.heroBanner 
-            ? 'bg-white/90 dark:bg-zinc-950/90 backdrop-blur-[2px]' 
+            ? 'bg-white/85 dark:bg-zinc-950/85 backdrop-blur-[2px]' 
             : 'bg-gradient-to-br from-purple-900/10 via-indigo-900/5 to-transparent'
         }`} />
         {!settings?.heroBanner && (

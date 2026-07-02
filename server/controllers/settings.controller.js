@@ -2,7 +2,7 @@ import Settings from '../models/Settings.js';
 import { v2 as cloudinary } from 'cloudinary';
 
 // Helper for Cloudinary dynamic config & upload
-const uploadToCloudinary = async (fileBuffer, folder) => {
+const uploadToCloudinary = async (fileBuffer, folder, mimetype = 'image/png') => {
   if (
     process.env.CLOUDINARY_CLOUD_NAME &&
     process.env.CLOUDINARY_CLOUD_NAME !== 'mock'
@@ -14,7 +14,7 @@ const uploadToCloudinary = async (fileBuffer, folder) => {
     });
     const result = await new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
-        { folder },
+        { folder, resource_type: 'auto' },
         (error, result) => {
           if (error) reject(error);
           else resolve(result);
@@ -25,7 +25,7 @@ const uploadToCloudinary = async (fileBuffer, folder) => {
     return result.secure_url;
   } else {
     // Local Base64 fallback
-    return `data:image/png;base64,${fileBuffer.toString('base64')}`;
+    return `data:${mimetype};base64,${fileBuffer.toString('base64')}`;
   }
 };
 
@@ -51,11 +51,11 @@ export const updateSettings = async (req, res, next) => {
     // 1. Process logo & banner file uploads
     if (req.files) {
       if (req.files.logo && req.files.logo[0]) {
-        const logoUrl = await uploadToCloudinary(req.files.logo[0].buffer, 'settings-logo');
+        const logoUrl = await uploadToCloudinary(req.files.logo[0].buffer, 'settings-logo', req.files.logo[0].mimetype);
         settings.logo = logoUrl;
       }
       if (req.files.heroBanner && req.files.heroBanner[0]) {
-        const bannerUrl = await uploadToCloudinary(req.files.heroBanner[0].buffer, 'settings-banner');
+        const bannerUrl = await uploadToCloudinary(req.files.heroBanner[0].buffer, 'settings-banner', req.files.heroBanner[0].mimetype);
         settings.heroBanner = bannerUrl;
       }
     }
