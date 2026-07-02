@@ -3,12 +3,32 @@
 @variant dark (&:where(.dark, .dark *));
 
 @theme {
+  --color-purple-50: var(--theme-purple-50);
+  --color-purple-100: var(--theme-purple-100);
+  --color-purple-200: var(--theme-purple-200);
+  --color-purple-300: var(--theme-purple-300);
+  --color-purple-400: var(--theme-purple-400);
   --color-purple-500: var(--theme-purple-500);
   --color-purple-600: var(--theme-purple-600);
   --color-purple-650: var(--theme-purple-650);
+  --color-purple-700: var(--theme-purple-700);
+  --color-purple-800: var(--theme-purple-800);
+  --color-purple-900: var(--theme-purple-900);
+  --color-purple-950: var(--theme-purple-950);
+
+  --color-indigo-50: var(--theme-indigo-50);
+  --color-indigo-100: var(--theme-indigo-100);
+  --color-indigo-200: var(--theme-indigo-200);
+  --color-indigo-300: var(--theme-indigo-300);
+  --color-indigo-400: var(--theme-indigo-400);
   --color-indigo-500: var(--theme-indigo-500);
   --color-indigo-600: var(--theme-indigo-600);
   --color-indigo-650: var(--theme-indigo-650);
+  --color-indigo-700: var(--theme-indigo-700);
+  --color-indigo-800: var(--theme-indigo-800);
+  --color-indigo-900: var(--theme-indigo-900);
+  --color-indigo-950: var(--theme-indigo-950);
+
   --color-violet-500: var(--theme-violet-500);
   --color-pink-500: var(--theme-pink-500);
   --color-pink-650: var(--theme-pink-650);
@@ -16,12 +36,32 @@
 
 @layer base {
   :root {
+    --theme-purple-50: #faf5ff;
+    --theme-purple-100: #f3e8ff;
+    --theme-purple-200: #e9d5ff;
+    --theme-purple-300: #d8b4fe;
+    --theme-purple-400: #c084fc;
     --theme-purple-500: #a855f7;
     --theme-purple-600: #9333ea;
     --theme-purple-650: #7c3aed;
+    --theme-purple-700: #7e22ce;
+    --theme-purple-800: #6b21a8;
+    --theme-purple-900: #581c87;
+    --theme-purple-950: #3b0764;
+
+    --theme-indigo-50: #eef2ff;
+    --theme-indigo-100: #e0e7ff;
+    --theme-indigo-200: #c7d2fe;
+    --theme-indigo-300: #a5b4fc;
+    --theme-indigo-400: #818cf8;
     --theme-indigo-500: #6366f1;
     --theme-indigo-600: #4f46e5;
     --theme-indigo-650: #4338ca;
+    --theme-indigo-700: #3730a3;
+    --theme-indigo-800: #312e81;
+    --theme-indigo-900: #1e1b4b;
+    --theme-indigo-950: #0f172a;
+
     --theme-violet-500: #8b5cf6;
     --theme-pink-500: #ec4899;
     --theme-pink-650: #db2777;
@@ -49,37 +89,34 @@
     --radius: 0.75rem;
   }
 
-  .theme-green {
-    --theme-purple-500: #22c55e;
-    --theme-purple-600: #16a34a;
-    --theme-purple-650: #15803d;
-    --theme-indigo-500: #10b981;
-    --theme-indigo-600: #059669;
-    --theme-indigo-650: #047857;
-    --theme-violet-500: #34d399;
-    --theme-pink-500: #06b6d4;
-    --theme-pink-650: #0891b2;
-    --theme-glow-shadow: rgba(22, 163, 74, 0.15);
-
-    --primary: 142.1 76.2% 36.3%;
-    --primary-foreground: 0 0% 100%;
-    --accent: 142.1 76.2% 45%;
-    --accent-foreground: 0 0% 100%;
-    --ring: 142.1 76.2% 45%;
-
-    --background: 0 0% 100%;
-    --foreground: 224 71.4% 4.1%;
-    --card: 0 0% 100%;
-    --card-foreground: 224 71.4% 4.1%;
-  }
-
   .dark {
+    --theme-purple-55: #faf5ff;
+    --theme-purple-50: #faf5ff;
+    --theme-purple-100: #f3e8ff;
+    --theme-purple-200: #e9d5ff;
+    --theme-purple-300: #d8b4fe;
+    --theme-purple-400: #c084fc;
     --theme-purple-500: #a855f7;
     --theme-purple-600: #9333ea;
     --theme-purple-650: #7c3aed;
+    --theme-purple-700: #7e22ce;
+    --theme-purple-800: #6b21a8;
+    --theme-purple-900: #581c87;
+    --theme-purple-950: #3b0764;
+
+    --theme-indigo-50: #eef2ff;
+    --theme-indigo-100: #e0e7ff;
+    --theme-indigo-200: #c7d2fe;
+    --theme-indigo-300: #a5b4fc;
+    --theme-indigo-400: #818cf8;
     --theme-indigo-500: #6366f1;
     --theme-indigo-600: #4f46e5;
     --theme-indigo-650: #4338ca;
+    --theme-indigo-700: #3730a3;
+    --theme-indigo-800: #312e81;
+    --theme-indigo-900: #1e1b4b;
+    --theme-indigo-950: #0f172a;
+
     --theme-violet-500: #8b5cf6;
     --theme-pink-500: #ec4899;
     --theme-pink-650: #db2777;
@@ -106,13 +143,78 @@
     --ring: 263.4 70% 50.4%;
   }
 
-  .dark.theme-green {
-    --theme-purple-500: #4ade80;
-    --theme-purple-600: #22c55e;
-    --theme-purple-650: #16a34a;
-    --theme-indigo-500: #34d399;
+  .theme-green {
+    --theme-purple-50: #f0fdf4;
+    --theme-purple-100: #dcfce7;
+    --theme-purple-200: #bbf7d0;
+    --theme-purple-300: #86efac;
+    --theme-purple-400: #4ade80;
+    --theme-purple-500: #22c55e;
+    --theme-purple-600: #16a34a;
+    --theme-purple-650: #15803d;
+    --theme-purple-700: #166534;
+    --theme-purple-800: #14532d;
+    --theme-purple-900: #134e4a;
+    --theme-purple-950: #022c22;
+
+    --theme-indigo-50: #ecfdf5;
+    --theme-indigo-100: #d1fae5;
+    --theme-indigo-200: #a7f3d0;
+    --theme-indigo-300: #6ee7b7;
+    --theme-indigo-400: #34d399;
+    --theme-indigo-500: #10b981;
+    --theme-indigo-600: #059669;
+    --theme-indigo-650: #047857;
+    --theme-indigo-700: #065f46;
+    --theme-indigo-800: #064e3b;
+    --theme-indigo-900: #022c22;
+    --theme-indigo-950: #011c14;
+
+    --theme-violet-500: #34d399;
+    --theme-pink-500: #06b6d4;
+    --theme-pink-650: #0891b2;
+    --theme-glow-shadow: rgba(22, 163, 74, 0.15);
+
+    --primary: 142.1 76.2% 36.3%;
+    --primary-foreground: 0 0% 100%;
+    --accent: 142.1 76.2% 45%;
+    --accent-foreground: 0 0% 100%;
+    --ring: 142.1 76.2% 45%;
+
+    --background: 0 0% 100%;
+    --foreground: 224 71.4% 4.1%;
+    --card: 0 0% 100%;
+    --card-foreground: 224 71.4% 4.1%;
+  }
+
+  .dark.theme-green,
+  .theme-green .dark {
+    --theme-purple-50: #022c22;
+    --theme-purple-100: #14532d;
+    --theme-purple-200: #166534;
+    --theme-purple-300: #15803d;
+    --theme-purple-400: #16a34a;
+    --theme-purple-500: #22c55e;
+    --theme-purple-600: #4ade80;
+    --theme-purple-650: #22c55e;
+    --theme-purple-700: #86efac;
+    --theme-purple-800: #bbf7d0;
+    --theme-purple-900: #dcfce7;
+    --theme-purple-950: #f0fdf4;
+
+    --theme-indigo-50: #011c14;
+    --theme-indigo-100: #022c22;
+    --theme-indigo-200: #064e3b;
+    --theme-indigo-300: #065f46;
+    --theme-indigo-400: #047857;
+    --theme-indigo-500: #059669;
     --theme-indigo-600: #10b981;
-    --theme-indigo-650: #059669;
+    --theme-indigo-650: #34d399;
+    --theme-indigo-700: #6ee7b7;
+    --theme-indigo-800: #a7f3d0;
+    --theme-indigo-900: #d1fae5;
+    --theme-indigo-950: #ecfdf5;
+
     --theme-violet-500: #6ee7b7;
     --theme-pink-500: #22d3ee;
     --theme-pink-650: #06b6d4;
