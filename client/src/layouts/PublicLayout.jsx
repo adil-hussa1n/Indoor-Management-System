@@ -10,7 +10,7 @@ export const PublicLayout = () => {
   });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
-  const { data: settings } = usePublicSettings();
+  const { data: settings, isLoading } = usePublicSettings();
 
   useEffect(() => {
     if (darkMode) {
@@ -46,6 +46,31 @@ export const PublicLayout = () => {
   ];
 
   const isActive = (path) => location.pathname === path;
+
+  if (isLoading) {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-zinc-50 dark:bg-zinc-950 transition-colors duration-300">
+        <div className="relative flex flex-col items-center gap-6">
+          {/* Animated Loader Circle */}
+          <div className="w-20 h-20 rounded-full border-2 border-purple-500/10 border-t-purple-650 animate-spin absolute" />
+          
+          {/* Pulsing logo icon */}
+          <div className="w-16 h-16 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800 flex items-center justify-center shadow-lg relative z-10">
+            {settings?.logo ? (
+              <img src={settings.logo} alt="Loading..." className="w-12 h-12 object-contain rounded-lg animate-pulse" />
+            ) : (
+              <div className="w-12 h-12 rounded-xl bg-purple-650 flex items-center justify-center text-white font-extrabold text-xl shadow-inner animate-pulse">
+                A
+              </div>
+            )}
+          </div>
+          <span className="text-xs font-bold uppercase tracking-widest text-zinc-500 animate-pulse">
+            Loading...
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-zinc-50 dark:bg-zinc-950 transition-colors duration-300">
