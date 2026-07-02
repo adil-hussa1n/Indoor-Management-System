@@ -6,6 +6,7 @@ import Settings from '../models/Settings.js';
 import Review from '../models/Review.js';
 import Contact from '../models/Contact.js';
 import Booking from '../models/Booking.js';
+import Gallery from '../models/Gallery.js';
 
 dotenv.config();
 
@@ -45,12 +46,24 @@ const seedDB = async () => {
     await mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/indoor_sports');
     console.log('Connected to MongoDB for seeding...');
 
-    // Clear existing collection except bookings (so we don't wipe user data unnecessarily, but for a clean seed let's clean Slots, Settings, Admin)
+    // Clear existing collections
     await Admin.deleteMany({});
     await Slot.deleteMany({});
     await Settings.deleteMany({});
     await Review.deleteMany({});
     await Contact.deleteMany({});
+    await Gallery.deleteMany({});
+
+    // Seed default 360 degree panoramic image
+    await Gallery.create({
+      imageUrl: 'https://pannellum.org/images/alma.jpg',
+      publicId: 'default_360_panorama',
+      order: 0,
+      is360: true,
+      mediaType: 'image',
+      autoPlay360: true,
+    });
+    console.log('Default 360° gallery image seeded.');
 
     // Seed Admin
     const admin = new Admin({
