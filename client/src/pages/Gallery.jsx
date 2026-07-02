@@ -67,7 +67,7 @@ export const Gallery = () => {
                       />
                     ) : (
                       <iframe
-                        src={`https://pannellum.org/js/pannellum.htm?panorama=${encodeURIComponent(item.imageUrl)}&autoLoad=true${item.autoPlay360 ? '&autoRotate=-2' : ''}`}
+                        src={`https://cdn.pannellum.org/2.5/pannellum.htm#panorama=${encodeURIComponent(item.imageUrl)}&autoLoad=true${item.autoPlay360 ? '&autoRotate=-2' : ''}`}
                         className="w-full h-[450px] border-0"
                         allowFullScreen
                         title="360 Court Tour"
