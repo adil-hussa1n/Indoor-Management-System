@@ -10,18 +10,25 @@ A premium, production-ready MERN Stack Indoor Sports Booking System designed for
 - **Core Glassmorphism System**: Implemented frosted backdrop blurs (`.glass-card`), soft lighting borders (`.glow-effect`), and hover transformations.
 - **Theme Filtering**: Configured Google Maps iframe preview cards with a liquid glass transparent border design and dark-theme inversion filters (`grayscale` and `invert` modifiers).
 - **Responsive Layout Overhaul**: All dashboard metrics, calendar listings, slot shifts, and booking tables have horizontal-scroll prevention wrappers to support mobile and tablet viewports.
-- **Scroll Restoration**: Implemented automatic window scroll-to-top behavior upon route transitions via a custom React hook component.
+- **Scroll Restoration**: Implemented automatic window scroll-to-top behavior upon route transitions via a custom `ScrollToTop` React hook component.
+- **Admin Login Isolation**: The `/admin/login` route renders without the public navbar and footer for a clean, distraction-free login experience.
 
 ### 2. 🔌 Real-time Syncing & Push Notification Alerts
 - **Broadcasting Socket Events**: Emits instant WebSocket alerts (`slot-status-changed`, `settings-updated`, `gallery-updated`) to synchronize frontend components without page reload delays.
 - **Admin Inbox Push Notifications**: Listeners in `AdminLayout` intercept incoming `new-booking`, `new-message`, and `new-review` socket triggers to play toast pop-ups.
-- **Sidebar Glowing Alert Badges**: Renders a red pulsing alert notification badge next to Bookings, Messages, or Reviews tabs to notify online admins immediately.
+- **Sidebar Glowing Alert Badges**: Renders a red pulsing alert notification badge next to Bookings, Messages, or Reviews tabs to notify online admins immediately. Badges auto-clear when navigating to the relevant page.
 
-### 3. 📸 360° Panorama Virtual Tour Player
+### 3. 🖼️ Hero Banner Multi-Media Support
+- **Image / Video / 360° Panorama**: Admin can set the hero banner as a static image, a looping background video (autoplay, muted), or an interactive 360° panorama powered by Pannellum.
+- **Media Type Selector**: Admin Settings provides a dropdown to choose between 🖼️ Image, 🎬 Video, and 🌐 360° Panorama modes.
+- **Auto-Rotate Toggle**: When 360° mode is selected, an auto-rotate toggle switch enables continuous panoramic rotation on the homepage.
+- **Video & Large File Support**: Cloudinary uploads use `resource_type: 'auto'` with a 20MB file size limit to support video uploads.
+
+### 4. 📸 360° Gallery Panorama Virtual Tour Player
 - **Pannellum Panorama Viewer**: Pinned 360° photos and videos to the top of the public Gallery using the official CDN Hosted Pannellum iframe viewer.
 - **Auto-Rotation & Video Autoplay**: Support is provided for `is360`, `mediaType`, and `autoPlay360` database options configurable in the Admin Media Dashboard.
 
-### 4. ⏰ Shift-Based Rates & Local Dhaka Formatting
+### 5. ⏰ Shift-Based Rates & Local Dhaka Formatting
 - **6-Tier Pricing Scheme**: Supports Day and Night shift rates for Weekdays, Weekends, and Holidays.
 - **12-Hour Time Display**: Formats all slot listings, calendars, and receipt booking tables in the local 12-hour AM/PM Dhaka time zone format.
 - **BDT Currency**: Set all currency formats to Bangladesh Taka (৳/BDT) and converted revenue metrics labels to "Sales".
