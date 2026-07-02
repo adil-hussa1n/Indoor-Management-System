@@ -137,21 +137,21 @@ export const AdminBookings = () => {
   ];
 
   return (
-    <div className="space-y-6 text-left">
-      {/* Header bar */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div className="space-y-6 text-left animate-fade-in">
+      {/* Header filter bar */}
+      <div className="glass-card p-6 rounded-3xl shadow-sm flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
         <div className="flex flex-wrap items-center gap-3">
           <input
             type="text"
             placeholder="Search name, phone, ref..."
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            className="px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+            className="px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-sm focus:outline-none focus:ring-2 focus:ring-purple-650"
           />
           <select
             value={statusFilter}
             onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-            className="px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-sm focus:outline-none"
+            className="px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-sm focus:outline-none focus:ring-2 focus:ring-purple-655"
           >
             <option value="">All Statuses</option>
             <option value="Pending">Pending</option>
@@ -163,7 +163,7 @@ export const AdminBookings = () => {
             type="date"
             value={dateFilter}
             onChange={(e) => { setDateFilter(e.target.value); setPage(1); }}
-            className="px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+            className="px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-sm focus:outline-none focus:ring-2 focus:ring-purple-650"
           />
           {dateFilter && (
             <button
@@ -175,7 +175,7 @@ export const AdminBookings = () => {
           )}
         </div>
 
-        <Button onClick={() => setIsModalOpen(true)} className="flex items-center gap-2">
+        <Button onClick={() => setIsModalOpen(true)} className="flex items-center gap-2 font-bold shadow-md shadow-purple-500/10">
           <Plus className="w-4 h-4" /> Add Manual Booking
         </Button>
       </div>
@@ -183,11 +183,11 @@ export const AdminBookings = () => {
       {isLoading ? (
         <Loader size="large" className="py-20" />
       ) : (
-        <Card>
-          <CardContent className="overflow-x-auto pt-6">
-            <table className="w-full text-sm text-left border-collapse">
+        <div className="glass-card rounded-3xl shadow-sm border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+          <div className="p-6 overflow-x-auto custom-scrollbar">
+            <table className="w-full text-sm text-left border-collapse min-w-[800px]">
               <thead>
-                <tr className="border-b border-zinc-150 dark:border-zinc-800 text-zinc-550 uppercase tracking-wider text-xs font-bold">
+                <tr className="border-b border-zinc-150 dark:border-zinc-800 text-zinc-500 uppercase tracking-wider text-xs font-extrabold">
                   <th className="py-3 px-4">Ref ID</th>
                   <th className="py-3 px-4">Customer</th>
                   <th className="py-3 px-4">Sport</th>
@@ -202,24 +202,24 @@ export const AdminBookings = () => {
                   <tr key={b._id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30">
                     <td className="py-3.5 px-4 font-bold text-purple-650">{b.bookingId}</td>
                     <td className="py-3.5 px-4">
-                      <div className="font-semibold text-zinc-900 dark:text-zinc-105">{b.customerName}</div>
-                      <div className="text-xs text-zinc-500">{b.phone} | {b.email || 'No email'}</div>
+                      <div className="font-bold text-zinc-800 dark:text-zinc-200">{b.customerName}</div>
+                      <div className="text-xs text-zinc-450">{b.phone} | {b.email || 'No email'}</div>
                     </td>
-                    <td className="py-3.5 px-4 font-medium">{b.sport}</td>
+                    <td className="py-3.5 px-4 font-bold text-zinc-650 dark:text-zinc-350">{b.sport}</td>
                     <td className="py-3.5 px-4">
-                      <div className="font-semibold">{new Date(b.bookingDate).toLocaleDateString('en-BD')}</div>
-                      <div className="text-xs text-zinc-555">{format12Hour(b.startTime)} - {format12Hour(b.endTime)} ({b.duration} hr)</div>
+                      <div className="text-zinc-850 dark:text-zinc-200 font-semibold">{new Date(b.bookingDate).toLocaleDateString('en-BD')}</div>
+                      <div className="text-xs text-zinc-500">{format12Hour(b.startTime)} - {format12Hour(b.endTime)} ({b.duration} hr)</div>
                     </td>
-                    <td className="py-3.5 px-4 font-bold">৳{b.price}</td>
+                    <td className="py-3.5 px-4 font-extrabold text-zinc-855 dark:text-zinc-100">৳{b.price}</td>
                     <td className="py-3.5 px-4">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
                         b.status === 'Confirmed'
-                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/30'
+                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400'
                           : b.status === 'Pending'
-                          ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/30'
+                          ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/30 dark:text-amber-400'
                           : b.status === 'Completed'
-                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/30'
-                          : 'bg-zinc-100 text-zinc-800 dark:bg-zinc-900 dark:text-zinc-400'
+                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/30 dark:text-blue-400'
+                          : 'bg-zinc-100 text-zinc-850 dark:bg-zinc-900 dark:text-zinc-400'
                       }`}>
                         {b.status}
                       </span>
@@ -228,7 +228,7 @@ export const AdminBookings = () => {
                       <select
                         value={b.status}
                         onChange={(e) => handleStatusChange(b._id, e.target.value)}
-                        className="text-xs px-2 py-1 border border-zinc-200 dark:border-zinc-800 rounded bg-white dark:bg-zinc-950 focus:outline-none"
+                        className="text-xs px-2 py-1.5 border border-zinc-200 dark:border-zinc-800 rounded-lg bg-white dark:bg-zinc-950 focus:outline-none focus:ring-1 focus:ring-purple-650 font-semibold text-zinc-800 dark:text-zinc-200"
                       >
                         <option value="Pending">Pending</option>
                         <option value="Confirmed">Confirmed</option>
@@ -237,7 +237,8 @@ export const AdminBookings = () => {
                       </select>
                       <button
                         onClick={() => handleDelete(b._id)}
-                        className="p-1.5 text-zinc-400 hover:text-red-500 transition-colors"
+                        className="p-1.5 text-zinc-400 hover:text-red-500 transition-colors cursor-pointer"
+                        title="Delete booking"
                       >
                         <Trash2 className="w-4.5 h-4.5" />
                       </button>
@@ -258,7 +259,7 @@ export const AdminBookings = () => {
                     variant="outline"
                     disabled={page === 1}
                     onClick={() => setPage(p => p - 1)}
-                    className="p-2"
+                    className="p-2 text-xs font-bold"
                   >
                     <ArrowLeft className="w-4 h-4" /> Previous
                   </Button>
@@ -266,15 +267,15 @@ export const AdminBookings = () => {
                     variant="outline"
                     disabled={page >= bookingData.pagination.totalPages}
                     onClick={() => setPage(p => p + 1)}
-                    className="p-2"
+                    className="p-2 text-xs font-bold"
                   >
                     Next <ArrowRight className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* Manual Booking Dialog */}
