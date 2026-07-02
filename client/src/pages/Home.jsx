@@ -241,7 +241,7 @@ export const Home = () => {
               <div>
                 <h4 className="font-bold text-sm text-zinc-500 uppercase tracking-wider">Hours of Operation</h4>
                 <p className="text-zinc-800 dark:text-zinc-200 font-semibold">
-                  Mon-Fri: {settings?.businessHours?.weekday} | Sat-Sun: {settings?.businessHours?.weekend}
+                  Weekdays: {settings?.businessHours?.weekday} | Weekends: {settings?.businessHours?.weekend}
                 </p>
               </div>
             </div>
