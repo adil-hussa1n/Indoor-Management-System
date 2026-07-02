@@ -49,7 +49,7 @@ export const Contact = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-16 text-left">
+    <div className="max-w-6xl mx-auto px-4 py-16 text-left animate-fade-in">
       <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-zinc-900 dark:text-white mb-6 text-center">
         Contact <span className="bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">Us</span>
       </h1>
@@ -61,14 +61,14 @@ export const Contact = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Column: Contact details */}
         <div className="lg:col-span-5 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Business Information</CardTitle>
-              <CardDescription>Reach out to us directly.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
+          <div className="glass-card p-6 rounded-2xl shadow-sm space-y-6">
+            <div>
+              <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Business Information</h3>
+              <p className="text-xs text-zinc-400 mt-1">Reach out to us directly.</p>
+            </div>
+            <div className="space-y-6">
               <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-600 flex-shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-purple-500/10 dark:bg-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400 flex-shrink-0">
                   <Mail className="w-5 h-5" />
                 </div>
                 <div>
@@ -78,7 +78,7 @@ export const Contact = () => {
               </div>
 
               <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-600 flex-shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-indigo-500/10 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 flex-shrink-0">
                   <Phone className="w-5 h-5" />
                 </div>
                 <div>
@@ -88,55 +88,53 @@ export const Contact = () => {
               </div>
 
               <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-xl bg-pink-500/10 flex items-center justify-center text-pink-650 flex-shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-pink-500/10 dark:bg-pink-500/20 flex items-center justify-center text-pink-650 dark:text-pink-400 flex-shrink-0">
                   <MapPin className="w-5 h-5" />
                 </div>
                 <div>
                   <h4 className="font-bold text-xs text-zinc-400 uppercase tracking-wider">Arena Location</h4>
-                  <p className="text-zinc-800 dark:text-zinc-205 font-semibold leading-relaxed">
+                  <p className="text-zinc-800 dark:text-zinc-200 font-semibold leading-relaxed">
                     {settings?.contactAddress}
                   </p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {settings?.socialLinks?.whatsapp && (
-            <Card className="border border-emerald-250 bg-emerald-50/10 dark:bg-emerald-950/5">
-              <CardContent className="pt-6 flex flex-col items-center text-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-emerald-500 flex items-center justify-center text-white">
-                  <MessageCircle className="w-6 h-6 fill-white text-emerald-500" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-md text-zinc-900 dark:text-white">Quick Chat on WhatsApp</h4>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 max-w-xs">
-                    Need instant answers? Text our manager directly on WhatsApp.
-                  </p>
-                </div>
-                <a
-                  href={settings.socialLinks.whatsapp}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full"
-                >
-                  <Button variant="secondary" className="w-full border-emerald-300 dark:border-emerald-900/50 hover:bg-emerald-500 hover:text-white text-emerald-600 dark:text-emerald-400 transition-colors">
-                    Start WhatsApp Chat
-                  </Button>
-                </a>
-              </CardContent>
-            </Card>
+            <div className="glass-card hover-glow p-6 rounded-2xl border border-emerald-250/20 bg-emerald-50/5 dark:bg-emerald-950/5 flex flex-col items-center text-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-emerald-500 flex items-center justify-center text-white shadow-lg shadow-emerald-500/20">
+                <MessageCircle className="w-6 h-6 fill-white text-emerald-500" />
+              </div>
+              <div>
+                <h4 className="font-bold text-md text-zinc-900 dark:text-white">Quick Chat on WhatsApp</h4>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 max-w-xs leading-relaxed">
+                  Need instant answers? Text our manager directly on WhatsApp.
+                </p>
+              </div>
+              <a
+                href={settings.socialLinks.whatsapp}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full"
+              >
+                <Button variant="secondary" className="w-full border-emerald-300 dark:border-emerald-950 hover:bg-emerald-500 hover:text-white text-emerald-600 dark:text-emerald-400 transition-all font-bold">
+                  Start WhatsApp Chat
+                </Button>
+              </a>
+            </div>
           )}
         </div>
 
         {/* Right Column: Contact form */}
         <div className="lg:col-span-7">
           <form onSubmit={handleSubmit(onSubmit)}>
-            <Card>
-              <CardHeader>
-                <CardTitle>Send Us a Message</CardTitle>
-                <CardDescription>Fill out the contact sheet.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
+            <div className="glass-card p-8 rounded-2xl shadow-sm space-y-6">
+              <div>
+                <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Send Us a Message</h3>
+                <p className="text-xs text-zinc-400 mt-1">Fill out the contact sheet.</p>
+              </div>
+              <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Input
                     label="Full Name"
@@ -159,13 +157,13 @@ export const Contact = () => {
                 />
                 
                 <div className="flex flex-col gap-1.5 w-full text-left">
-                  <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
+                  <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
                     Your Message
                   </label>
                   <textarea
                     rows="5"
                     placeholder="Type your message details here..."
-                    className={`w-full px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800/80 bg-white dark:bg-zinc-950 text-sm text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all ${
+                    className={`w-full px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-sm text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-650 transition-all ${
                       errors.message ? 'border-red-500 focus:ring-red-500/20' : ''
                     }`}
                     {...register('message')}
@@ -178,13 +176,13 @@ export const Contact = () => {
                 <Button
                   type="submit"
                   disabled={submitContactMutation.isPending}
-                  className="w-full pt-3 pb-3"
+                  className="w-full pt-3 pb-3 font-bold"
                 >
                   {submitContactMutation.isPending ? 'Sending Message...' : 'Send Message'}
                   <Send className="w-4 h-4" />
                 </Button>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </form>
         </div>
       </div>

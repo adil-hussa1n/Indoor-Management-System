@@ -15,7 +15,7 @@ export const About = () => {
   ];
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-16 text-left">
+    <div className="max-w-4xl mx-auto px-4 py-16 text-left animate-fade-in">
       <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-zinc-900 dark:text-white mb-6 text-center">
         About <span className="bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">{settings?.businessName || 'Apex Arena'}</span>
       </h1>
@@ -26,7 +26,7 @@ export const About = () => {
 
       {/* Mission & Vision */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-150 dark:border-zinc-800/80 p-8 rounded-2xl shadow-sm">
+        <div className="glass-card hover-glow p-8 rounded-2xl shadow-sm">
           <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-3 flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-purple-600" /> Our Mission
           </h3>
@@ -34,7 +34,7 @@ export const About = () => {
             To deliver an elite, climate-controlled arena where sports enthusiasts can hone their skills and enjoy matches without worrying about weather conditions. We maintain absolute cleanliness, premium flooring, and a seamless slot locking booking interface.
           </p>
         </div>
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-150 dark:border-zinc-800/80 p-8 rounded-2xl shadow-sm">
+        <div className="glass-card hover-glow p-8 rounded-2xl shadow-sm">
           <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-3 flex items-center gap-2">
             <ShieldCheck className="w-5 h-5 text-indigo-600" /> Facilities
           </h3>
@@ -52,8 +52,8 @@ export const About = () => {
           </h3>
           <ul className="space-y-4">
             {rules.map((rule, idx) => (
-              <li key={idx} className="flex gap-3 text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                <span className="w-5 h-5 rounded-full bg-purple-500/10 flex-shrink-0 flex items-center justify-center text-purple-650 font-bold text-xs">
+              <li key={idx} className="flex gap-3 text-sm text-zinc-650 dark:text-zinc-400 leading-relaxed">
+                <span className="w-6 h-6 rounded-full bg-purple-500/10 dark:bg-purple-500/20 flex-shrink-0 flex items-center justify-center text-purple-650 dark:text-purple-400 font-extrabold text-xs shadow-inner">
                   {idx + 1}
                 </span>
                 <span>{rule}</span>
@@ -63,27 +63,27 @@ export const About = () => {
         </div>
 
         <div className="space-y-8">
-          <div>
+          <div className="glass-card p-6 rounded-2xl border border-zinc-100 dark:border-zinc-800">
             <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-4 flex items-center gap-2">
               <Clock className="w-5 h-5 text-purple-500" /> Operating Hours
             </h3>
-            <div className="space-y-2 text-sm text-zinc-600 dark:text-zinc-455">
+            <div className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
               <div className="flex justify-between">
-                <span>Weekdays:</span>
-                <span className="font-semibold">{settings?.businessHours?.weekday}</span>
+                <span className="font-semibold text-zinc-500">Weekdays:</span>
+                <span className="font-bold text-zinc-850 dark:text-zinc-200">{settings?.businessHours?.weekday}</span>
               </div>
               <div className="flex justify-between">
-                <span>Weekends:</span>
-                <span className="font-semibold">{settings?.businessHours?.weekend}</span>
+                <span className="font-semibold text-zinc-500">Weekends:</span>
+                <span className="font-bold text-zinc-850 dark:text-zinc-200">{settings?.businessHours?.weekend}</span>
               </div>
             </div>
           </div>
 
-          <div>
+          <div className="glass-card p-6 rounded-2xl border border-zinc-100 dark:border-zinc-800">
             <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-4 flex items-center gap-2">
               <MapPin className="w-5 h-5 text-indigo-500" /> Location
             </h3>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
+            <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed font-medium">
               {settings?.contactAddress}
             </p>
           </div>
