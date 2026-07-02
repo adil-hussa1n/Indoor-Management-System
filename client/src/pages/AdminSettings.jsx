@@ -7,6 +7,64 @@ import { Loader } from '../components/ui/Loader';
 import { useToast } from '../components/ui/Toast';
 import { Save, Plus, Trash2, HelpCircle } from 'lucide-react';
 
+const compressImageIfNeeded = (file, maxSizeMB = 8, maxWidthOrHeight = 4096) => {
+  return new Promise((resolve) => {
+    if (!file || !file.type.startsWith('image/')) {
+      return resolve(file);
+    }
+    const fileSizeMB = file.size / (1024 * 1024);
+    if (fileSizeMB <= maxSizeMB) {
+      return resolve(file);
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidthOrHeight || height > maxWidthOrHeight) {
+          if (width > height) {
+            height = Math.round((height * maxWidthOrHeight) / width);
+            width = maxWidthOrHeight;
+          } else {
+            width = Math.round((width * maxWidthOrHeight) / height);
+            height = maxWidthOrHeight;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              const compressedFile = new File([blob], file.name, {
+                type: 'image/jpeg',
+                lastModified: Date.now(),
+              });
+              resolve(compressedFile.size < file.size ? compressedFile : file);
+            } else {
+              resolve(file);
+            }
+          },
+          'image/jpeg',
+          0.85
+        );
+      };
+      img.onerror = () => resolve(file);
+      img.src = e.target.result;
+    };
+    reader.onerror = () => resolve(file);
+    reader.readAsDataURL(file);
+  });
+};
+
 export const AdminSettings = () => {
   const toast = useToast();
   const { data: settings, isLoading, refetch } = useAdminSettings();
@@ -19,6 +77,22 @@ export const AdminSettings = () => {
   const [formData, setFormData] = useState(null);
   const [logoFile, setLogoFile] = useState(null);
   const [bannerFile, setBannerFile] = useState(null);
+
+  const handleLogoChange = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const compressed = await compressImageIfNeeded(file);
+      setLogoFile(compressed);
+    }
+  };
+
+  const handleBannerChange = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const compressed = await compressImageIfNeeded(file);
+      setBannerFile(compressed);
+    }
+  };
 
   // Initialize form state once loaded
   React.useEffect(() => {
@@ -296,7 +370,7 @@ export const AdminSettings = () => {
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={(e) => setLogoFile(e.target.files[0])}
+                  onChange={handleLogoChange}
                   className="text-xs text-zinc-500 w-full cursor-pointer"
                 />
               </div>
@@ -312,7 +386,7 @@ export const AdminSettings = () => {
                 <input
                   type="file"
                   accept="image/*,video/*"
-                  onChange={(e) => setBannerFile(e.target.files[0])}
+                  onChange={handleBannerChange}
                   className="text-xs text-zinc-500 w-full cursor-pointer"
                 />
               </div>
