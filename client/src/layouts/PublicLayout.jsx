@@ -117,6 +117,17 @@ export const PublicLayout = () => {
     );
   }
 
+  const isAdminLogin = location.pathname === '/admin/login';
+  if (isAdminLogin) {
+    return (
+      <div className="min-h-screen flex flex-col bg-zinc-50 dark:bg-zinc-950 transition-colors duration-300">
+        <main className="flex-1">
+          <Outlet />
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-zinc-50 dark:bg-zinc-950 transition-colors duration-300">
       {/* Header */}
