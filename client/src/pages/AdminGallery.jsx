@@ -11,6 +11,9 @@ export const AdminGallery = () => {
   const toast = useToast();
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [is360, setIs360] = useState(false);
+  const [mediaType, setMediaType] = useState('image');
+  const [autoPlay360, setAutoPlay360] = useState(true);
   const socket = useSocket();
 
   const { data: images, isLoading, refetch } = usePublicGallery();
@@ -45,12 +48,18 @@ export const AdminGallery = () => {
 
     const formData = new FormData();
     formData.append('image', selectedFile);
+    formData.append('is360', is360);
+    formData.append('mediaType', mediaType);
+    formData.append('autoPlay360', autoPlay360);
 
     setUploading(true);
     uploadMutation.mutate(formData, {
       onSuccess: () => {
-        toast.success('Image uploaded successfully!');
+        toast.success('Media uploaded successfully!');
         setSelectedFile(null);
+        setIs360(false);
+        setMediaType('image');
+        setAutoPlay360(true);
         setUploading(false);
         // Clear input file
         document.getElementById('gallery-upload-input').value = '';
@@ -122,10 +131,50 @@ export const AdminGallery = () => {
               <input
                 id="gallery-upload-input"
                 type="file"
-                accept="image/*"
+                accept="image/*,video/*"
                 onChange={handleFileChange}
                 className="text-xs text-zinc-550 w-full"
               />
+            </div>
+            
+            <div className="space-y-3 pt-2">
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Media Type</label>
+                <select
+                  value={mediaType}
+                  onChange={(e) => setMediaType(e.target.value)}
+                  className="w-full text-sm rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-purple-650"
+                >
+                  <option value="image">Image (Photo)</option>
+                  <option value="video">Video (MP4/WebM)</option>
+                </select>
+              </div>
+
+              <div className="flex items-center justify-between border-t border-zinc-100 dark:border-zinc-900 pt-3">
+                <label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 cursor-pointer select-none flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={is360}
+                    onChange={(e) => setIs360(e.target.checked)}
+                    className="rounded border-zinc-350 text-purple-650 focus:ring-purple-500 w-4 h-4 cursor-pointer"
+                  />
+                  Is 360° Media?
+                </label>
+              </div>
+
+              {is360 && (
+                <div className="flex items-center justify-between border-t border-zinc-100 dark:border-zinc-900 pt-3">
+                  <label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 cursor-pointer select-none flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={autoPlay360}
+                      onChange={(e) => setAutoPlay360(e.target.checked)}
+                      className="rounded border-zinc-350 text-purple-650 focus:ring-purple-500 w-4 h-4 cursor-pointer"
+                    />
+                    Auto Rotate / Auto Play?
+                  </label>
+                </div>
+              )}
             </div>
             <Button
               type="submit"
@@ -158,11 +207,24 @@ export const AdminGallery = () => {
                   key={img._id}
                   className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 overflow-hidden shadow-sm"
                 >
-                  <img
-                    src={img.imageUrl}
-                    alt="Gallery item"
-                    className="w-full h-40 object-cover border-b border-zinc-200 dark:border-zinc-800"
-                  />
+                  {img.is360 && (
+                    <span className="absolute top-2 left-2 bg-purple-650 text-white font-extrabold text-[9px] uppercase tracking-wider px-2.5 py-0.5 rounded-full z-10 shadow">
+                      360° {img.mediaType}
+                    </span>
+                  )}
+                  {img.mediaType === 'video' ? (
+                    <video
+                      src={img.imageUrl}
+                      muted
+                      className="w-full h-40 object-cover border-b border-zinc-200 dark:border-zinc-800"
+                    />
+                  ) : (
+                    <img
+                      src={img.imageUrl}
+                      alt="Gallery item"
+                      className="w-full h-40 object-cover border-b border-zinc-200 dark:border-zinc-800"
+                    />
+                  )}
                   <div className="p-4 flex items-center justify-between">
                     <span className="text-xs font-semibold text-zinc-400">Order: {img.order}</span>
 

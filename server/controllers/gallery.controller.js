@@ -34,7 +34,7 @@ export const uploadImage = async (req, res, next) => {
       // Upload to Cloudinary
       const result = await new Promise((resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream(
-          { folder: 'indoor-sports-gallery' },
+          { folder: 'indoor-sports-gallery', resource_type: 'auto' },
           (error, result) => {
             if (error) reject(error);
             else resolve(result);
@@ -53,11 +53,15 @@ export const uploadImage = async (req, res, next) => {
       publicId = `local_mock_${Date.now()}`;
     }
 
+    const { is360, mediaType, autoPlay360 } = req.body;
     const count = await Gallery.countDocuments();
     const newImage = await Gallery.create({
       imageUrl,
       publicId,
       order: count,
+      is360: is360 === 'true' || is360 === true,
+      mediaType: mediaType || 'image',
+      autoPlay360: autoPlay360 === 'true' || autoPlay360 === true || autoPlay360 === undefined,
     });
 
     const io = req.app.get('io');
