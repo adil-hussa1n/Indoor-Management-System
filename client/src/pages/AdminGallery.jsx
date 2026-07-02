@@ -111,29 +111,29 @@ export const AdminGallery = () => {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start text-left">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start text-left animate-fade-in">
       {/* Upload image card */}
-      <Card className="lg:col-span-4">
+      <div className="lg:col-span-4 glass-card p-6 rounded-3xl shadow-sm space-y-4">
         <form onSubmit={handleUpload}>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+          <div className="mb-4">
+            <h3 className="text-lg font-bold text-zinc-900 dark:text-white flex items-center gap-2">
               <Upload className="w-5 h-5 text-purple-650" />
-              Upload Image
-            </CardTitle>
-            <CardDescription>Add new photos to the public gallery.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl p-6 flex flex-col items-center justify-center gap-3 text-center bg-zinc-50/50 dark:bg-zinc-900/10">
+              Upload Media
+            </h3>
+            <p className="text-xs text-zinc-400 mt-1">Add new photos or videos to the public gallery.</p>
+          </div>
+          <div className="space-y-4">
+            <div className="border-2 border-dashed border-zinc-250 dark:border-zinc-800 rounded-2xl p-6 flex flex-col items-center justify-center gap-3 text-center bg-zinc-55/10 dark:bg-zinc-900/10">
               <Upload className="w-8 h-8 text-zinc-400" />
-              <div className="text-xs text-zinc-500">
-                Choose JPG, PNG or WEBP (Max 5MB)
+              <div className="text-[11px] text-zinc-500 font-semibold">
+                Choose JPG, PNG, WEBP or MP4 (Max 5MB)
               </div>
               <input
                 id="gallery-upload-input"
                 type="file"
                 accept="image/*,video/*"
                 onChange={handleFileChange}
-                className="text-xs text-zinc-550 w-full"
+                className="text-xs text-zinc-550 w-full cursor-pointer"
               />
             </div>
             
@@ -143,7 +143,7 @@ export const AdminGallery = () => {
                 <select
                   value={mediaType}
                   onChange={(e) => setMediaType(e.target.value)}
-                  className="w-full text-sm rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-purple-650"
+                  className="w-full text-sm rounded-xl border border-zinc-250 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-650 font-semibold text-zinc-800 dark:text-zinc-200"
                 >
                   <option value="image">Image (Photo)</option>
                   <option value="video">Video (MP4/WebM)</option>
@@ -151,12 +151,12 @@ export const AdminGallery = () => {
               </div>
 
               <div className="flex items-center justify-between border-t border-zinc-100 dark:border-zinc-900 pt-3">
-                <label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 cursor-pointer select-none flex items-center gap-2">
+                <label className="text-sm font-semibold text-zinc-700 dark:text-zinc-350 cursor-pointer select-none flex items-center gap-2">
                   <input
                     type="checkbox"
                     checked={is360}
                     onChange={(e) => setIs360(e.target.checked)}
-                    className="rounded border-zinc-350 text-purple-650 focus:ring-purple-500 w-4 h-4 cursor-pointer"
+                    className="rounded border-zinc-350 text-purple-650 focus:ring-purple-650 w-4 h-4 cursor-pointer"
                   />
                   Is 360° Media?
                 </label>
@@ -164,12 +164,12 @@ export const AdminGallery = () => {
 
               {is360 && (
                 <div className="flex items-center justify-between border-t border-zinc-100 dark:border-zinc-900 pt-3">
-                  <label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 cursor-pointer select-none flex items-center gap-2">
+                  <label className="text-sm font-semibold text-zinc-700 dark:text-zinc-355 cursor-pointer select-none flex items-center gap-2">
                     <input
                       type="checkbox"
                       checked={autoPlay360}
                       onChange={(e) => setAutoPlay360(e.target.checked)}
-                      className="rounded border-zinc-350 text-purple-650 focus:ring-purple-500 w-4 h-4 cursor-pointer"
+                      className="rounded border-zinc-350 text-purple-650 focus:ring-purple-650 w-4 h-4 cursor-pointer"
                     />
                     Auto Rotate / Auto Play?
                   </label>
@@ -179,21 +179,21 @@ export const AdminGallery = () => {
             <Button
               type="submit"
               disabled={uploading || !selectedFile}
-              className="w-full"
+              className="w-full font-bold shadow-md"
             >
-              {uploading ? 'Uploading image...' : 'Upload Image'}
+              {uploading ? 'Uploading...' : 'Upload Media'}
             </Button>
-          </CardContent>
+          </div>
         </form>
-      </Card>
+      </div>
 
       {/* Images List Grid */}
-      <Card className="lg:col-span-8">
-        <CardHeader>
-          <CardTitle>Gallery Management</CardTitle>
-          <CardDescription>Reorder or delete photos from the display.</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <div className="lg:col-span-8 glass-card rounded-3xl shadow-sm border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+        <div className="p-6 border-b border-zinc-200 dark:border-zinc-800">
+          <h3 className="text-xl font-bold text-zinc-850 dark:text-zinc-200">Gallery Management</h3>
+          <p className="text-xs text-zinc-450 mt-1">Reorder or delete photos from the display.</p>
+        </div>
+        <div className="p-6">
           {isLoading ? (
             <Loader size="medium" className="py-12" />
           ) : !images || images.length === 0 ? (
@@ -205,7 +205,7 @@ export const AdminGallery = () => {
               {images.map((img, idx) => (
                 <div
                   key={img._id}
-                  className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 overflow-hidden shadow-sm"
+                  className="relative rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 overflow-hidden shadow-sm hover-glow"
                 >
                   {img.is360 && (
                     <span className="absolute top-2 left-2 bg-purple-650 text-white font-extrabold text-[9px] uppercase tracking-wider px-2.5 py-0.5 rounded-full z-10 shadow">
@@ -247,7 +247,7 @@ export const AdminGallery = () => {
                       </button>
                       <button
                         onClick={() => handleDelete(img._id)}
-                        className="p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-red-550 cursor-pointer"
+                        className="p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-red-555 cursor-pointer"
                         title="Delete photo"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -258,8 +258,8 @@ export const AdminGallery = () => {
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };
