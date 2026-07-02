@@ -4,6 +4,17 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../co
 import { Loader } from '../components/ui/Loader';
 import { CalendarDays, Clock, User } from 'lucide-react';
 
+const format12Hour = (time24) => {
+  if (!time24) return '';
+  const [hourStr, minStr] = time24.split(':');
+  let hour = parseInt(hourStr, 10);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  hour = hour % 12;
+  hour = hour ? hour : 12;
+  const displayHour = String(hour).padStart(2, '0');
+  return `${displayHour}:${minStr} ${ampm}`;
+};
+
 export const AdminCalendar = () => {
   const [selectedDate, setSelectedDate] = useState(() => {
     return new Date().toISOString().split('T')[0];
