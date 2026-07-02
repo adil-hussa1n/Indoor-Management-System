@@ -244,39 +244,44 @@ export const Home = () => {
               </div>
             </div>
           </div>
-          <div className="relative h-96 rounded-3xl overflow-hidden border border-zinc-250/60 dark:border-zinc-800/80 shadow-2xl group">
-            {/* Inner Shadow Overlay */}
-            <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_30px_rgba(0,0,0,0.15)] dark:shadow-[inset_0_0_40px_rgba(0,0,0,0.5)] rounded-3xl z-10" />
-            
-            {/* Top-Left: Open in Maps button */}
-            <a 
-              href={settings?.googleMapUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="absolute top-4 left-4 z-20 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md px-4 py-2 rounded-xl border border-zinc-205/50 dark:border-zinc-800 text-xs font-bold text-zinc-800 dark:text-zinc-200 shadow-lg hover:bg-purple-650 hover:text-white dark:hover:bg-purple-650 transition-all flex items-center gap-1.5 cursor-pointer"
-            >
-              Open in Maps
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-              </svg>
-            </a>
+          <div className="relative p-[3px] rounded-[26px] bg-gradient-to-tr from-purple-600 via-pink-500/80 to-indigo-600 shadow-[0_0_50px_rgba(147,51,234,0.25)] dark:shadow-[0_0_60px_rgba(147,51,234,0.35)] transition-all duration-300 hover:shadow-[0_0_70px_rgba(147,51,234,0.45)]">
+            <div className="relative h-96 rounded-[23px] overflow-hidden border border-white/10 shadow-2xl group">
+              {/* Liquid Gloss/Shine Sweep Effect */}
+              <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out pointer-events-none z-20" />
+              
+              {/* Inner Shadow Overlay */}
+              <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_30px_rgba(0,0,0,0.15)] dark:shadow-[inset_0_0_40px_rgba(0,0,0,0.5)] rounded-[23px] z-10" />
+              
+              {/* Top-Left: Open in Maps button */}
+              <a 
+                href={settings?.googleMapUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="absolute top-4 left-4 z-20 bg-white/80 dark:bg-zinc-900/85 backdrop-blur-md px-4 py-2 rounded-xl border border-white/20 text-xs font-bold text-zinc-800 dark:text-zinc-200 shadow-lg hover:bg-purple-650 hover:text-white dark:hover:bg-purple-650 transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                Open in Maps
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </a>
 
-            {/* Bottom-Left: Address Indicator */}
-            <div className="absolute bottom-4 left-4 z-20 bg-zinc-950/90 dark:bg-zinc-950/95 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-white/10 text-white text-xs font-bold shadow-xl flex items-center gap-2 max-w-[85%] sm:max-w-md select-none transition-all hover:bg-black">
-              <span className="w-2 h-2 rounded-full bg-red-500 animate-ping shrink-0" />
-              <span className="truncate">{settings?.contactAddress || 'Loading address...'}</span>
+              {/* Bottom-Left: Address Indicator */}
+              <div className="absolute bottom-4 left-4 z-20 bg-zinc-950/80 dark:bg-zinc-950/90 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-white/15 text-white text-xs font-bold shadow-xl flex items-center gap-2 max-w-[85%] sm:max-w-md select-none transition-all hover:bg-black">
+                <span className="w-2 h-2 rounded-full bg-red-500 animate-ping shrink-0" />
+                <span className="truncate">{settings?.contactAddress || 'Loading address...'}</span>
+              </div>
+
+              <iframe
+                title="Apex Map Location"
+                src={settings?.googleMapUrl}
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                allowFullScreen=""
+                loading="lazy"
+                className="w-full h-full grayscale-[10%] dark:grayscale-[30%] dark:invert-[90%] dark:hue-rotate-[180deg] transition-all duration-300 group-hover:grayscale-0"
+              />
             </div>
-
-            <iframe
-              title="Apex Map Location"
-              src={settings?.googleMapUrl}
-              width="100%"
-              height="100%"
-              style={{ border: 0 }}
-              allowFullScreen=""
-              loading="lazy"
-              className="w-full h-full grayscale-[10%] dark:grayscale-[30%] dark:invert-[90%] dark:hue-rotate-[180deg] transition-all duration-300 group-hover:grayscale-0"
-            />
           </div>
         </div>
       </section>
