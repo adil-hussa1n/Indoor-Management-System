@@ -50,20 +50,29 @@ export const Home = () => {
             loop
             muted
             playsInline
-            className="absolute inset-0 w-full h-full object-cover"
+            className={`absolute inset-0 w-full h-full object-cover transition-all duration-[2s] ${
+              settings?.hero?.blurBackground ? 'blur-[5px] scale-105' : ''
+            }`}
           />
         )}
         {settings?.heroBanner && settings?.hero?.mediaType === '360' && (
           <iframe
             title="360° Hero Panorama"
-            src={`https://cdn.pannellum.org/2.5/pannellum.htm#panorama=${encodeURIComponent(settings.heroBanner)}&autoLoad=true&autoRotate=${settings?.hero?.autoPlay360 !== false ? '-2' : '0'}&showControls=false`}
-            className="absolute inset-0 w-full h-full border-0"
+            src={`https://cdn.pannellum.org/2.5/pannellum.htm?panorama=${encodeURIComponent(settings.heroBanner)}&autoLoad=true&autoRotate=${settings?.hero?.autoPlay360 !== false ? '-2' : '0'}`}
+            className={`absolute -top-[50px] -left-[50px] w-[calc(100%+100px)] h-[calc(100%+100px)] border-0 [will-change:transform] transition-all duration-[2s] ${
+              settings?.hero?.blurBackground ? 'blur-[5px] scale-105' : ''
+            }`}
+            allow="accelerometer; gyroscope; magnetometer; vr"
             allowFullScreen
           />
         )}
         {settings?.heroBanner && (!settings?.hero?.mediaType || settings?.hero?.mediaType === 'image') && (
           <div
-            className="absolute inset-0"
+            className={`absolute inset-0 transition-all duration-[2s] ${
+              settings?.hero?.zoomAnimation ? 'animate-kenburns' : ''
+            } ${
+              settings?.hero?.blurBackground ? 'blur-[5px] scale-105' : ''
+            }`}
             style={{
               backgroundImage: `url(${settings.heroBanner})`,
               backgroundSize: 'cover',
@@ -73,9 +82,11 @@ export const Home = () => {
         )}
 
         {/* Overlay */}
-        <div className={`absolute inset-0 ${
+        <div className={`absolute inset-0 transition-all duration-300 ${
           settings?.heroBanner 
-            ? 'bg-white/85 dark:bg-zinc-950/85 backdrop-blur-[2px]' 
+            ? (settings?.hero?.darkenOverlay 
+                ? 'bg-black/35 dark:bg-black/55 backdrop-blur-[1px]' 
+                : 'bg-white/70 dark:bg-zinc-950/70 backdrop-blur-[2px]')
             : 'bg-gradient-to-br from-purple-900/10 via-indigo-900/5 to-transparent'
         }`} />
         {!settings?.heroBanner && (
@@ -85,43 +96,138 @@ export const Home = () => {
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.15),rgba(255,255,255,0))] dark:bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.15),rgba(255,255,255,0))]" />
         )}
         
-        <div className="max-w-5xl mx-auto text-center relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-500/10 text-purple-600 dark:text-purple-400 mb-6 uppercase tracking-widest border border-purple-500/20">
-              {settings?.hero?.tagline || '⚡ Premium Indoor Court'}
-            </span>
-            <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-zinc-900 dark:text-white mb-6">
-              {settings?.hero?.title1 || 'Experience Sports'} <br />
-              <span className="bg-gradient-to-r from-purple-600 via-violet-500 to-indigo-600 bg-clip-text text-transparent">
-                {settings?.hero?.title2 || 'Like Never Before'}
-              </span>
-            </h1>
-            <p className="text-lg md:text-xl text-zinc-650 dark:text-zinc-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-              {settings?.hero?.description || 'Book our state-of-the-art climate-controlled indoor arena. Designed for futsal, basketball, badminton, and more. Clean, professional, and ready.'}
-            </p>
-          </motion.div>
+        <div className="max-w-5xl mx-auto text-center relative z-10 px-4">
+          {settings?.hero?.useGlassBg ? (
+            <div className="max-w-3xl mx-auto p-8 md:p-12 rounded-3xl border border-white/20 dark:border-zinc-800/40 bg-white/10 dark:bg-zinc-900/10 backdrop-blur-md shadow-2xl">
+              {(() => {
+                const isDark = settings?.hero?.darkenOverlay;
+                return (
+                  <>
+                    <motion.div
+                      initial={{ opacity: 0, y: 30 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6 }}
+                    >
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold mb-6 uppercase tracking-widest border ${
+                        isDark 
+                          ? 'bg-white/10 text-white border-white/20' 
+                          : 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20'
+                      }`}>
+                        {settings?.hero?.tagline || '⚡ Premium Indoor Court'}
+                      </span>
+                      <h1 className={`text-4xl md:text-6xl font-extrabold tracking-tight mb-6 ${
+                        isDark 
+                          ? 'text-white' 
+                          : 'text-zinc-900 dark:text-white'
+                      }`}>
+                        {settings?.hero?.title1 || 'Experience Sports'} <br />
+                        <span className="bg-gradient-to-r from-purple-600 via-violet-500 to-indigo-600 bg-clip-text text-transparent">
+                          {settings?.hero?.title2 || 'Like Never Before'}
+                        </span>
+                      </h1>
+                      <p className={`text-base md:text-lg max-w-2xl mx-auto mb-10 leading-relaxed ${
+                        isDark 
+                          ? 'text-zinc-200' 
+                          : 'text-zinc-650 dark:text-zinc-400'
+                      }`}>
+                        {settings?.hero?.description || 'Book our state-of-the-art climate-controlled indoor arena. Designed for futsal, basketball, badminton, and more. Clean, professional, and ready.'}
+                      </p>
+                    </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4"
-          >
-            <Link to="/booking">
-              <Button size="large" variant="primary" className="px-8 py-3.5 text-base">
-                Book Court Now <ArrowRight className="w-5 h-5" />
-              </Button>
-            </Link>
-            <Link to="/about">
-              <Button size="large" variant="secondary" className="px-8 py-3.5 text-base">
-                Explore Arena
-              </Button>
-            </Link>
-          </motion.div>
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.2, duration: 0.5 }}
+                      className="flex flex-col sm:flex-row items-center justify-center gap-4"
+                    >
+                      <Link to="/booking">
+                        <Button size="large" variant="primary" className="px-8 py-3.5 text-base shadow-lg">
+                          Book Court Now <ArrowRight className="w-5 h-5" />
+                        </Button>
+                      </Link>
+                      <Link to="/about">
+                        <Button 
+                          size="large" 
+                          variant="secondary" 
+                          className={`px-8 py-3.5 text-base ${
+                            isDark 
+                              ? 'bg-white/15 text-white hover:bg-white/25 border-white/20 backdrop-blur-xs' 
+                              : ''
+                          }`}
+                        >
+                          Explore Arena
+                        </Button>
+                      </Link>
+                    </motion.div>
+                  </>
+                );
+              })()}
+            </div>
+          ) : (
+            (() => {
+              const isDark = settings?.hero?.darkenOverlay;
+              return (
+                <>
+                  <motion.div
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6 }}
+                  >
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold mb-6 uppercase tracking-widest border ${
+                      isDark 
+                        ? 'bg-white/10 text-white border-white/20' 
+                        : 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20'
+                    }`}>
+                      {settings?.hero?.tagline || '⚡ Premium Indoor Court'}
+                    </span>
+                    <h1 className={`text-5xl md:text-7xl font-extrabold tracking-tight mb-6 ${
+                      isDark 
+                        ? 'text-white' 
+                        : 'text-zinc-900 dark:text-white'
+                    }`}>
+                      {settings?.hero?.title1 || 'Experience Sports'} <br />
+                      <span className="bg-gradient-to-r from-purple-600 via-violet-500 to-indigo-600 bg-clip-text text-transparent">
+                        {settings?.hero?.title2 || 'Like Never Before'}
+                      </span>
+                    </h1>
+                    <p className={`text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed ${
+                      isDark 
+                        ? 'text-zinc-200' 
+                        : 'text-zinc-650 dark:text-zinc-400'
+                    }`}>
+                      {settings?.hero?.description || 'Book our state-of-the-art climate-controlled indoor arena. Designed for futsal, basketball, badminton, and more. Clean, professional, and ready.'}
+                    </p>
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.2, duration: 0.5 }}
+                    className="flex flex-col sm:flex-row items-center justify-center gap-4"
+                  >
+                    <Link to="/booking">
+                      <Button size="large" variant="primary" className="px-8 py-3.5 text-base shadow-lg">
+                        Book Court Now <ArrowRight className="w-5 h-5" />
+                      </Button>
+                    </Link>
+                    <Link to="/about">
+                      <Button 
+                        size="large" 
+                        variant="secondary" 
+                        className={`px-8 py-3.5 text-base ${
+                          isDark 
+                            ? 'bg-white/15 text-white hover:bg-white/25 border-white/20 backdrop-blur-xs' 
+                            : ''
+                        }`}
+                      >
+                        Explore Arena
+                      </Button>
+                    </Link>
+                  </motion.div>
+                </>
+              );
+            })()
+          )}
         </div>
       </section>
 

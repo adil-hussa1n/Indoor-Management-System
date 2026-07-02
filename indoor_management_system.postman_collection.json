@@ -1,0 +1,1111 @@
+{
+  "info": {
+    "_postman_id": "bfd8bb1d-5573-4f9e-be41-01f6874eb78d",
+    "name": "Indoor Management System API",
+    "description": "Comprehensive Postman collection for testing the Public and Admin APIs of the Indoor Sports Management & Booking System.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Admin Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Log in as an administrator to receive a JWT access token."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Admin Profile",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Retrieve details of the currently logged in administrator."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Bookings",
+      "item": [
+        {
+          "name": "Create Public Booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerName\": \"John Doe\",\n  \"customerEmail\": \"johndoe@example.com\",\n  \"customerPhone\": \"+8801700000000\",\n  \"sport\": \"Futsal\",\n  \"bookingDate\": \"2026-07-10T00:00:00.000Z\",\n  \"slots\": [\n    {\n      \"startTime\": \"10:00\",\n      \"endTime\": \"11:00\",\n      \"price\": 1200\n    }\n  ],\n  \"totalAmount\": 1200,\n  \"paymentMethod\": \"bkash\",\n  \"transactionId\": \"TRX1234567\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking"
+              ]
+            },
+            "description": "Submit a public booking reservation request."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Dashboard Data (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dashboard",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dashboard"
+              ]
+            },
+            "description": "Retrieve overview statistics, active court occupancy, and revenue details for the dashboard."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Bookings List (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/bookings?status=pending&sport=Futsal",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "pending"
+                },
+                {
+                  "key": "sport",
+                  "value": "Futsal"
+                }
+              ]
+            },
+            "description": "Fetch all booking records with filter capabilities."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Manual Booking (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerName\": \"Walk-in Guest\",\n  \"customerEmail\": \"walkin@example.com\",\n  \"customerPhone\": \"+8801800000000\",\n  \"sport\": \"Basketball\",\n  \"bookingDate\": \"2026-07-15T00:00:00.000Z\",\n  \"slots\": [\n    {\n      \"startTime\": \"18:00\",\n      \"endTime\": \"19:00\",\n      \"price\": 1400\n    }\n  ],\n  \"totalAmount\": 1400,\n  \"paymentMethod\": \"cash\",\n  \"paymentStatus\": \"paid\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/bookings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings"
+              ]
+            },
+            "description": "Book a slot manually on behalf of a guest walk-in."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Booking Details (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/bookings/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "65b5e3a2bf92fa001dc11001",
+                  "description": "ID of the target booking"
+                }
+              ]
+            },
+            "description": "Fetch deep details of a specific booking."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Booking (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerName\": \"Johnathan Doe\",\n  \"customerPhone\": \"+8801799999999\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/bookings/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "65b5e3a2bf92fa001dc11001"
+                }
+              ]
+            },
+            "description": "Modify customer contact details on a booking."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Booking Status (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"confirmed\",\n  \"paymentStatus\": \"paid\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking-status/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "booking-status",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "65b5e3a2bf92fa001dc11001"
+                }
+              ]
+            },
+            "description": "Approve or decline a booking, or update its payment status."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Booking (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/bookings/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "65b5e3a2bf92fa001dc11001"
+                }
+              ]
+            },
+            "description": "Cancel and permanently delete a booking record."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Slots & Availability",
+      "item": [
+        {
+          "name": "Get Available Slots (Public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/available-slots?date=2026-07-10&sport=Futsal",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "available-slots"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "2026-07-10"
+                },
+                {
+                  "key": "sport",
+                  "value": "Futsal"
+                }
+              ]
+            },
+            "description": "Retrieve available time slots for a specific date and sport discipline."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Slots List (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/slots?sport=Futsal",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "slots"
+              ],
+              "query": [
+                {
+                  "key": "sport",
+                  "value": "Futsal"
+                }
+              ]
+            },
+            "description": "Fetch the master schedule time slots configured."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Time Slot (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sport\": \"Futsal\",\n  \"startTime\": \"08:00\",\n  \"endTime\": \"09:00\",\n  \"price\": 1200,\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/slots",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "slots"
+              ]
+            },
+            "description": "Add a new slot to the master schedule."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Time Slot (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 1300,\n  \"isActive\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/slots/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "slots",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "65b5e3a2bf92fa001dc11002"
+                }
+              ]
+            },
+            "description": "Modify parameters or toggle availability status of a master schedule slot."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Time Slot (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/slots/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "slots",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "65b5e3a2bf92fa001dc11002"
+                }
+              ]
+            },
+            "description": "Permanently remove a slot from the master schedule."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Settings",
+      "item": [
+        {
+          "name": "Get Public Info (Public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/info",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "info"
+              ]
+            },
+            "description": "Retrieve contact details, pricing, logo, hero variables, and public system parameters."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Master Settings (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "settings"
+              ]
+            },
+            "description": "Fetch current server configuration parameters."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Master Settings (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"businessName\": \"D-Box Indoor Sports Arena\",\n  \"contactPhone\": \"+880 1712-345678\",\n  \"theme\": \"green\",\n  \"hero\": {\n    \"tagline\": \"⚡ Professional Grade Arena\",\n    \"title1\": \"Experience Sports\",\n    \"title2\": \"Like Never Before\",\n    \"mediaType\": \"360\",\n    \"autoPlay360\": true,\n    \"useGlassBg\": true,\n    \"darkenOverlay\": true,\n    \"blurBackground\": false,\n    \"zoomAnimation\": false\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "settings"
+              ]
+            },
+            "description": "Update general business details and hero layout styles."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Gallery",
+      "item": [
+        {
+          "name": "Get Gallery (Public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/gallery",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "gallery"
+              ]
+            },
+            "description": "Retrieve all public gallery pictures and 360 panorama items."
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Gallery Item (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": [],
+                  "description": "Choose local image file"
+                },
+                {
+                  "key": "is360",
+                  "value": "true",
+                  "type": "text"
+                },
+                {
+                  "key": "autoPlay360",
+                  "value": "true",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/gallery",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "gallery"
+              ]
+            },
+            "description": "Upload a new picture or 360 degree panoramic image to the public gallery."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Gallery Item (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/gallery/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "gallery",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "65b5e3a2bf92fa001dc11004"
+                }
+              ]
+            },
+            "description": "Remove an image from the gallery and delete its Cloudinary file."
+          },
+          "response": []
+        },
+        {
+          "name": "Reorder Gallery (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderedIds\": [\n    \"65b5e3a2bf92fa001dc11004\",\n    \"65b5e3a2bf92fa001dc11005\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/gallery/reorder",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "gallery",
+                "reorder"
+              ]
+            },
+            "description": "Save custom sorting order of gallery pictures."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Reviews & Testimonials",
+      "item": [
+        {
+          "name": "Get Approved Reviews (Public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reviews",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reviews"
+              ]
+            },
+            "description": "Retrieve list of approved customer reviews to show on landing testimonials."
+          },
+          "response": []
+        },
+        {
+          "name": "Submit Review (Public)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Satisfied Player\",\n  \"rating\": 5,\n  \"comment\": \"Amazing court! The lighting and flooring are perfect.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reviews",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reviews"
+              ]
+            },
+            "description": "Submit a review/rating. Pending moderation by default."
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Reviews (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reviews/all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reviews",
+                "all"
+              ]
+            },
+            "description": "Retrieve both pending and approved reviews for moderation."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Review Status (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"approved\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reviews/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reviews",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "65b5e3a2bf92fa001dc11007"
+                }
+              ]
+            },
+            "description": "Approve or decline customer reviews."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Review (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reviews/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reviews",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "65b5e3a2bf92fa001dc11007"
+                }
+              ]
+            },
+            "description": "Permanently remove a review."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Contact Messages",
+      "item": [
+        {
+          "name": "Submit Contact Message (Public)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jane Smith\",\n  \"email\": \"janesmith@example.com\",\n  \"phone\": \"+8801600000000\",\n  \"subject\": \"Tournament Booking Inquiry\",\n  \"message\": \"We would like to book the court for a weekend corporate tournament. What are the rates?\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/contact",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "contact"
+              ]
+            },
+            "description": "Submit a message from the landing contact form."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Contact Messages (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/messages",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "messages"
+              ]
+            },
+            "description": "Fetch all contact form submissions."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Message Status (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"read\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/messages/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "messages",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "65b5e3a2bf92fa001dc11009"
+                }
+              ]
+            },
+            "description": "Toggle message status between 'unread' and 'read'."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Message (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/messages/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "messages",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "65b5e3a2bf92fa001dc11009"
+                }
+              ]
+            },
+            "description": "Permanently delete a contact message."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "adminToken",
+      "value": "YOUR_ADMIN_JWT_TOKEN",
+      "type": "string"
+    }
+  ]
+}

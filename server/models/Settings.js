@@ -17,6 +17,10 @@ const settingsSchema = new mongoose.Schema(
       description: { type: String, default: 'Book our state-of-the-art climate-controlled indoor arena. Designed for futsal, basketball, badminton, and more. Clean, professional, and ready.' },
       mediaType: { type: String, enum: ['image', 'video', '360'], default: 'image' },
       autoPlay360: { type: Boolean, default: true },
+      useGlassBg: { type: Boolean, default: false },
+      darkenOverlay: { type: Boolean, default: false },
+      blurBackground: { type: Boolean, default: false },
+      zoomAnimation: { type: Boolean, default: false },
     },
     businessName: {
       type: String,

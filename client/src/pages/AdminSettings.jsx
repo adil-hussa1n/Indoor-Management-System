@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAdminSettings, useUpdateSettings } from '../hooks/useApi';
+import { useAdminSettings, useUpdateSettings, usePublicGallery } from '../hooks/useApi';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -69,6 +69,8 @@ export const AdminSettings = () => {
   const toast = useToast();
   const { data: settings, isLoading, refetch } = useAdminSettings();
   const updateSettingsMutation = useUpdateSettings();
+  const { data: galleryImages } = usePublicGallery();
+  const gallery360Images = galleryImages?.filter(img => img.is360) || [];
 
   const [newSport, setNewSport] = useState('');
   const [newHoliday, setNewHoliday] = useState('');
@@ -83,6 +85,9 @@ export const AdminSettings = () => {
     if (file) {
       const compressed = await compressImageIfNeeded(file);
       setLogoFile(compressed);
+      
+      const previewUrl = URL.createObjectURL(compressed);
+      setFormData(prev => ({ ...prev, logo: previewUrl }));
     }
   };
 
@@ -91,6 +96,9 @@ export const AdminSettings = () => {
     if (file) {
       const compressed = await compressImageIfNeeded(file);
       setBannerFile(compressed);
+      
+      const previewUrl = URL.createObjectURL(compressed);
+      setFormData(prev => ({ ...prev, heroBanner: previewUrl }));
     }
   };
 
@@ -137,6 +145,10 @@ export const AdminSettings = () => {
           description: settings.hero?.description || 'Book our state-of-the-art climate-controlled indoor arena. Designed for futsal, basketball, badminton, and more. Clean, professional, and ready.',
           mediaType: settings.hero?.mediaType || 'image',
           autoPlay360: settings.hero?.autoPlay360 ?? true,
+          useGlassBg: settings.hero?.useGlassBg ?? false,
+          darkenOverlay: settings.hero?.darkenOverlay ?? false,
+          blurBackground: settings.hero?.blurBackground ?? false,
+          zoomAnimation: settings.hero?.zoomAnimation ?? false,
         },
       });
     }
@@ -165,9 +177,13 @@ export const AdminSettings = () => {
     const data = new FormData();
     if (logoFile) {
       data.append('logo', logoFile);
+    } else {
+      data.append('logo', formData.logo || '');
     }
     if (bannerFile) {
       data.append('heroBanner', bannerFile);
+    } else {
+      data.append('heroBanner', formData.heroBanner || '');
     }
 
     data.append('businessName', formData.businessName);
@@ -364,31 +380,183 @@ export const AdminSettings = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-zinc-100 dark:border-zinc-900 pt-4">
               <div className="flex flex-col gap-1.5 text-left">
                 <label className="text-xs font-semibold text-zinc-655 dark:text-zinc-450 uppercase tracking-wider">Logo Image</label>
-                {formData.logo && (
-                  <img src={formData.logo} alt="Logo preview" className="w-16 h-16 object-contain rounded-lg border p-1 bg-zinc-50 mb-1" />
+                {formData.logo ? (
+                  <div className="relative group w-24 h-24 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 p-2 mb-2 flex items-center justify-center">
+                    <img src={formData.logo} alt="Logo preview" className="w-full h-full object-contain" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormData(prev => ({ ...prev, logo: '' }));
+                        setLogoFile(null);
+                      }}
+                      className="absolute inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center gap-1.5 text-white opacity-0 group-hover:opacity-100 transition-all duration-200 cursor-pointer text-xs font-bold"
+                    >
+                      <Trash2 className="w-4 h-4 text-red-400" /> Remove
+                    </button>
+                  </div>
+                ) : (
+                  <div className="w-24 h-24 rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/20 mb-2 flex flex-col items-center justify-center text-zinc-400 text-xs gap-1">
+                    <span>No Logo</span>
+                  </div>
                 )}
                 <input
                   type="file"
                   accept="image/*"
                   onChange={handleLogoChange}
-                  className="text-xs text-zinc-500 w-full cursor-pointer"
+                  className="text-xs text-zinc-500 w-full cursor-pointer file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-purple-500/10 file:text-purple-600 hover:file:bg-purple-500/20 file:cursor-pointer cursor-pointer"
                 />
               </div>
               <div className="flex flex-col gap-1.5 text-left">
                 <label className="text-xs font-semibold text-zinc-655 dark:text-zinc-450 uppercase tracking-wider">Hero Banner Media File (Image or Video)</label>
-                {formData.heroBanner && (
-                  formData.heroBanner.includes('data:video/') || formData.heroBanner.match(/\.(mp4|webm|ogg|mov)$/i) ? (
-                    <video src={formData.heroBanner} className="w-24 h-12 object-cover rounded-lg border bg-zinc-50 mb-1" muted playsInline />
-                  ) : (
-                    <img src={formData.heroBanner} alt="Banner preview" className="w-24 h-12 object-cover rounded-lg border bg-zinc-50 mb-1" />
-                  )
+                {formData.heroBanner ? (
+                  <div className="relative group w-44 h-24 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 mb-2">
+                    {formData.heroBanner.includes('data:video/') || formData.heroBanner.match(/\.(mp4|webm|ogg|mov)$/i) ? (
+                      <video src={formData.heroBanner} className="w-full h-full object-cover" muted playsInline />
+                    ) : (
+                      <img src={formData.heroBanner} alt="Banner preview" className="w-full h-full object-cover" />
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormData(prev => ({ ...prev, heroBanner: '' }));
+                        setBannerFile(null);
+                      }}
+                      className="absolute inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center gap-1.5 text-white opacity-0 group-hover:opacity-100 transition-all duration-200 cursor-pointer text-xs font-bold"
+                    >
+                      <Trash2 className="w-4 h-4 text-red-400" /> Remove
+                    </button>
+                  </div>
+                ) : (
+                  <div className="w-44 h-24 rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/20 mb-2 flex flex-col items-center justify-center text-zinc-400 text-xs gap-1">
+                    <span>No Banner</span>
+                  </div>
                 )}
                 <input
                   type="file"
                   accept="image/*,video/*"
                   onChange={handleBannerChange}
-                  className="text-xs text-zinc-500 w-full cursor-pointer"
+                  className="text-xs text-zinc-500 w-full cursor-pointer file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-purple-500/10 file:text-purple-600 hover:file:bg-purple-500/20 file:cursor-pointer cursor-pointer"
                 />
+                {formData.hero.mediaType === '360' && gallery360Images.length > 0 && (
+                  <div className="mt-3">
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block mb-1">Or Select Existing 360° Gallery Image</label>
+                    <select
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          setFormData(prev => ({ ...prev, heroBanner: e.target.value }));
+                          setBannerFile(null); // Clear any pending local file upload
+                        }
+                      }}
+                      value={gallery360Images.some(img => img.imageUrl === formData.heroBanner) ? formData.heroBanner : ""}
+                      className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-3 py-2 text-sm text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-650 transition-all duration-200 cursor-pointer"
+                    >
+                      <option value="">-- Choose from Gallery --</option>
+                      {gallery360Images.map((img, idx) => (
+                        <option key={img._id || idx} value={img.imageUrl}>
+                          360° Image #{idx + 1} ({img.imageUrl.substring(img.imageUrl.lastIndexOf('/') + 1)})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-zinc-100 dark:border-zinc-900 pt-4">
+              <div className="flex flex-col gap-1.5 text-left">
+                <label className="text-xs font-semibold text-zinc-650 dark:text-zinc-450 uppercase tracking-wider">Hero Banner Media Type</label>
+                <select
+                  value={formData.hero.mediaType}
+                  onChange={(e) => handleChange('hero', 'mediaType', e.target.value)}
+                  className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-3 py-2 text-sm text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-650 transition-all duration-200 cursor-pointer"
+                >
+                  <option value="image">🖼️ Image</option>
+                  <option value="video">🎬 Video</option>
+                  <option value="360">🌐 360° Panorama</option>
+                </select>
+              </div>
+
+              {formData.hero.mediaType === '360' && (
+                <div className="flex items-center gap-3 pt-4">
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.hero.autoPlay360}
+                      onChange={(e) => handleChange('hero', 'autoPlay360', e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-zinc-200 dark:bg-zinc-800 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-600 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600" />
+                  </label>
+                  <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Auto-Rotate 360°</span>
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-zinc-100 dark:border-zinc-900 pt-4">
+              <div className="flex items-center gap-3">
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.hero.useGlassBg}
+                    onChange={(e) => handleChange('hero', 'useGlassBg', e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-zinc-200 dark:bg-zinc-800 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-650 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-650" />
+                </label>
+                <div className="flex flex-col text-left">
+                  <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Frosted Glass Text Container</span>
+                  <span className="text-[10px] text-zinc-405">Adds a liquid-glass card behind hero texts to improve readability.</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.hero.darkenOverlay}
+                    onChange={(e) => handleChange('hero', 'darkenOverlay', e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-zinc-200 dark:bg-zinc-800 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-650 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-650" />
+                </label>
+                <div className="flex flex-col text-left">
+                  <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Darken Background Overlay</span>
+                  <span className="text-[10px] text-zinc-405">Dims the background banner to make white text pop out.</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-zinc-100 dark:border-zinc-900 pt-4">
+              <div className="flex items-center gap-3">
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.hero.blurBackground}
+                    onChange={(e) => handleChange('hero', 'blurBackground', e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-zinc-200 dark:bg-zinc-800 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-650 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-650" />
+                </label>
+                <div className="flex flex-col text-left">
+                  <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Blur Background Media</span>
+                  <span className="text-[10px] text-zinc-405">Adds a beautiful soft-focus blur filter to the background media.</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.hero.zoomAnimation}
+                    onChange={(e) => handleChange('hero', 'zoomAnimation', e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-zinc-200 dark:bg-zinc-800 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-650 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-650" />
+                </label>
+                <div className="flex flex-col text-left">
+                  <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Zoom/Scale Animation (Ken Burns)</span>
+                  <span className="text-[10px] text-zinc-405">Applies a slow, premium pulsing scale animation to image banners.</span>
+                </div>
               </div>
             </div>
             <Input
@@ -518,36 +686,6 @@ export const AdminSettings = () => {
                 className="flex min-h-[80px] w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-3 py-2 text-sm text-zinc-900 dark:text-white placeholder-zinc-450 focus:outline-none focus:ring-2 focus:ring-purple-650 transition-all duration-200"
                 rows={3}
               />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1.5 text-left">
-                <label className="text-xs font-semibold text-zinc-650 dark:text-zinc-450 uppercase tracking-wider">Hero Banner Media Type</label>
-                <select
-                  value={formData.hero.mediaType}
-                  onChange={(e) => handleChange('hero', 'mediaType', e.target.value)}
-                  className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-3 py-2.5 text-sm text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-650 transition-all duration-200 cursor-pointer"
-                >
-                  <option value="image">🖼️ Image</option>
-                  <option value="video">🎬 Video</option>
-                  <option value="360">🌐 360° Panorama</option>
-                </select>
-              </div>
-
-              {formData.hero.mediaType === '360' && (
-                <div className="flex items-center gap-3 pt-6">
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.hero.autoPlay360}
-                      onChange={(e) => handleChange('hero', 'autoPlay360', e.target.checked)}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-zinc-200 dark:bg-zinc-800 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-600 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600" />
-                  </label>
-                  <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Auto-Rotate 360°</span>
-                </div>
-              )}
             </div>
           </div>
         </div>

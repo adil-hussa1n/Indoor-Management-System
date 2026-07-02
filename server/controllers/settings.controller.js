@@ -48,20 +48,23 @@ export const updateSettings = async (req, res, next) => {
       settings = await Settings.create({});
     }
 
+    const body = { ...req.body };
+
     // 1. Process logo & banner file uploads
     if (req.files) {
       if (req.files.logo && req.files.logo[0]) {
         const logoUrl = await uploadToCloudinary(req.files.logo[0].buffer, 'settings-logo', req.files.logo[0].mimetype);
         settings.logo = logoUrl;
+        delete body.logo;
       }
       if (req.files.heroBanner && req.files.heroBanner[0]) {
         const bannerUrl = await uploadToCloudinary(req.files.heroBanner[0].buffer, 'settings-banner', req.files.heroBanner[0].mimetype);
         settings.heroBanner = bannerUrl;
+        delete body.heroBanner;
       }
     }
 
     // 2. Parse stringified JSON fields (sent via multipart/form-data)
-    const body = { ...req.body };
     const jsonFields = ['businessHours', 'pricing', 'socialLinks', 'seo', 'availableSports', 'holidays', 'maintenanceDays', 'weekendDays', 'hero'];
     for (const field of jsonFields) {
       if (body[field]) {
