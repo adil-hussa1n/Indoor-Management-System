@@ -206,15 +206,15 @@ export const AdminSettings = () => {
   if (isLoading || !formData) return <Loader size="large" className="py-20" />;
 
   return (
-    <div className="space-y-8 text-left max-w-5xl mx-auto">
+    <div className="space-y-8 text-left max-w-5xl mx-auto animate-fade-in">
       <form onSubmit={handleSave} className="space-y-8">
         {/* Core details */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Court Business Settings</CardTitle>
-            <CardDescription>Core organization details and hours.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <div className="glass-card p-6 rounded-3xl shadow-sm space-y-4">
+          <div>
+            <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Court Business Settings</h3>
+            <p className="text-xs text-zinc-400 mt-1">Core organization details and hours.</p>
+          </div>
+          <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input
                 label="Business Name"
@@ -252,7 +252,7 @@ export const AdminSettings = () => {
               />
             </div>
             <div className="flex flex-col gap-2 border-t border-zinc-100 dark:border-zinc-900 pt-4 text-left">
-              <label className="text-xs font-semibold text-zinc-650 dark:text-zinc-400 uppercase tracking-wider">Configure Weekend Days</label>
+              <label className="text-xs font-semibold text-zinc-650 dark:text-zinc-450 uppercase tracking-wider">Configure Weekend Days</label>
               <div className="flex flex-wrap gap-4 mt-2">
                 {[
                   { id: 0, label: 'Sunday' },
@@ -265,7 +265,7 @@ export const AdminSettings = () => {
                 ].map((d) => {
                   const isChecked = formData.weekendDays.includes(d.id);
                   return (
-                    <label key={d.id} className="flex items-center gap-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300 cursor-pointer select-none">
+                    <label key={d.id} className="flex items-center gap-2 text-sm font-semibold text-zinc-700 dark:text-zinc-350 cursor-pointer select-none">
                       <input
                         type="checkbox"
                         checked={isChecked}
@@ -275,7 +275,7 @@ export const AdminSettings = () => {
                             : formData.weekendDays.filter((val) => val !== d.id);
                           handleChange(null, 'weekendDays', updated);
                         }}
-                        className="rounded border-zinc-350 text-purple-600 focus:ring-purple-500 w-4 h-4 cursor-pointer"
+                        className="rounded border-zinc-350 text-purple-650 focus:ring-purple-650 w-4 h-4 cursor-pointer"
                       />
                       {d.label}
                     </label>
@@ -285,7 +285,7 @@ export const AdminSettings = () => {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-zinc-100 dark:border-zinc-900 pt-4">
               <div className="flex flex-col gap-1.5 text-left">
-                <label className="text-xs font-semibold text-zinc-650 dark:text-zinc-400 uppercase tracking-wider">Logo Image</label>
+                <label className="text-xs font-semibold text-zinc-655 dark:text-zinc-450 uppercase tracking-wider">Logo Image</label>
                 {formData.logo && (
                   <img src={formData.logo} alt="Logo preview" className="w-16 h-16 object-contain rounded-lg border p-1 bg-zinc-50 mb-1" />
                 )}
@@ -293,11 +293,11 @@ export const AdminSettings = () => {
                   type="file"
                   accept="image/*"
                   onChange={(e) => setLogoFile(e.target.files[0])}
-                  className="text-xs text-zinc-500 w-full"
+                  className="text-xs text-zinc-500 w-full cursor-pointer"
                 />
               </div>
               <div className="flex flex-col gap-1.5 text-left">
-                <label className="text-xs font-semibold text-zinc-650 dark:text-zinc-400 uppercase tracking-wider">Hero Banner Image</label>
+                <label className="text-xs font-semibold text-zinc-655 dark:text-zinc-450 uppercase tracking-wider">Hero Banner Image</label>
                 {formData.heroBanner && (
                   <img src={formData.heroBanner} alt="Banner preview" className="w-24 h-12 object-cover rounded-lg border bg-zinc-50 mb-1" />
                 )}
@@ -305,7 +305,7 @@ export const AdminSettings = () => {
                   type="file"
                   accept="image/*"
                   onChange={(e) => setBannerFile(e.target.files[0])}
-                  className="text-xs text-zinc-500 w-full"
+                  className="text-xs text-zinc-500 w-full cursor-pointer"
                 />
               </div>
             </div>
@@ -314,16 +314,16 @@ export const AdminSettings = () => {
               value={formData.googleMapUrl}
               onChange={(e) => handleChange(null, 'googleMapUrl', e.target.value)}
             />
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Pricing tier details */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Pricing Rates Configuration (BDT)</CardTitle>
-            <CardDescription>Determine hourly rates charged to players dynamically for Day and Night shifts.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="glass-card p-6 rounded-3xl shadow-sm space-y-4">
+          <div>
+            <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Pricing Rates Configuration (BDT)</h3>
+            <p className="text-xs text-zinc-400 mt-1">Determine hourly rates charged to players dynamically for Day and Night shifts.</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <Input
               label="Weekday Day Shift Rate (৳)"
               type="number"
@@ -360,16 +360,16 @@ export const AdminSettings = () => {
               value={formData.pricing.holidayNight}
               onChange={(e) => handleChange('pricing', 'holidayNight', Number(e.target.value))}
             />
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Social Media Links */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Social Media Links</CardTitle>
-            <CardDescription>Configure external business handles.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="glass-card p-6 rounded-3xl shadow-sm space-y-4">
+          <div>
+            <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Social Media Links</h3>
+            <p className="text-xs text-zinc-400 mt-1">Configure external business handles.</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Facebook Page URL"
               value={formData.socialLinks.facebook}
@@ -390,16 +390,16 @@ export const AdminSettings = () => {
               value={formData.socialLinks.whatsapp}
               onChange={(e) => handleChange('socialLinks', 'whatsapp', e.target.value)}
             />
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Hero Section Content */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Hero Section Content</CardTitle>
-            <CardDescription>Configure homepage hero banner texts.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <div className="glass-card p-6 rounded-3xl shadow-sm space-y-4">
+          <div>
+            <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Hero Section Content</h3>
+            <p className="text-xs text-zinc-400 mt-1">Configure homepage hero banner texts.</p>
+          </div>
+          <div className="space-y-4">
             <Input
               label="Hero Subtitle / Tagline"
               value={formData.hero.tagline}
@@ -418,24 +418,24 @@ export const AdminSettings = () => {
               />
             </div>
             <div className="flex flex-col gap-1.5 text-left">
-              <label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Hero Description</label>
+              <label className="text-xs font-semibold text-zinc-650 dark:text-zinc-450 uppercase tracking-wider">Hero Description</label>
               <textarea
                 value={formData.hero.description}
                 onChange={(e) => handleChange('hero', 'description', e.target.value)}
-                className="flex min-h-[80px] w-full rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-3 py-2 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-205"
+                className="flex min-h-[80px] w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-3 py-2 text-sm text-zinc-900 dark:text-white placeholder-zinc-450 focus:outline-none focus:ring-2 focus:ring-purple-650 transition-all duration-200"
                 rows={3}
               />
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* SEO Metatags */}
-        <Card>
-          <CardHeader>
-            <CardTitle>SEO Meta Settings</CardTitle>
-            <CardDescription>Configure landing search keywords.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <div className="glass-card p-6 rounded-3xl shadow-sm space-y-4">
+          <div>
+            <h3 className="text-xl font-bold text-zinc-900 dark:text-white">SEO Meta Settings</h3>
+            <p className="text-xs text-zinc-400 mt-1">Configure landing search keywords.</p>
+          </div>
+          <div className="space-y-4">
             <Input
               label="Meta Page Title"
               value={formData.seo.title}
@@ -451,12 +451,12 @@ export const AdminSettings = () => {
               value={formData.seo.keywords}
               onChange={(e) => handleChange('seo', 'keywords', e.target.value)}
             />
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Floating Save Button */}
         <div className="flex justify-end sticky bottom-6 z-10">
-          <Button type="submit" disabled={updateSettingsMutation.isPending} className="shadow-lg px-8 py-3">
+          <Button type="submit" disabled={updateSettingsMutation.isPending} className="shadow-lg shadow-purple-500/10 px-8 py-3 font-bold">
             <Save className="w-5 h-5" /> {updateSettingsMutation.isPending ? 'Saving...' : 'Save Configuration'}
           </Button>
         </div>
@@ -465,92 +465,92 @@ export const AdminSettings = () => {
       {/* Array configuration sections */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {/* Sports */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Sports List</CardTitle>
-            <CardDescription>Sports players can choose from.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <div className="glass-card p-6 rounded-3xl shadow-sm space-y-4">
+          <div>
+            <h3 className="text-base font-bold text-zinc-900 dark:text-white">Sports List</h3>
+            <p className="text-xs text-zinc-400 mt-1">Sports players can choose.</p>
+          </div>
+          <div className="space-y-4">
             <div className="flex gap-2">
               <input
                 type="text"
                 placeholder="e.g. Squash"
                 value={newSport}
                 onChange={(e) => setNewSport(e.target.value)}
-                className="flex-1 px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-sm focus:outline-none"
+                className="flex-1 px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-sm focus:outline-none focus:ring-1 focus:ring-purple-650"
               />
-              <Button onClick={handleAddSport} className="p-2.5">Add</Button>
+              <Button onClick={handleAddSport} className="p-2.5 font-bold">Add</Button>
             </div>
             <div className="space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar">
               {settings.availableSports?.map((sport) => (
-                <div key={sport} className="flex items-center justify-between p-2 rounded-lg bg-zinc-50 dark:bg-zinc-900 text-sm">
-                  <span className="font-semibold">{sport}</span>
-                  <button onClick={() => handleDeleteSport(sport)} className="text-zinc-400 hover:text-red-500">
+                <div key={sport} className="flex items-center justify-between p-2 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 text-sm">
+                  <span className="font-semibold text-zinc-850 dark:text-zinc-200">{sport}</span>
+                  <button onClick={() => handleDeleteSport(sport)} className="text-zinc-400 hover:text-red-500 cursor-pointer">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Holidays */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Holidays</CardTitle>
-            <CardDescription>Block court (Holiday rate apply).</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <div className="glass-card p-6 rounded-3xl shadow-sm space-y-4">
+          <div>
+            <h3 className="text-base font-bold text-zinc-900 dark:text-white">Holidays</h3>
+            <p className="text-xs text-zinc-400 mt-1">Block court (Holiday rate apply).</p>
+          </div>
+          <div className="space-y-4">
             <div className="flex gap-2">
               <input
                 type="date"
                 value={newHoliday}
                 onChange={(e) => setNewHoliday(e.target.value)}
-                className="flex-1 px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-sm focus:outline-none"
+                className="flex-1 px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-sm focus:outline-none focus:ring-1 focus:ring-purple-655"
               />
-              <Button onClick={handleAddHoliday} className="p-2.5">Add</Button>
+              <Button onClick={handleAddHoliday} className="p-2.5 font-bold">Add</Button>
             </div>
             <div className="space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar">
               {settings.holidays?.map((date) => (
-                <div key={date} className="flex items-center justify-between p-2 rounded-lg bg-zinc-50 dark:bg-zinc-900 text-sm">
-                  <span className="font-semibold">{date}</span>
-                  <button onClick={() => handleDeleteHoliday(date)} className="text-zinc-400 hover:text-red-500">
+                <div key={date} className="flex items-center justify-between p-2 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 text-sm">
+                  <span className="font-semibold text-zinc-850 dark:text-zinc-200">{date}</span>
+                  <button onClick={() => handleDeleteHoliday(date)} className="text-zinc-400 hover:text-red-500 cursor-pointer">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Maintenance */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Maintenance Days</CardTitle>
-            <CardDescription>Block court completely (Zero slots).</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <div className="glass-card p-6 rounded-3xl shadow-sm space-y-4">
+          <div>
+            <h3 className="text-base font-bold text-zinc-900 dark:text-white">Maintenance Days</h3>
+            <p className="text-xs text-zinc-400 mt-1">Block court completely (Zero slots).</p>
+          </div>
+          <div className="space-y-4">
             <div className="flex gap-2">
               <input
                 type="date"
                 value={newMaintenance}
                 onChange={(e) => setNewMaintenance(e.target.value)}
-                className="flex-1 px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-sm focus:outline-none"
+                className="flex-1 px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-sm focus:outline-none focus:ring-1 focus:ring-purple-655"
               />
-              <Button onClick={handleAddMaintenance} className="p-2.5">Add</Button>
+              <Button onClick={handleAddMaintenance} className="p-2.5 font-bold">Add</Button>
             </div>
             <div className="space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar">
               {settings.maintenanceDays?.map((date) => (
-                <div key={date} className="flex items-center justify-between p-2 rounded-lg bg-zinc-50 dark:bg-zinc-900 text-sm">
-                  <span className="font-semibold">{date}</span>
-                  <button onClick={() => handleDeleteMaintenance(date)} className="text-zinc-400 hover:text-red-500">
+                <div key={date} className="flex items-center justify-between p-2 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 text-sm">
+                  <span className="font-semibold text-zinc-850 dark:text-zinc-200">{date}</span>
+                  <button onClick={() => handleDeleteMaintenance(date)} className="text-zinc-400 hover:text-red-500 cursor-pointer">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );

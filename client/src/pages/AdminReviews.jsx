@@ -51,26 +51,26 @@ export const AdminReviews = () => {
   };
 
   return (
-    <div className="space-y-6 text-left">
-      <Card>
-        <CardHeader>
-          <CardTitle>Customer Reviews & Feedback</CardTitle>
-          <CardDescription>Approve or feature reviews submitted by players.</CardDescription>
-        </CardHeader>
-        <CardContent>
+    <div className="space-y-6 text-left animate-fade-in">
+      <div className="glass-card p-6 rounded-3xl shadow-sm space-y-4">
+        <div>
+          <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Customer Reviews & Feedback</h3>
+          <p className="text-xs text-zinc-400 mt-1">Approve or feature reviews submitted by players.</p>
+        </div>
+        <div>
           {isLoading ? (
             <Loader size="medium" className="py-12" />
           ) : !reviews || reviews.length === 0 ? (
-            <p className="text-zinc-400 py-6 text-center">No customer reviews submitted yet.</p>
+            <p className="text-zinc-400 py-6 text-center font-semibold">No customer reviews submitted yet.</p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {reviews.map((rev) => (
                 <div
                   key={rev._id}
-                  className={`p-5 rounded-2xl border flex flex-col justify-between gap-4 transition-all ${
+                  className={`p-5 rounded-2xl border flex flex-col justify-between gap-4 transition-all hover-glow ${
                     rev.isApproved
-                      ? 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950'
-                      : 'border-amber-250 bg-amber-50/10 dark:bg-amber-950/5'
+                      ? 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm'
+                      : 'border-amber-250/50 bg-amber-50/5 dark:bg-amber-950/5 shadow-sm'
                   }`}
                 >
                   <div>
@@ -95,7 +95,7 @@ export const AdminReviews = () => {
                     <p className="text-sm text-zinc-650 dark:text-zinc-350 italic mb-4">
                       "{rev.comment}"
                     </p>
-                    <div className="font-bold text-sm text-zinc-900 dark:text-white">
+                    <div className="font-extrabold text-xs uppercase tracking-wider text-purple-650 dark:text-purple-400">
                       - {rev.customerName}
                     </div>
                   </div>
@@ -106,13 +106,13 @@ export const AdminReviews = () => {
                         size="small"
                         variant={rev.isApproved ? 'secondary' : 'primary'}
                         onClick={() => handleApprove(rev._id, rev.isApproved)}
-                        className="py-1 px-3 text-xs"
+                        className="py-1 px-3 text-xs font-bold"
                       >
                         {rev.isApproved ? 'Unapprove' : 'Approve'}
                       </Button>
                       <button
                         onClick={() => handleFeature(rev._id, rev.isFeatured)}
-                        className={`p-1.5 rounded-lg border transition-colors ${
+                        className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
                           rev.isFeatured
                             ? 'border-pink-200 bg-pink-50 text-pink-600 dark:border-pink-950/50 dark:bg-pink-950/20'
                             : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-pink-550'
@@ -125,7 +125,7 @@ export const AdminReviews = () => {
 
                     <button
                       onClick={() => handleDelete(rev._id)}
-                      className="p-1.5 text-zinc-400 hover:text-red-500 transition-colors"
+                      className="p-1.5 text-zinc-400 hover:text-red-500 transition-colors cursor-pointer"
                       title="Delete review"
                     >
                       <Trash2 className="w-4.5 h-4.5" />
@@ -135,8 +135,8 @@ export const AdminReviews = () => {
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };
