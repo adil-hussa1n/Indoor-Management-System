@@ -31,12 +31,12 @@ const settingsSchema = new mongoose.Schema(
       weekend: { type: String, default: '09:00 - 23:00' },
     },
     pricing: {
-      weekdayDay: { type: Number, default: 1500 },
-      weekdayNight: { type: Number, default: 1500 },
-      weekendDay: { type: Number, default: 1500 },
-      weekendNight: { type: Number, default: 1500 },
-      holidayDay: { type: Number, default: 1500 },
-      holidayNight: { type: Number, default: 1500 },
+      weekdayDay: { type: Number, default: 1200 },
+      weekdayNight: { type: Number, default: 1400 },
+      weekendDay: { type: Number, default: 1700 },
+      weekendNight: { type: Number, default: 1800 },
+      holidayDay: { type: Number, default: 2000 },
+      holidayNight: { type: Number, default: 2200 },
     },
     socialLinks: {
       facebook: { type: String, default: 'https://facebook.com' },

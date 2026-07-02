@@ -71,12 +71,12 @@ const seedDB = async () => {
       contactPhone: '+880 1712-345678',
       contactAddress: 'Sector 11, Uttara, Dhaka, Bangladesh',
       pricing: {
-        weekdayDay: 1500,
-        weekdayNight: 1500,
-        weekendDay: 1500,
-        weekendNight: 1500,
-        holidayDay: 1500,
-        holidayNight: 1500,
+        weekdayDay: 1200,
+        weekdayNight: 1400,
+        weekendDay: 1700,
+        weekendNight: 1800,
+        holidayDay: 2000,
+        holidayNight: 2200,
       }
     });
     console.log('Default settings seeded.');
