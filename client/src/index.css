@@ -369,3 +369,21 @@ body {
   animation: kenburns 25s ease-in-out infinite;
 }
 
+/* Elevate any glass-card that contains an open DatePicker to prevent stacking context clipping */
+.glass-card:has(.z-\[100\]) {
+  z-index: 50 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+}
+
+.dark .glass-card:has(.z-\[100\]) {
+  background: rgba(9, 9, 11, 0.98) !important;
+}
+
+/* Ensure parents of date pickers do not clip them */
+.glass-card:has(.z-\[100\]),
+div:has(> .z-\[100\]) {
+  overflow: visible !important;
+}
+

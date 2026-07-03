@@ -86,6 +86,10 @@ const settingsSchema = new mongoose.Schema(
       enum: ['default', 'green'],
       default: 'default',
     },
+    enableDarkMode: {
+      type: Boolean,
+      default: true,
+    },
     rules: {
       type: [String],
       default: [

@@ -6,13 +6,18 @@ import { useSocket } from '../contexts/SocketContext';
 
 export const PublicLayout = () => {
   const [darkMode, setDarkMode] = useState(() => {
-    return localStorage.getItem('theme') === 'dark' || 
-      (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    return localStorage.getItem('theme') === 'dark';
   });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showPreloader, setShowPreloader] = useState(true);
   const location = useLocation();
   const { data: settings, isLoading, refetch } = usePublicSettings();
+
+  useEffect(() => {
+    if (settings && settings.enableDarkMode === false) {
+      setDarkMode(false);
+    }
+  }, [settings]);
   const socket = useSocket();
 
   useEffect(() => {
@@ -173,12 +178,14 @@ export const PublicLayout = () => {
           {/* Header Actions */}
           <div className="flex items-center gap-3">
             {/* Dark Mode Toggle */}
-            <button
-              onClick={() => setDarkMode(!darkMode)}
-              className="p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800/80 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-150 transition-colors cursor-pointer bg-white dark:bg-zinc-900"
-            >
-              {darkMode ? <Sun className="w-4.5 h-4.5" /> : <Moon className="w-4.5 h-4.5" />}
-            </button>
+            {settings?.enableDarkMode !== false && (
+              <button
+                onClick={() => setDarkMode(!darkMode)}
+                className="p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800/80 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-150 transition-colors cursor-pointer bg-white dark:bg-zinc-900"
+              >
+                {darkMode ? <Sun className="w-4.5 h-4.5" /> : <Moon className="w-4.5 h-4.5" />}
+              </button>
+            )}
 
             {/* Admin Dashboard shortcut */}
             <Link

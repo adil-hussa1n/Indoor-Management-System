@@ -228,7 +228,15 @@ export const AdminBookings = () => {
                       <select
                         value={b.status}
                         onChange={(e) => handleStatusChange(b._id, e.target.value)}
-                        className="text-xs px-2 py-1.5 border border-zinc-200 dark:border-zinc-800 rounded-lg bg-white dark:bg-zinc-950 focus:outline-none focus:ring-1 focus:ring-purple-650 font-semibold text-zinc-800 dark:text-zinc-200"
+                        className={`text-xs px-3 py-1.5 border rounded-full font-bold focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all duration-200 cursor-pointer shadow-sm ${
+                          b.status === 'Confirmed'
+                            ? 'border-emerald-250 text-emerald-700 bg-emerald-50/30 dark:border-emerald-900/40 dark:text-emerald-400 dark:bg-emerald-950/20'
+                            : b.status === 'Pending'
+                            ? 'border-amber-250 text-amber-700 bg-amber-50/30 dark:border-amber-900/40 dark:text-amber-455 dark:bg-amber-950/20'
+                            : b.status === 'Completed'
+                            ? 'border-blue-250 text-blue-700 bg-blue-50/30 dark:border-blue-900/40 dark:text-blue-400 dark:bg-blue-950/20'
+                            : 'border-zinc-200 text-zinc-500 bg-zinc-50/30 dark:border-zinc-800 dark:text-zinc-400 dark:bg-zinc-900/20'
+                        }`}
                       >
                         <option value="Pending">Pending</option>
                         <option value="Confirmed">Confirmed</option>
@@ -237,10 +245,10 @@ export const AdminBookings = () => {
                       </select>
                       <button
                         onClick={() => handleDelete(b._id)}
-                        className="p-1.5 text-zinc-400 hover:text-red-500 transition-colors cursor-pointer"
+                        className="p-2 rounded-xl text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all duration-200 cursor-pointer"
                         title="Delete booking"
                       >
-                        <Trash2 className="w-4.5 h-4.5" />
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </td>
                   </tr>

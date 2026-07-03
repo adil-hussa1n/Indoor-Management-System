@@ -124,6 +124,7 @@ export const AdminSettings = () => {
         heroBanner: settings.heroBanner || '',
         googleMapUrl: settings.googleMapUrl || '',
         theme: settings.theme || 'default',
+        enableDarkMode: settings.enableDarkMode ?? true,
         rules: settings.rules || [],
         businessHours: {
           weekday: settings.businessHours?.weekday || '08:00 - 22:00',
@@ -203,6 +204,7 @@ export const AdminSettings = () => {
     data.append('contactAddress', formData.contactAddress);
     data.append('googleMapUrl', formData.googleMapUrl);
     data.append('theme', formData.theme);
+    data.append('enableDarkMode', formData.enableDarkMode);
 
     data.append('businessHours', JSON.stringify(formData.businessHours));
     data.append('pricing', JSON.stringify(formData.pricing));
@@ -416,7 +418,7 @@ export const AdminSettings = () => {
                 <p className="text-xs text-zinc-400 mt-1">Configure business name, logo, contact coordinates, and layout styling.</p>
               </div>
               <div className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
                   <Input
                     label="Business Name"
                     value={formData.businessName}
@@ -432,6 +434,24 @@ export const AdminSettings = () => {
                       <option value="default">🔮 Default Theme (Purple & Indigo Glass)</option>
                       <option value="green">🌿 Emerald Green Theme (Green Primary & White Background)</option>
                     </select>
+                  </div>
+                  <div className="flex flex-col gap-1.5 text-left">
+                    <label className="text-xs font-semibold text-zinc-650 dark:text-zinc-455 uppercase tracking-wider">Dark Mode Setting</label>
+                    <div className="flex items-center justify-between px-4 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 h-[42px] cursor-pointer" onClick={() => handleChange(null, 'enableDarkMode', !formData.enableDarkMode)}>
+                      <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Enable Dark Mode</span>
+                      <button
+                        type="button"
+                        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                          formData.enableDarkMode ? 'bg-purple-650' : 'bg-zinc-200 dark:bg-zinc-800'
+                        }`}
+                      >
+                        <span
+                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                            formData.enableDarkMode ? 'translate-x-4' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
+                    </div>
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-zinc-100 dark:border-zinc-900 pt-4">

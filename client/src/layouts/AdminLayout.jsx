@@ -33,9 +33,14 @@ export const AdminLayout = () => {
   const toast = useToast();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(() => {
-    return localStorage.getItem('theme') === 'dark' || 
-      (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    return localStorage.getItem('theme') === 'dark';
   });
+
+  useEffect(() => {
+    if (settings && settings.enableDarkMode === false) {
+      setDarkMode(false);
+    }
+  }, [settings]);
 
   const [alerts, setAlerts] = useState({
     bookings: false,
@@ -219,12 +224,14 @@ export const AdminLayout = () => {
 
           <div className="flex items-center gap-3">
             {/* Dark Mode Toggle */}
-            <button
-              onClick={() => setDarkMode(!darkMode)}
-              className="p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800/80 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-150 transition-colors cursor-pointer bg-white dark:bg-zinc-900"
-            >
-              {darkMode ? <Sun className="w-4.5 h-4.5" /> : <Moon className="w-4.5 h-4.5" />}
-            </button>
+            {settings?.enableDarkMode !== false && (
+              <button
+                onClick={() => setDarkMode(!darkMode)}
+                className="p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800/80 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-150 transition-colors cursor-pointer bg-white dark:bg-zinc-900"
+              >
+                {darkMode ? <Sun className="w-4.5 h-4.5" /> : <Moon className="w-4.5 h-4.5" />}
+              </button>
+            )}
 
             {/* View Website Link */}
             <Link

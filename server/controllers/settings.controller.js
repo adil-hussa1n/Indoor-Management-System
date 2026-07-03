@@ -113,6 +113,7 @@ export const getPublicInfo = async (req, res, next) => {
       weekendDays: settings.weekendDays,
       hero: settings.hero,
       theme: settings.theme,
+      enableDarkMode: settings.enableDarkMode,
       rules: settings.rules,
     };
     res.status(200).json({ success: true, settings: publicSettings });
