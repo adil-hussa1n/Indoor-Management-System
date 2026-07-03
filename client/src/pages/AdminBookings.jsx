@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAdminBookings, useCreateManualBooking, useUpdateBookingStatus, useDeleteBooking, useAdminSettings } from '../hooks/useApi';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input, Select } from '../components/ui/Input';
+import { DatePicker } from '../components/ui/DatePicker';
 import { Dialog } from '../components/ui/Dialog';
 import { Loader } from '../components/ui/Loader';
 import { useToast } from '../components/ui/Toast';
@@ -74,7 +75,7 @@ export const AdminBookings = () => {
   const updateStatusMutation = useUpdateBookingStatus();
   const deleteBookingMutation = useDeleteBooking();
 
-  const { register, handleSubmit, formState: { errors }, reset } = useForm({
+  const { register, handleSubmit, control, formState: { errors }, reset } = useForm({
     resolver: zodResolver(manualBookingSchema),
     defaultValues: {
       customerName: '',
@@ -159,11 +160,10 @@ export const AdminBookings = () => {
             <option value="Completed">Completed</option>
             <option value="Cancelled">Cancelled</option>
           </select>
-          <input
-            type="date"
+          <DatePicker
             value={dateFilter}
-            onChange={(e) => { setDateFilter(e.target.value); setPage(1); }}
-            className="px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-sm focus:outline-none focus:ring-2 focus:ring-purple-650"
+            onChange={(val) => { setDateFilter(val); setPage(1); }}
+            className="w-48"
           />
           {dateFilter && (
             <button
@@ -318,11 +318,17 @@ export const AdminBookings = () => {
             />
           </div>
           <div className="grid grid-cols-3 gap-3">
-            <Input
-              label="Date"
-              type="date"
-              error={errors.bookingDate?.message}
-              {...register('bookingDate')}
+            <Controller
+              name="bookingDate"
+              control={control}
+              render={({ field }) => (
+                <DatePicker
+                  label="Date"
+                  value={field.value}
+                  onChange={field.onChange}
+                  error={errors.bookingDate?.message}
+                />
+              )}
             />
             <Input
               label="Start (HH:MM)"

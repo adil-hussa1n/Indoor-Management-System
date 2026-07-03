@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../co
 import { Button } from '../components/ui/Button';
 import { Input, Select } from '../components/ui/Input';
 import { Loader } from '../components/ui/Loader';
+import { DatePicker } from '../components/ui/DatePicker';
 import { useToast } from '../components/ui/Toast';
 import { Trash2, ToggleLeft, ToggleRight, Plus, Calendar, Clock, Sparkles } from 'lucide-react';
 
@@ -161,11 +162,10 @@ export const AdminSlots = () => {
             )}
 
             {slotType === 'special' && (
-              <Input
+              <DatePicker
                 label="Target Special Date"
-                type="date"
                 value={specificDate}
-                onChange={(e) => setSpecificDate(e.target.value)}
+                onChange={setSpecificDate}
               />
             )}
 

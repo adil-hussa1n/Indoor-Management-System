@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../co
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Loader } from '../components/ui/Loader';
+import { DatePicker } from '../components/ui/DatePicker';
 import { useToast } from '../components/ui/Toast';
 import { Save, Plus, Trash2, HelpCircle } from 'lucide-react';
 
@@ -861,34 +862,31 @@ export const AdminSettings = () => {
                   </div>
 
                   {holidayMode === 'single' ? (
-                    <div className="flex gap-2">
-                      <input
-                        type="date"
+                    <div className="flex gap-2 items-end w-full">
+                      <DatePicker
                         value={newHoliday}
-                        onChange={(e) => setNewHoliday(e.target.value)}
-                        className="flex-1 px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-955 text-xs focus:outline-none focus:ring-1 focus:ring-purple-655"
+                        onChange={setNewHoliday}
+                        className="flex-1"
                       />
-                      <Button onClick={handleAddHoliday} className="p-2 font-bold">Add</Button>
+                      <Button onClick={handleAddHoliday} className="p-2.5 font-bold h-10 shrink-0">Add</Button>
                     </div>
                   ) : (
                     <div className="space-y-2">
                       <div className="grid grid-cols-2 gap-2">
                         <div className="flex flex-col gap-1 text-[10px] text-zinc-450">
                           <span>Start Date</span>
-                          <input
-                            type="date"
+                          <DatePicker
                             value={holidayStart}
-                            onChange={(e) => setHolidayStart(e.target.value)}
-                            className="px-3 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-955 text-xs focus:outline-none focus:ring-1 focus:ring-purple-655"
+                            onChange={setHolidayStart}
+                            className="w-full"
                           />
                         </div>
                         <div className="flex flex-col gap-1 text-[10px] text-zinc-450">
                           <span>End Date</span>
-                          <input
-                            type="date"
+                          <DatePicker
                             value={holidayEnd}
-                            onChange={(e) => setHolidayEnd(e.target.value)}
-                            className="px-3 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-955 text-xs focus:outline-none focus:ring-1 focus:ring-purple-655"
+                            onChange={setHolidayEnd}
+                            className="w-full"
                           />
                         </div>
                       </div>
@@ -942,34 +940,31 @@ export const AdminSettings = () => {
                   </div>
 
                   {maintenanceMode === 'single' ? (
-                    <div className="flex gap-2">
-                      <input
-                        type="date"
+                    <div className="flex gap-2 items-end w-full">
+                      <DatePicker
                         value={newMaintenance}
-                        onChange={(e) => setNewMaintenance(e.target.value)}
-                        className="flex-1 px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-955 text-xs focus:outline-none focus:ring-1 focus:ring-purple-655"
+                        onChange={setNewMaintenance}
+                        className="flex-1"
                       />
-                      <Button onClick={handleAddMaintenance} className="p-2 font-bold">Add</Button>
+                      <Button onClick={handleAddMaintenance} className="p-2.5 font-bold h-10 shrink-0">Add</Button>
                     </div>
                   ) : (
                     <div className="space-y-2">
                       <div className="grid grid-cols-2 gap-2">
                         <div className="flex flex-col gap-1 text-[10px] text-zinc-450">
                           <span>Start Date</span>
-                          <input
-                            type="date"
+                          <DatePicker
                             value={maintenanceStart}
-                            onChange={(e) => setMaintenanceStart(e.target.value)}
-                            className="px-3 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-955 text-xs focus:outline-none focus:ring-1 focus:ring-purple-655"
+                            onChange={setMaintenanceStart}
+                            className="w-full"
                           />
                         </div>
                         <div className="flex flex-col gap-1 text-[10px] text-zinc-450">
                           <span>End Date</span>
-                          <input
-                            type="date"
+                          <DatePicker
                             value={maintenanceEnd}
-                            onChange={(e) => setMaintenanceEnd(e.target.value)}
-                            className="px-3 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-955 text-xs focus:outline-none focus:ring-1 focus:ring-purple-655"
+                            onChange={setMaintenanceEnd}
+                            className="w-full"
                           />
                         </div>
                       </div>

@@ -3,6 +3,7 @@ import { useAdminBookings } from '../hooks/useApi';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { Loader } from '../components/ui/Loader';
 import { CalendarDays, Clock, User } from 'lucide-react';
+import { DatePicker } from '../components/ui/DatePicker';
 
 const format12Hour = (time24) => {
   if (!time24) return '';
@@ -32,8 +33,8 @@ export const AdminCalendar = () => {
     limit: 50,
   });
 
-  const handleDateChange = (e) => {
-    setSelectedDate(e.target.value);
+  const handleDateChange = (dateStr) => {
+    setSelectedDate(dateStr);
   };
 
   const statusColors = {
@@ -54,11 +55,10 @@ export const AdminCalendar = () => {
           </h3>
           <p className="text-xs text-zinc-400 mt-1">Select any date to view all bookings.</p>
         </div>
-        <input
-          type="date"
+        <DatePicker
           value={selectedDate}
           onChange={handleDateChange}
-          className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-sm focus:outline-none focus:ring-2 focus:ring-purple-650"
+          className="w-full"
         />
       </div>
 

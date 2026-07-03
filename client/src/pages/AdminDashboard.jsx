@@ -1,6 +1,7 @@
 import React from 'react';
 import { useDashboardData, useUpdateBookingStatus, useDeleteBooking } from '../hooks/useApi';
 import { Loader } from '../components/ui/Loader';
+import { DatePicker } from '../components/ui/DatePicker';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { useToast } from '../components/ui/Toast';
@@ -164,18 +165,16 @@ export const AdminDashboard = () => {
           {/* Custom Date Inputs */}
           {filterType === 'custom' && (
             <div className="flex items-center gap-2">
-              <input
-                type="date"
+              <DatePicker
                 value={customRange.startDate}
-                onChange={(e) => setCustomRange((prev) => ({ ...prev, startDate: e.target.value }))}
-                className="px-3 py-1.5 rounded-lg border border-zinc-250 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs font-semibold text-zinc-805 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-purple-650"
+                onChange={(val) => setCustomRange((prev) => ({ ...prev, startDate: val }))}
+                className="w-36"
               />
               <span className="text-xs text-zinc-400 font-bold">to</span>
-              <input
-                type="date"
+              <DatePicker
                 value={customRange.endDate}
-                onChange={(e) => setCustomRange((prev) => ({ ...prev, endDate: e.target.value }))}
-                className="px-3 py-1.5 rounded-lg border border-zinc-250 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs font-semibold text-zinc-805 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-purple-650"
+                onChange={(val) => setCustomRange((prev) => ({ ...prev, endDate: val }))}
+                className="w-36"
               />
             </div>
           )}

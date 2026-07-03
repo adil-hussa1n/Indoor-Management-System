@@ -8,6 +8,7 @@ import { useSocket } from '../contexts/SocketContext';
 import { Button } from '../components/ui/Button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { Input, Select } from '../components/ui/Input';
+import { DatePicker } from '../components/ui/DatePicker';
 import { Loader } from '../components/ui/Loader';
 import { useToast } from '../components/ui/Toast';
 
@@ -117,8 +118,8 @@ export const Booking = () => {
   const duration = selectedSlots.length;
   const totalPrice = calculateEstimatedTotal();
 
-  const handleDateChange = (e) => {
-    setSelectedDate(e.target.value);
+  const handleDateChange = (dateStr) => {
+    setSelectedDate(dateStr);
     setSelectedSlots([]);
   };
 
@@ -292,8 +293,7 @@ export const Booking = () => {
               </h3>
               <p className="text-xs text-zinc-400 mt-1">We offer daily scheduling slots.</p>
             </div>
-            <Input
-              type="date"
+            <DatePicker
               min={new Date().toISOString().split('T')[0]}
               value={selectedDate}
               onChange={handleDateChange}
