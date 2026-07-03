@@ -185,7 +185,7 @@ export const AdminDashboard = () => {
       {/* Selected Day metrics */}
       <div className="space-y-4">
         <h3 className="text-xs font-extrabold uppercase tracking-widest text-purple-650">
-          Filtered Performance ({new Date(queryParams.startDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} - {new Date(queryParams.endDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })})
+          Filtered Performance ({new Date(queryParams.startDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })} - {new Date(queryParams.endDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })})
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="glass-card hover-glow p-6 rounded-3xl border border-purple-250/20 bg-purple-50/5 dark:bg-purple-950/5 flex justify-between items-start">
@@ -339,7 +339,7 @@ export const AdminDashboard = () => {
                     </td>
                     <td className="py-3.5 px-4 font-bold text-zinc-650 dark:text-zinc-350">{b.sport}</td>
                     <td className="py-3.5 px-4">
-                      <div className="text-zinc-800 dark:text-zinc-200 font-semibold">{new Date(b.bookingDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
+                      <div className="text-zinc-800 dark:text-zinc-200 font-semibold">{new Date(b.bookingDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}</div>
                       <div className="text-xs text-zinc-500">
                         {format12Hour(b.startTime)} - {format12Hour(b.endTime)}
                       </div>

@@ -88,7 +88,7 @@ export const AdminReviews = () => {
                         ))}
                       </div>
                       <span className="text-xs font-semibold text-zinc-400">
-                        {new Date(rev.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        {new Date(rev.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                       </span>
                     </div>
 

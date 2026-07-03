@@ -81,7 +81,7 @@ export const AdminMessages = () => {
                         {msg.name}
                       </h4>
                       <span className="text-xs text-zinc-450 font-medium">
-                        ({new Date(msg.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} at {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})
+                        ({new Date(msg.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })} at {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})
                       </span>
                     </div>
 
