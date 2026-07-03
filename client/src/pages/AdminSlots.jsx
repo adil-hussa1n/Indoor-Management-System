@@ -28,6 +28,12 @@ const format12Hour = (time24) => {
   return `${displayHour}:${minStr} ${ampm}`;
 };
 
+const formatDateDMY = (dateStr) => {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+};
+
 export const AdminSlots = () => {
   const toast = useToast();
   const [startTime, setStartTime] = useState('');
@@ -245,7 +251,7 @@ export const AdminSlots = () => {
                 if (slot.dayOfWeek !== -1) {
                   dayLabel = WEEKDAYS.find((d) => d.value === String(slot.dayOfWeek))?.label || '';
                 } else if (slot.specificDate) {
-                  dayLabel = `Special Date: ${slot.specificDate}`;
+                  dayLabel = `Special Date: ${formatDateDMY(slot.specificDate)}`;
                 } else {
                   dayLabel = 'Default Daily';
                 }

@@ -263,6 +263,12 @@ export const AdminSettings = () => {
     return dates;
   };
 
+  const formatDateDMY = (dateStr) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  };
+
   const handleAddHoliday = () => {
     let toAdd = [];
     if (holidayMode === 'single') {
@@ -893,7 +899,7 @@ export const AdminSettings = () => {
                   <div className="space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar">
                     {settings.holidays?.map((date) => (
                       <div key={date} className="flex items-center justify-between p-2 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 text-sm">
-                        <span className="font-semibold text-zinc-855 dark:text-zinc-200">{date}</span>
+                        <span className="font-semibold text-zinc-855 dark:text-zinc-200">{formatDateDMY(date)}</span>
                         <button onClick={() => handleDeleteHoliday(date)} className="text-zinc-400 hover:text-red-500 cursor-pointer">
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -974,7 +980,7 @@ export const AdminSettings = () => {
                   <div className="space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar">
                     {settings.maintenanceDays?.map((date) => (
                       <div key={date} className="flex items-center justify-between p-2 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 text-sm">
-                        <span className="font-semibold text-zinc-855 dark:text-zinc-200">{date}</span>
+                        <span className="font-semibold text-zinc-855 dark:text-zinc-200">{formatDateDMY(date)}</span>
                         <button onClick={() => handleDeleteMaintenance(date)} className="text-zinc-400 hover:text-red-500 cursor-pointer">
                           <Trash2 className="w-4 h-4" />
                         </button>
