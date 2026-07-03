@@ -7,6 +7,7 @@ export const DatePicker = ({
   onChange,
   error,
   min, // Expects 'YYYY-MM-DD'
+  align = 'left',
   className = '',
   ...props
 }) => {
@@ -88,7 +89,7 @@ export const DatePicker = ({
   ];
 
   return (
-    <div ref={containerRef} className="flex flex-col gap-1.5 w-full text-left relative">
+    <div ref={containerRef} className={`flex flex-col gap-1.5 w-full text-left relative ${isOpen ? 'z-[100]' : 'z-10'}`}>
       {label && (
         <label className="text-xs font-semibold text-zinc-655 dark:text-zinc-400 uppercase tracking-wider">
           {label}
@@ -113,7 +114,7 @@ export const DatePicker = ({
       </div>
 
       {isOpen && (
-        <div className="absolute top-[calc(100%+4px)] left-0 z-50 w-72 p-4 rounded-2xl border border-zinc-150 dark:border-zinc-850 bg-white dark:bg-zinc-950 shadow-xl shadow-zinc-200/50 dark:shadow-none animate-fade-in text-zinc-800 dark:text-zinc-200">
+        <div className={`absolute top-[calc(100%+4px)] ${align === 'right' ? 'right-0' : 'left-0'} z-[100] w-72 p-4 rounded-2xl border border-zinc-150 dark:border-zinc-850 bg-white dark:bg-zinc-950 shadow-xl shadow-zinc-200/50 dark:shadow-none animate-fade-in text-zinc-800 dark:text-zinc-200`}>
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <span className="font-extrabold text-sm">

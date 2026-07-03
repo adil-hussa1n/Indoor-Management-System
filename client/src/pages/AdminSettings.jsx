@@ -887,6 +887,7 @@ export const AdminSettings = () => {
                             value={holidayEnd}
                             onChange={setHolidayEnd}
                             className="w-full"
+                            align="right"
                           />
                         </div>
                       </div>
@@ -965,6 +966,7 @@ export const AdminSettings = () => {
                             value={maintenanceEnd}
                             onChange={setMaintenanceEnd}
                             className="w-full"
+                            align="right"
                           />
                         </div>
                       </div>

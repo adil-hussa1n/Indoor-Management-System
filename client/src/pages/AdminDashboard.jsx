@@ -175,6 +175,7 @@ export const AdminDashboard = () => {
                 value={customRange.endDate}
                 onChange={(val) => setCustomRange((prev) => ({ ...prev, endDate: val }))}
                 className="w-36"
+                align="right"
               />
             </div>
           )}
