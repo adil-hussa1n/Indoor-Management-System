@@ -65,7 +65,7 @@ export const updateSettings = async (req, res, next) => {
     }
 
     // 2. Parse stringified JSON fields (sent via multipart/form-data)
-    const jsonFields = ['businessHours', 'pricing', 'socialLinks', 'seo', 'availableSports', 'holidays', 'maintenanceDays', 'weekendDays', 'hero'];
+    const jsonFields = ['businessHours', 'pricing', 'socialLinks', 'seo', 'availableSports', 'holidays', 'maintenanceDays', 'weekendDays', 'hero', 'rules'];
     for (const field of jsonFields) {
       if (body[field]) {
         try {
@@ -113,6 +113,7 @@ export const getPublicInfo = async (req, res, next) => {
       weekendDays: settings.weekendDays,
       hero: settings.hero,
       theme: settings.theme,
+      rules: settings.rules,
     };
     res.status(200).json({ success: true, settings: publicSettings });
   } catch (error) {

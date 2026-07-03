@@ -207,7 +207,7 @@ export const AdminBookings = () => {
                     </td>
                     <td className="py-3.5 px-4 font-bold text-zinc-650 dark:text-zinc-350">{b.sport}</td>
                     <td className="py-3.5 px-4">
-                      <div className="text-zinc-850 dark:text-zinc-200 font-semibold">{new Date(b.bookingDate).toLocaleDateString('en-BD')}</div>
+                      <div className="text-zinc-850 dark:text-zinc-200 font-semibold">{new Date(b.bookingDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
                       <div className="text-xs text-zinc-500">{format12Hour(b.startTime)} - {format12Hour(b.endTime)} ({b.duration} hr)</div>
                     </td>
                     <td className="py-3.5 px-4 font-extrabold text-zinc-855 dark:text-zinc-100">৳{b.price}</td>

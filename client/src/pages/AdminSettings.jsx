@@ -75,6 +75,7 @@ export const AdminSettings = () => {
   const [newSport, setNewSport] = useState('');
   const [newHoliday, setNewHoliday] = useState('');
   const [newMaintenance, setNewMaintenance] = useState('');
+  const [newRule, setNewRule] = useState('');
 
   const [formData, setFormData] = useState(null);
   const [logoFile, setLogoFile] = useState(null);
@@ -114,6 +115,7 @@ export const AdminSettings = () => {
         heroBanner: settings.heroBanner || '',
         googleMapUrl: settings.googleMapUrl || '',
         theme: settings.theme || 'default',
+        rules: settings.rules || [],
         businessHours: {
           weekday: settings.businessHours?.weekday || '08:00 - 22:00',
           weekend: settings.businessHours?.weekend || '09:00 - 23:00',
@@ -199,6 +201,7 @@ export const AdminSettings = () => {
     data.append('weekendDays', JSON.stringify(formData.weekendDays));
     data.append('socialLinks', JSON.stringify(formData.socialLinks));
     data.append('hero', JSON.stringify(formData.hero));
+    data.append('rules', JSON.stringify(formData.rules));
 
     updateSettingsMutation.mutate(data, {
       onSuccess: () => {
@@ -805,6 +808,61 @@ export const AdminSettings = () => {
                 <div key={date} className="flex items-center justify-between p-2 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 text-sm">
                   <span className="font-semibold text-zinc-850 dark:text-zinc-200">{date}</span>
                   <button onClick={() => handleDeleteMaintenance(date)} className="text-zinc-400 hover:text-red-500 cursor-pointer">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Rules & Regulations */}
+        <div className="glass-card p-6 rounded-3xl shadow-sm space-y-4 col-span-1 md:col-span-2">
+          <div>
+            <h3 className="text-base font-bold text-zinc-900 dark:text-white">Rules & Regulations</h3>
+            <p className="text-xs text-zinc-400 mt-1">Manage court rules shown to users after booking.</p>
+          </div>
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Add a new rule..."
+                value={newRule}
+                onChange={(e) => setNewRule(e.target.value)}
+                className="flex-1 px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-sm focus:outline-none focus:ring-1 focus:ring-purple-655"
+              />
+              <Button
+                onClick={() => {
+                  if (!newRule.trim()) return;
+                  setFormData(prev => ({ ...prev, rules: [...(prev.rules || []), newRule.trim()] }));
+                  setNewRule('');
+                }}
+                className="p-2.5 font-bold animate-glow"
+              >
+                Add
+              </Button>
+            </div>
+            <div className="space-y-2 max-h-72 overflow-y-auto custom-scrollbar">
+              {(formData?.rules || []).map((rule, idx) => (
+                <div key={idx} className="flex items-center gap-2 p-2 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 text-sm">
+                  <span className="text-xs font-bold text-zinc-450 dark:text-zinc-500 w-5">{idx + 1}</span>
+                  <input
+                    type="text"
+                    value={rule}
+                    onChange={(e) => {
+                      const updatedRules = [...formData.rules];
+                      updatedRules[idx] = e.target.value;
+                      setFormData(prev => ({ ...prev, rules: updatedRules }));
+                    }}
+                    className="flex-1 bg-transparent border-0 focus:ring-0 text-zinc-800 dark:text-zinc-250 text-sm p-0 focus:outline-none"
+                  />
+                  <button
+                    onClick={() => {
+                      const updatedRules = formData.rules.filter((_, i) => i !== idx);
+                      setFormData(prev => ({ ...prev, rules: updatedRules }));
+                    }}
+                    className="text-zinc-400 hover:text-red-500 cursor-pointer"
+                  >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>

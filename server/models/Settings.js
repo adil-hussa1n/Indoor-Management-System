@@ -79,12 +79,23 @@ const settingsSchema = new mongoose.Schema(
     },
     availableSports: {
       type: [String],
-      default: ['Futsal', 'Basketball', 'Badminton', 'Volleyball'],
+      default: ['Football', 'Futsal', 'Basketball', 'Badminton', 'Volleyball'],
     },
     theme: {
       type: String,
       enum: ['default', 'green'],
       default: 'default',
+    },
+    rules: {
+      type: [String],
+      default: [
+        'Only non-marking athletic shoes are allowed on the court playing surface.',
+        'Bookings are strict. Please vacate the court immediately when your session ends.',
+        'No food or sugary beverages on the main hardwood floor (bottled water only).',
+        'Proper sports attire must be worn at all times.',
+        'D-Box Indoor is not responsible for any lost or stolen personal belongings.',
+        'Damaging facilities or equipment will result in replacement fines.'
+      ],
     },
   },
   { timestamps: true }

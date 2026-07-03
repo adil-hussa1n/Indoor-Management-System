@@ -22,6 +22,12 @@ const format12Hour = (time24) => {
   return `${displayHour}:${minStr} ${ampm}`;
 };
 
+const formatDateDMY = (dateStr) => {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+};
+
 const bookingFormSchema = z.object({
   customerName: z.string().min(2, 'Full Name is required'),
   phone: z.string().min(7, 'Valid phone number is required'),
@@ -75,7 +81,7 @@ export const Booking = () => {
       customerName: '',
       phone: '',
       email: '',
-      sport: 'Futsal',
+      sport: 'Football',
       players: 10,
       notes: '',
     },
@@ -213,7 +219,7 @@ export const Booking = () => {
             <div className="flex justify-between items-center text-sm">
               <span className="text-zinc-500">Date</span>
               <span className="font-semibold text-zinc-850 dark:text-zinc-200">
-                {new Date(confirmedBooking.bookingDate).toLocaleDateString('en-BD')}
+                {formatDateDMY(confirmedBooking.bookingDate)}
               </span>
             </div>
             <div className="flex justify-between items-center text-sm">
@@ -231,6 +237,26 @@ export const Booking = () => {
           </CardContent>
         </Card>
 
+        {settings?.rules && settings.rules.length > 0 && (
+          <Card className="mb-8 text-left bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800">
+            <CardHeader className="pb-2 pt-5">
+              <CardTitle className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-wider">
+                Court Rules & Regulations
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pb-5">
+              <ul className="space-y-2.5">
+                {settings.rules.map((rule, idx) => (
+                  <li key={idx} className="flex gap-2.5 text-xs text-zinc-650 dark:text-zinc-450">
+                    <span className="font-extrabold text-purple-650 shrink-0">{idx + 1}.</span>
+                    <span>{rule}</span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
+
         <Button onClick={() => setConfirmedBooking(null)} className="w-full">
           Book Another Court Session
         </Button>
@@ -239,6 +265,7 @@ export const Booking = () => {
   }
 
   const sportOptions = settings?.availableSports?.map((s) => ({ value: s, label: s })) || [
+    { value: 'Football', label: 'Football' },
     { value: 'Futsal', label: 'Futsal' },
     { value: 'Basketball', label: 'Basketball' },
     { value: 'Badminton', label: 'Badminton' },
@@ -399,7 +426,7 @@ export const Booking = () => {
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span className="text-zinc-500">Date Selected</span>
-                  <span className="font-semibold text-zinc-850 dark:text-zinc-205">{selectedDate}</span>
+                  <span className="font-semibold text-zinc-850 dark:text-zinc-205">{formatDateDMY(selectedDate)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-zinc-500">Time Slots</span>

@@ -15,6 +15,12 @@ const format12Hour = (time24) => {
   return `${displayHour}:${minStr} ${ampm}`;
 };
 
+const formatDateDMY = (dateStr) => {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+};
+
 export const AdminCalendar = () => {
   const [selectedDate, setSelectedDate] = useState(() => {
     return new Date().toISOString().split('T')[0];
@@ -59,7 +65,7 @@ export const AdminCalendar = () => {
       {/* Bookings List Card */}
       <div className="lg:col-span-8 glass-card p-6 rounded-3xl shadow-sm space-y-4">
         <div>
-          <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Schedule for {selectedDate}</h3>
+          <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Schedule for {formatDateDMY(selectedDate)}</h3>
           <p className="text-xs text-zinc-400 mt-1">All scheduled court slots for this day.</p>
         </div>
         <div>
