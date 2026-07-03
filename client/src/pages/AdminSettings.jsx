@@ -74,7 +74,14 @@ export const AdminSettings = () => {
 
   const [newSport, setNewSport] = useState('');
   const [newHoliday, setNewHoliday] = useState('');
+  const [holidayMode, setHolidayMode] = useState('single');
+  const [holidayStart, setHolidayStart] = useState('');
+  const [holidayEnd, setHolidayEnd] = useState('');
+
   const [newMaintenance, setNewMaintenance] = useState('');
+  const [maintenanceMode, setMaintenanceMode] = useState('single');
+  const [maintenanceStart, setMaintenanceStart] = useState('');
+  const [maintenanceEnd, setMaintenanceEnd] = useState('');
   const [newRule, setNewRule] = useState('');
   const [activeTab, setActiveTab] = useState('general');
 
@@ -245,15 +252,45 @@ export const AdminSettings = () => {
     );
   };
 
+  const getDatesInRange = (startDateStr, endDateStr) => {
+    const dates = [];
+    let current = new Date(startDateStr);
+    const end = new Date(endDateStr);
+    while (current <= end) {
+      dates.push(current.toISOString().split('T')[0]);
+      current.setDate(current.getDate() + 1);
+    }
+    return dates;
+  };
+
   const handleAddHoliday = () => {
-    if (!newHoliday) return;
-    const updatedHolidays = [...(settings.holidays || []), newHoliday];
+    let toAdd = [];
+    if (holidayMode === 'single') {
+      if (!newHoliday) return;
+      toAdd = [newHoliday];
+    } else {
+      if (!holidayStart || !holidayEnd) {
+        toast.error('Please specify start and end dates');
+        return;
+      }
+      if (holidayStart > holidayEnd) {
+        toast.error('Start date cannot be after end date');
+        return;
+      }
+      toAdd = getDatesInRange(holidayStart, holidayEnd);
+    }
+
+    const currentHolidays = settings.holidays || [];
+    const merged = Array.from(new Set([...currentHolidays, ...toAdd]));
+
     updateSettingsMutation.mutate(
-      { holidays: updatedHolidays },
+      { holidays: merged },
       {
         onSuccess: () => {
-          toast.success('Holiday blockout date added');
+          toast.success('Holiday blockout date(s) added');
           setNewHoliday('');
+          setHolidayStart('');
+          setHolidayEnd('');
           refetch();
         },
       }
@@ -274,14 +311,33 @@ export const AdminSettings = () => {
   };
 
   const handleAddMaintenance = () => {
-    if (!newMaintenance) return;
-    const updatedMaint = [...(settings.maintenanceDays || []), newMaintenance];
+    let toAdd = [];
+    if (maintenanceMode === 'single') {
+      if (!newMaintenance) return;
+      toAdd = [newMaintenance];
+    } else {
+      if (!maintenanceStart || !maintenanceEnd) {
+        toast.error('Please specify start and end dates');
+        return;
+      }
+      if (maintenanceStart > maintenanceEnd) {
+        toast.error('Start date cannot be after end date');
+        return;
+      }
+      toAdd = getDatesInRange(maintenanceStart, maintenanceEnd);
+    }
+
+    const currentMaint = settings.maintenanceDays || [];
+    const merged = Array.from(new Set([...currentMaint, ...toAdd]));
+
     updateSettingsMutation.mutate(
-      { maintenanceDays: updatedMaint },
+      { maintenanceDays: merged },
       {
         onSuccess: () => {
-          toast.success('Maintenance date blocked');
+          toast.success('Maintenance date(s) blocked');
           setNewMaintenance('');
+          setMaintenanceStart('');
+          setMaintenanceEnd('');
           refetch();
         },
       }
@@ -299,40 +355,50 @@ export const AdminSettings = () => {
         },
       }
     );
-  };
+  };  if (isLoading || !formData) return <Loader size="large" className="py-20" />;
 
-  if (isLoading || !formData) return <Loader size="large" className="py-20" />;  return (
+  return (
     <div className="space-y-6 text-left max-w-5xl mx-auto animate-fade-in">
+      <form onSubmit={handleSave} className="space-y-6">
       <div className="flex flex-col gap-1.5">
         <h1 className="text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-white">Admin Settings</h1>
         <p className="text-sm text-zinc-400">Configure your website theme, business details, pricing structure, and court schedules.</p>
       </div>
 
-      {/* Tab Controls */}
-      <div className="flex flex-wrap gap-2 border-b border-zinc-200 dark:border-zinc-850 pb-3">
-        {[
-          { id: 'general', label: '🌐 Branding & Media' },
-          { id: 'hero', label: '✨ Hero Section' },
-          { id: 'pricing', label: '৳ Hours & Pricing' },
-          { id: 'court', label: '⚙️ Court & Rules' },
-          { id: 'integrations', label: '🔗 SEO & Links' },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => setActiveTab(tab.id)}
-            className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer ${
-              activeTab === tab.id
-                ? 'bg-purple-650 text-white shadow-md shadow-purple-500/20'
-                : 'text-zinc-650 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-white'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+      {/* Tab Controls & Save Button */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-200 dark:border-zinc-855 pb-3">
+        <div className="flex flex-wrap gap-2">
+          {[
+            { id: 'general', label: '🌐 Branding & Media' },
+            { id: 'hero', label: '✨ Hero Section' },
+            { id: 'pricing', label: '৳ Hours & Pricing' },
+            { id: 'court', label: '⚙️ Court & Rules' },
+            { id: 'integrations', label: '🔗 SEO & Links' },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer ${
+                activeTab === tab.id
+                  ? 'bg-purple-650 text-white shadow-md shadow-purple-500/20'
+                  : 'text-zinc-650 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-white'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        <Button
+          type="submit"
+          disabled={updateSettingsMutation.isPending}
+          className="px-5 py-2.5 font-bold shadow-md shadow-purple-500/10 active:scale-[0.98] shrink-0 animate-glow"
+        >
+          {updateSettingsMutation.isPending ? 'Saving...' : 'Save Configuration'}
+        </Button>
       </div>
 
-      <form onSubmit={handleSave} className="space-y-8">
         {/* Tab 1: General & Media */}
         {activeTab === 'general' && (
           <div className="space-y-6 animate-fade-in">
@@ -756,7 +822,6 @@ export const AdminSettings = () => {
                   </div>
                 </div>
               </div>
-
               {/* Holidays */}
               <div className="glass-card p-6 rounded-3xl shadow-sm space-y-4">
                 <div>
@@ -764,15 +829,67 @@ export const AdminSettings = () => {
                   <p className="text-xs text-zinc-400 mt-1">Block court (Holiday rate apply).</p>
                 </div>
                 <div className="space-y-4">
-                  <div className="flex gap-2">
-                    <input
-                      type="date"
-                      value={newHoliday}
-                      onChange={(e) => setNewHoliday(e.target.value)}
-                      className="flex-1 px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-sm focus:outline-none focus:ring-1 focus:ring-purple-655"
-                    />
-                    <Button onClick={handleAddHoliday} className="p-2.5 font-bold">Add</Button>
+                  <div className="flex gap-4 text-xs font-bold border-b border-zinc-100 dark:border-zinc-800 pb-2">
+                    <button
+                      type="button"
+                      onClick={() => setHolidayMode('single')}
+                      className={`pb-1 border-b-2 transition-all cursor-pointer ${
+                        holidayMode === 'single'
+                          ? 'border-purple-650 text-purple-650'
+                          : 'border-transparent text-zinc-400 hover:text-zinc-650'
+                      }`}
+                    >
+                      Single Day
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setHolidayMode('range')}
+                      className={`pb-1 border-b-2 transition-all cursor-pointer ${
+                        holidayMode === 'range'
+                          ? 'border-purple-650 text-purple-650'
+                          : 'border-transparent text-zinc-400 hover:text-zinc-650'
+                      }`}
+                    >
+                      Date Range
+                    </button>
                   </div>
+
+                  {holidayMode === 'single' ? (
+                    <div className="flex gap-2">
+                      <input
+                        type="date"
+                        value={newHoliday}
+                        onChange={(e) => setNewHoliday(e.target.value)}
+                        className="flex-1 px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-955 text-xs focus:outline-none focus:ring-1 focus:ring-purple-655"
+                      />
+                      <Button onClick={handleAddHoliday} className="p-2 font-bold">Add</Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="flex flex-col gap-1 text-[10px] text-zinc-450">
+                          <span>Start Date</span>
+                          <input
+                            type="date"
+                            value={holidayStart}
+                            onChange={(e) => setHolidayStart(e.target.value)}
+                            className="px-3 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-955 text-xs focus:outline-none focus:ring-1 focus:ring-purple-655"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1 text-[10px] text-zinc-450">
+                          <span>End Date</span>
+                          <input
+                            type="date"
+                            value={holidayEnd}
+                            onChange={(e) => setHolidayEnd(e.target.value)}
+                            className="px-3 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-955 text-xs focus:outline-none focus:ring-1 focus:ring-purple-655"
+                          />
+                        </div>
+                      </div>
+                      <Button onClick={handleAddHoliday} className="w-full py-2 font-bold">Add Range</Button>
+                    </div>
+                  )}
+
                   <div className="space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar">
                     {settings.holidays?.map((date) => (
                       <div key={date} className="flex items-center justify-between p-2 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 text-sm">
@@ -793,15 +910,67 @@ export const AdminSettings = () => {
                   <p className="text-xs text-zinc-400 mt-1">Block court completely (Zero slots).</p>
                 </div>
                 <div className="space-y-4">
-                  <div className="flex gap-2">
-                    <input
-                      type="date"
-                      value={newMaintenance}
-                      onChange={(e) => setNewMaintenance(e.target.value)}
-                      className="flex-1 px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-sm focus:outline-none focus:ring-1 focus:ring-purple-655"
-                    />
-                    <Button onClick={handleAddMaintenance} className="p-2.5 font-bold">Add</Button>
+                  <div className="flex gap-4 text-xs font-bold border-b border-zinc-100 dark:border-zinc-800 pb-2">
+                    <button
+                      type="button"
+                      onClick={() => setMaintenanceMode('single')}
+                      className={`pb-1 border-b-2 transition-all cursor-pointer ${
+                        maintenanceMode === 'single'
+                          ? 'border-purple-650 text-purple-650'
+                          : 'border-transparent text-zinc-400 hover:text-zinc-655'
+                      }`}
+                    >
+                      Single Day
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMaintenanceMode('range')}
+                      className={`pb-1 border-b-2 transition-all cursor-pointer ${
+                        maintenanceMode === 'range'
+                          ? 'border-purple-650 text-purple-650'
+                          : 'border-transparent text-zinc-400 hover:text-zinc-655'
+                      }`}
+                    >
+                      Date Range
+                    </button>
                   </div>
+
+                  {maintenanceMode === 'single' ? (
+                    <div className="flex gap-2">
+                      <input
+                        type="date"
+                        value={newMaintenance}
+                        onChange={(e) => setNewMaintenance(e.target.value)}
+                        className="flex-1 px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-955 text-xs focus:outline-none focus:ring-1 focus:ring-purple-655"
+                      />
+                      <Button onClick={handleAddMaintenance} className="p-2 font-bold">Add</Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="flex flex-col gap-1 text-[10px] text-zinc-450">
+                          <span>Start Date</span>
+                          <input
+                            type="date"
+                            value={maintenanceStart}
+                            onChange={(e) => setMaintenanceStart(e.target.value)}
+                            className="px-3 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-955 text-xs focus:outline-none focus:ring-1 focus:ring-purple-655"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1 text-[10px] text-zinc-450">
+                          <span>End Date</span>
+                          <input
+                            type="date"
+                            value={maintenanceEnd}
+                            onChange={(e) => setMaintenanceEnd(e.target.value)}
+                            className="px-3 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-955 text-xs focus:outline-none focus:ring-1 focus:ring-purple-655"
+                          />
+                        </div>
+                      </div>
+                      <Button onClick={handleAddMaintenance} className="w-full py-2 font-bold">Add Range</Button>
+                    </div>
+                  )}
+
                   <div className="space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar">
                     {settings.maintenanceDays?.map((date) => (
                       <div key={date} className="flex items-center justify-between p-2 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 text-sm">
@@ -811,9 +980,9 @@ export const AdminSettings = () => {
                         </button>
                       </div>
                     ))}
-                  </div>
                 </div>
               </div>
+            </div>
 
               {/* Rules & Regulations */}
               <div className="glass-card p-6 rounded-3xl shadow-sm space-y-4">
@@ -947,17 +1116,6 @@ export const AdminSettings = () => {
             </div>
           </div>
         )}
-
-        {/* Global Action Bar */}
-        <div className="flex justify-end pt-4 border-t border-zinc-200 dark:border-zinc-800/80">
-          <Button
-            type="submit"
-            disabled={updateSettingsMutation.isPending}
-            className="px-6 py-2.5 font-bold shadow-md shadow-purple-500/10 active:scale-[0.98]"
-          >
-            {updateSettingsMutation.isPending ? 'Saving Settings...' : 'Save Settings Configuration'}
-          </Button>
-        </div>
       </form>
     </div>
   );
