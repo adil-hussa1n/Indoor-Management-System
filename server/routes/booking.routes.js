@@ -8,8 +8,8 @@ import {
   updateBookingStatus,
   deleteBooking,
   getDashboardData,
-} from '../controllers/booking.controller.js';
-import { protect } from '../middleware/auth.js';
+} from '../src/controllers/booking.controller.js';
+import { protect } from '../src/middlewares/auth.js';
 
 const router = express.Router();
 

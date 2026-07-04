@@ -22,7 +22,7 @@ import {
   Phone,
   Mail
 } from 'lucide-react';
-import { usePublicSettings, usePublicReviews } from '../hooks/useApi';
+import { usePublicSettings, usePublicReviews, useCreateReview } from '../hooks/useApi';
 import { Button } from '../components/ui/Button';
 
 const getSportIcon = (sportName) => {
@@ -83,10 +83,45 @@ const staggerContainer = {
 export const Home = () => {
   const { data: settings } = usePublicSettings();
   const { data: reviews } = usePublicReviews();
+  const createReviewMutation = useCreateReview();
 
   // Pricing calculator state
   const [calcDayType, setCalcDayType] = useState('weekday');
   const [calcShift, setCalcShift] = useState('day');
+
+  // Review submission state
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [reviewName, setReviewName] = useState('');
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitError('');
+    if (!reviewName.trim() || !reviewComment.trim()) {
+      setSubmitError('Please fill in all fields.');
+      return;
+    }
+    try {
+      await createReviewMutation.mutateAsync({
+        customerName: reviewName,
+        rating: reviewRating,
+        comment: reviewComment,
+      });
+      setSubmitSuccess(true);
+      setReviewName('');
+      setReviewComment('');
+      setReviewRating(5);
+      setTimeout(() => {
+        setReviewModalOpen(false);
+        setSubmitSuccess(false);
+      }, 2500);
+    } catch (err) {
+      setSubmitError(err.response?.data?.message || 'Failed to submit review.');
+    }
+  };
 
   const features = [
     {
@@ -449,42 +484,158 @@ export const Home = () => {
       </section>
 
       {/* Testimonials */}
-      {reviews && reviews.filter(r => r.isFeatured).length > 0 && (
+      {reviews && (
         <section className="py-24 bg-zinc-100/40 dark:bg-zinc-950/20 border-t border-zinc-200/40 dark:border-zinc-900/60 px-4">
-          <div className="max-w-7xl mx-auto text-center">
-            <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-widest bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 mb-3">
-              <Star className="w-3.5 h-3.5" /> Player Love
-            </span>
-            <h2 className="text-4xl md:text-5xl font-black text-zinc-900 dark:text-white mb-16">
-              What Our Community Says
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {reviews.filter(r => r.isFeatured).map((rev) => (
-                <motion.div
-                  key={rev._id}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.4 }}
-                  className="glass-card hover-glow rounded-3xl p-6 shadow-sm text-left flex flex-col justify-between hover:bg-white dark:hover:bg-zinc-900/80 border border-zinc-200/50 dark:border-zinc-800"
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-16 max-w-2xl mx-auto flex flex-col items-center gap-4">
+              <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-widest bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                <Star className="w-3.5 h-3.5 animate-pulse" /> Player Love
+              </span>
+              <h2 className="text-4xl md:text-5xl font-black text-zinc-900 dark:text-white">
+                What Our Community Says
+              </h2>
+              <p className="text-zinc-550 dark:text-zinc-400 text-xs sm:text-sm leading-relaxed max-w-md">
+                Hear from futsal players, cricketers, and families who play at our arena every day.
+              </p>
+              <div className="pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setReviewModalOpen(true)}
+                  className="font-bold border-purple-500/20 text-purple-650 hover:bg-purple-500/5 dark:text-purple-400 rounded-2xl px-6 py-2.5 shadow-sm"
                 >
-                  <div>
-                    <div className="flex items-center gap-0.5 mb-4">
-                      {[...Array(rev.rating)].map((_, i) => (
-                        <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
-                      ))}
-                    </div>
-                    <p className="text-sm text-zinc-650 dark:text-zinc-350 italic mb-6 leading-relaxed">
-                      "{rev.comment}"
-                    </p>
-                  </div>
-                  <div className="font-extrabold text-xs uppercase tracking-wider text-purple-650 dark:text-purple-400 mt-2">
-                    &mdash; {rev.customerName}
-                  </div>
-                </motion.div>
-              ))}
+                  Write a Review <Sparkles className="w-4 h-4 ml-2 text-purple-500" />
+                </Button>
+              </div>
             </div>
+
+            {reviews.filter(r => r.isFeatured).length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {reviews.filter(r => r.isFeatured).map((rev) => (
+                  <motion.div
+                    key={rev._id || rev.id}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.4 }}
+                    className="glass-card hover-glow rounded-3xl p-6 shadow-sm text-left flex flex-col justify-between hover:bg-white dark:hover:bg-zinc-900/80 border border-zinc-200/50 dark:border-zinc-800"
+                  >
+                    <div>
+                      <div className="flex items-center gap-0.5 mb-4">
+                        {[...Array(rev.rating)].map((_, i) => (
+                          <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
+                        ))}
+                      </div>
+                      <p className="text-sm text-zinc-650 dark:text-zinc-350 italic mb-6 leading-relaxed">
+                        "{rev.comment}"
+                      </p>
+                    </div>
+                    <div className="font-extrabold text-xs uppercase tracking-wider text-purple-650 dark:text-purple-400 mt-2">
+                      &mdash; {rev.customerName}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-12 rounded-3xl border border-dashed border-zinc-300 dark:border-zinc-800 text-zinc-550">
+                No featured reviews yet. Be the first to share your experience!
+              </div>
+            )}
           </div>
+
+          {/* Write a Review Modal */}
+          {reviewModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                className="bg-white dark:bg-zinc-900 rounded-[2.5rem] border border-zinc-200/60 dark:border-zinc-800 p-8 w-full max-w-lg shadow-2xl relative"
+              >
+                <button
+                  onClick={() => setReviewModalOpen(false)}
+                  className="absolute top-6 right-6 text-zinc-400 hover:text-zinc-650 dark:hover:text-white text-xl font-bold p-2"
+                >
+                  &times;
+                </button>
+                <div className="mb-6">
+                  <h3 className="text-2xl font-black text-zinc-900 dark:text-white">Share Your Feedback</h3>
+                  <p className="text-zinc-500 text-xs mt-1">Your review will be posted once approved by the administrators.</p>
+                </div>
+
+                {submitSuccess ? (
+                  <div className="py-8 text-center space-y-4">
+                    <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto text-emerald-500">
+                      <Check className="w-8 h-8 stroke-[3]" />
+                    </div>
+                    <h4 className="text-lg font-bold text-zinc-900 dark:text-white">Review Submitted!</h4>
+                    <p className="text-sm text-zinc-550 dark:text-zinc-450">Thank you for sharing your experience with us.</p>
+                  </div>
+                ) : (
+                  <form onSubmit={handleReviewSubmit} className="space-y-5 text-left">
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2">Your Name</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="John Doe"
+                        value={reviewName}
+                        onChange={(e) => setReviewName(e.target.value)}
+                        className="w-full px-4 py-3 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm text-zinc-800 dark:text-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2">Rating</label>
+                      <div className="flex items-center gap-1.5">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            type="button"
+                            onClick={() => setReviewRating(star)}
+                            className="p-1 hover:scale-110 transition-transform"
+                          >
+                            <Star
+                              className={`w-7 h-7 ${
+                                star <= reviewRating
+                                  ? 'fill-amber-400 text-amber-400'
+                                  : 'text-zinc-300 dark:text-zinc-700'
+                              }`}
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2">Your Message</label>
+                      <textarea
+                        required
+                        rows="4"
+                        placeholder="Tell us about the court quality, amenities, or booking experience..."
+                        value={reviewComment}
+                        onChange={(e) => setReviewComment(e.target.value)}
+                        className="w-full px-4 py-3 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm text-zinc-800 dark:text-white"
+                      />
+                    </div>
+
+                    {submitError && (
+                      <p className="text-xs font-semibold text-red-500 bg-red-500/5 p-3 rounded-xl border border-red-500/10">
+                        {submitError}
+                      </p>
+                    )}
+
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      className="w-full py-3 font-bold"
+                      disabled={createReviewMutation.isPending}
+                    >
+                      {createReviewMutation.isPending ? 'Submitting...' : 'Submit Review'}
+                    </Button>
+                  </form>
+                )}
+              </motion.div>
+            </div>
+          )}
         </section>
       )}
 

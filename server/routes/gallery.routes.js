@@ -5,8 +5,8 @@ import {
   uploadImage,
   deleteImage,
   reorderGallery,
-} from '../controllers/gallery.controller.js';
-import { protect } from '../middleware/auth.js';
+} from '../src/controllers/gallery.controller.js';
+import { protect } from '../src/middlewares/auth.js';
 
 const router = express.Router();
 

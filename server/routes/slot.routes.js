@@ -5,8 +5,8 @@ import {
   createSlot,
   updateSlot,
   deleteSlot,
-} from '../controllers/slot.controller.js';
-import { protect } from '../middleware/auth.js';
+} from '../src/controllers/slot.controller.js';
+import { protect } from '../src/middlewares/auth.js';
 
 const router = express.Router();
 

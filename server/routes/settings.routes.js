@@ -4,8 +4,8 @@ import {
   getSettings,
   updateSettings,
   getPublicInfo,
-} from '../controllers/settings.controller.js';
-import { protect } from '../middleware/auth.js';
+} from '../src/controllers/settings.controller.js';
+import { protect } from '../src/middlewares/auth.js';
 
 const router = express.Router();
 const storage = multer.memoryStorage();

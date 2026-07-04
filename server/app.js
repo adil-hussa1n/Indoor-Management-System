@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 
+// Routes (keep same route files, but update controller imports inside them)
 import authRoutes from './routes/auth.routes.js';
 import bookingRoutes from './routes/booking.routes.js';
 import slotRoutes from './routes/slot.routes.js';
@@ -11,9 +12,10 @@ import galleryRoutes from './routes/gallery.routes.js';
 import reviewRoutes from './routes/review.routes.js';
 import contactRoutes from './routes/contact.routes.js';
 import settingsRoutes from './routes/settings.routes.js';
+import healthRoutes from './src/routes/health.route.js';
 
-import { errorHandler } from './middleware/errorHandler.js';
-import { apiLimiter } from './middleware/rateLimiter.js';
+import { errorHandler } from './src/middlewares/errorHandler.js';
+import { apiLimiter, bookingLimiter, loginLimiter, contactLimiter } from './src/middlewares/rateLimiter.js';
 
 dotenv.config();
 
@@ -56,9 +58,10 @@ if (process.env.NODE_ENV !== 'production') {
 // Versioned APIs (v1)
 const apiPrefix = '/api/v1';
 
-// Rate Limiter applied to public facing submissions
-app.use(`${apiPrefix}/booking`, apiLimiter);
-app.use(`${apiPrefix}/contact`, apiLimiter);
+// Specialized Rate Limiters per route
+app.use(`${apiPrefix}/booking`, bookingLimiter);
+app.use(`${apiPrefix}/auth/login`, loginLimiter);
+app.use(`${apiPrefix}/contact`, contactLimiter);
 app.use(`${apiPrefix}/reviews`, apiLimiter);
 
 // Register routes
@@ -70,9 +73,12 @@ app.use(`${apiPrefix}`, reviewRoutes);
 app.use(`${apiPrefix}`, contactRoutes);
 app.use(`${apiPrefix}`, settingsRoutes);
 
+// Health check
+app.use(`${apiPrefix}`, healthRoutes);
+
 // Base route
 app.get('/', (req, res) => {
-  res.status(200).json({ success: true, message: 'Apex Indoor Sports API is running' });
+  res.status(200).json({ success: true, message: 'D-Box Indoor Sports API is running (MySQL)' });
 });
 
 // Error handling middleware

@@ -1,14 +1,16 @@
-import mongoose from 'mongoose';
-import dotenv from 'dotenv';
-import Admin from '../models/Admin.js';
-import Slot from '../models/Slot.js';
-import Settings from '../models/Settings.js';
-import Review from '../models/Review.js';
-import Contact from '../models/Contact.js';
-import Booking from '../models/Booking.js';
-import Gallery from '../models/Gallery.js';
-
-dotenv.config();
+import 'dotenv/config';
+import bcrypt from 'bcryptjs';
+import {
+  sequelize,
+  Admin,
+  Slot,
+  Settings,
+  Review,
+  Contact,
+  Booking,
+  Gallery,
+  BookingStatusHistory,
+} from '../src/models/index.js';
 
 const defaultSlots = [
   { startTime: '08:00', endTime: '09:00', rateType: 'day' },
@@ -43,38 +45,33 @@ const mockContacts = [
 
 const seedDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/indoor_sports');
-    console.log('Connected to MongoDB for seeding...');
+    console.log('Authenticating database connection for seeding...');
+    await sequelize.authenticate();
+    console.log('Connection established. Re-syncing database tables...');
 
-    // Clear existing collections
-    await Admin.deleteMany({});
-    await Slot.deleteMany({});
-    await Settings.deleteMany({});
-    await Review.deleteMany({});
-    await Contact.deleteMany({});
-    await Gallery.deleteMany({});
+    // Force recreate tables to start fresh
+    await sequelize.sync({ force: true });
+    console.log('Tables recreated.');
 
     // Seed default 360 degree panoramic image
     await Gallery.create({
       imageUrl: 'https://pannellum.org/images/alma.jpg',
       publicId: 'default_360_panorama',
-      order: 0,
       is360: true,
-      mediaType: 'image',
-      autoPlay360: true,
     });
     console.log('Default 360° gallery image seeded.');
 
-    // Seed Admin
-    const admin = new Admin({
+    // Seed Admin (with properly hashed password)
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash('adminpassword123', salt);
+    await Admin.create({
       username: 'admin',
-      password: 'adminpassword123',
+      password: hashedPassword,
     });
-    await admin.save();
     console.log('Admin seeded: admin / adminpassword123');
 
     // Seed Slots
-    await Slot.insertMany(defaultSlots);
+    await Slot.bulkCreate(defaultSlots);
     console.log('Default slots seeded.');
 
     // Seed Settings
@@ -101,16 +98,13 @@ const seedDB = async () => {
     console.log('Default settings seeded.');
 
     // Seed Reviews & Contacts
-    await Review.insertMany(mockReviews);
-    await Contact.insertMany(mockContacts);
+    await Review.bulkCreate(mockReviews);
+    await Contact.bulkCreate(mockContacts);
     console.log('Mock reviews and contact messages seeded.');
 
-    // Seed some mock bookings to populate dashboard
-    await Booking.deleteMany({});
     const year = new Date().getFullYear();
     const todayStr = new Date().toISOString().split('T')[0];
 
-    // Generate dates for some days ago and tomorrow
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = yesterday.toISOString().split('T')[0];
@@ -126,7 +120,7 @@ const seedDB = async () => {
         phone: '555-0199',
         email: 'alice@example.com',
         sport: 'Basketball',
-        bookingDate: new Date(todayStr),
+        bookingDate: todayStr,
         startTime: '10:00',
         endTime: '11:00',
         duration: 1,
@@ -140,7 +134,7 @@ const seedDB = async () => {
         phone: '555-0245',
         email: 'robert@example.com',
         sport: 'Futsal',
-        bookingDate: new Date(todayStr),
+        bookingDate: todayStr,
         startTime: '18:00',
         endTime: '20:00',
         duration: 2,
@@ -154,7 +148,7 @@ const seedDB = async () => {
         phone: '555-0312',
         email: 'charlie@example.com',
         sport: 'Badminton',
-        bookingDate: new Date(todayStr),
+        bookingDate: todayStr,
         startTime: '14:00',
         endTime: '15:00',
         duration: 1,
@@ -168,7 +162,7 @@ const seedDB = async () => {
         phone: '555-0455',
         email: 'nabil@example.com',
         sport: 'Cricket',
-        bookingDate: new Date(yesterdayStr),
+        bookingDate: yesterdayStr,
         startTime: '16:00',
         endTime: '19:00',
         duration: 3,
@@ -182,7 +176,7 @@ const seedDB = async () => {
         phone: '555-0678',
         email: 'fahim@example.com',
         sport: 'Futsal',
-        bookingDate: new Date(tomorrowStr),
+        bookingDate: tomorrowStr,
         startTime: '09:00',
         endTime: '10:00',
         duration: 1,
@@ -196,7 +190,7 @@ const seedDB = async () => {
         phone: '555-0789',
         email: 'zayed@example.com',
         sport: 'Cricket',
-        bookingDate: new Date(yesterdayStr),
+        bookingDate: yesterdayStr,
         startTime: '08:00',
         endTime: '11:00',
         duration: 3,
@@ -205,9 +199,17 @@ const seedDB = async () => {
         status: 'Completed',
       }
     ];
-    await Booking.insertMany(mockBookings);
-    console.log('Mock bookings seeded.');
 
+    const bookings = await Booking.bulkCreate(mockBookings);
+    
+    // Seed status histories
+    const histories = bookings.map(b => ({
+      bookingId: b.id,
+      status: b.status,
+    }));
+    await BookingStatusHistory.bulkCreate(histories);
+
+    console.log('Mock bookings and status histories seeded.');
     console.log('Seeding completed successfully!');
     process.exit(0);
   } catch (error) {

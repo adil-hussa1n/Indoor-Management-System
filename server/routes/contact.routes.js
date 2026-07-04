@@ -4,8 +4,8 @@ import {
   getMessages,
   updateMessageStatus,
   deleteMessage,
-} from '../controllers/contact.controller.js';
-import { protect } from '../middleware/auth.js';
+} from '../src/controllers/contact.controller.js';
+import { protect } from '../src/middlewares/auth.js';
 
 const router = express.Router();
 

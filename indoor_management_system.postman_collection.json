@@ -1,23 +1,54 @@
 {
   "info": {
     "_postman_id": "bfd8bb1d-5573-4f9e-be41-01f6874eb78d",
-    "name": "Indoor Management System API",
-    "description": "Comprehensive Postman collection for testing the Public and Admin APIs of the Indoor Sports Management & Booking System.",
+    "name": "Indoor Management System API (MySQL)",
+    "description": "Comprehensive Postman collection for testing the Indoor Sports Management & Booking System.\n\nDatabase: MySQL 8.0 + Sequelize ORM\nIDs: Auto-increment integers (not MongoDB ObjectIds)\n\nUsage:\n1. Run 'Admin Login' first — the token is automatically saved to {{adminToken}}.\n2. All admin endpoints inherit Bearer auth from the collection.\n3. Replace :id path variables with actual integer IDs from your database.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
+    {
+      "name": "Health & Status",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Server health check — verifies MySQL database connectivity, uptime, and API version."
+          },
+          "response": []
+        }
+      ]
+    },
     {
       "name": "Authentication",
       "item": [
         {
           "name": "Admin Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.token) {",
+                  "  pm.collectionVariables.set('adminToken', jsonData.token);",
+                  "  console.log('Token saved to {{adminToken}}');",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
+              { "key": "Content-Type", "value": "application/json" }
             ],
             "body": {
               "mode": "raw",
@@ -25,15 +56,10 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "login"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
             },
-            "description": "Log in as an administrator using default username and password."
+            "description": "Authenticate as admin. The JWT token is automatically extracted and saved to {{adminToken}} for subsequent requests."
           },
           "response": []
         },
@@ -42,27 +68,16 @@
           "request": {
             "auth": {
               "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
             },
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/auth/me",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "me"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
             },
-            "description": "Retrieve details of the currently logged in administrator."
+            "description": "Retrieve the currently authenticated admin's profile."
           },
           "response": []
         }
@@ -76,25 +91,18 @@
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
+              { "key": "Content-Type", "value": "application/json" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"customerName\": \"John Doe\",\n  \"phone\": \"+8801700000000\",\n  \"email\": \"johndoe@example.com\",\n  \"sport\": \"Futsal\",\n  \"bookingDate\": \"2026-07-10T00:00:00.000Z\",\n  \"startTime\": \"10:00\",\n  \"endTime\": \"11:00\",\n  \"duration\": 1,\n  \"players\": 10,\n  \"notes\": \"Please provide a tournament ball.\"\n}"
+              "raw": "{\n  \"customerName\": \"John Doe\",\n  \"phone\": \"+8801700000000\",\n  \"email\": \"johndoe@example.com\",\n  \"sport\": \"Football\",\n  \"bookingDate\": \"2026-07-10\",\n  \"startTime\": \"10:00\",\n  \"endTime\": \"11:00\",\n  \"duration\": 1,\n  \"players\": 10,\n  \"notes\": \"Please provide a tournament ball.\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/booking",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "booking"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["booking"]
             },
-            "description": "Submit a public booking reservation request."
+            "description": "Submit a public booking reservation. Price is auto-calculated from settings. Status defaults to 'Pending'."
           },
           "response": []
         },
@@ -103,26 +111,16 @@
           "request": {
             "auth": {
               "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
             },
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/dashboard",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "dashboard"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["dashboard"]
             },
-            "description": "Retrieve overview statistics, active court occupancy, and revenue details for the dashboard."
+            "description": "Dashboard overview — total bookings, revenue, peak slots, and occupancy rates."
           },
           "response": []
         },
@@ -131,36 +129,20 @@
           "request": {
             "auth": {
               "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
             },
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/bookings?status=Pending&sport=Futsal",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "bookings"
-              ],
+              "raw": "{{baseUrl}}/bookings?status=Pending&sport=Football",
+              "host": ["{{baseUrl}}"],
+              "path": ["bookings"],
               "query": [
-                {
-                  "key": "status",
-                  "value": "Pending"
-                },
-                {
-                  "key": "sport",
-                  "value": "Futsal"
-                }
+                { "key": "status", "value": "Pending" },
+                { "key": "sport", "value": "Football" }
               ]
             },
-            "description": "Fetch all booking records with filter capabilities."
+            "description": "List all bookings with optional filters (status, sport, search, date range)."
           },
           "response": []
         },
@@ -169,35 +151,22 @@
           "request": {
             "auth": {
               "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
             },
             "method": "POST",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
+              { "key": "Content-Type", "value": "application/json" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"customerName\": \"Walk-in Guest\",\n  \"phone\": \"+8801800000000\",\n  \"email\": \"walkin@example.com\",\n  \"sport\": \"Basketball\",\n  \"bookingDate\": \"2026-07-15T00:00:00.000Z\",\n  \"startTime\": \"18:00\",\n  \"endTime\": \"19:00\",\n  \"duration\": 1,\n  \"players\": 10,\n  \"notes\": \"Cash booking on site.\"\n}"
+              "raw": "{\n  \"customerName\": \"Walk-in Guest\",\n  \"phone\": \"+8801800000000\",\n  \"email\": \"walkin@example.com\",\n  \"sport\": \"Basketball\",\n  \"bookingDate\": \"2026-07-15\",\n  \"startTime\": \"18:00\",\n  \"endTime\": \"19:00\",\n  \"duration\": 1,\n  \"players\": 10,\n  \"notes\": \"Cash booking on site.\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/bookings",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "bookings"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["bookings"]
             },
-            "description": "Book a slot manually on behalf of a guest walk-in."
+            "description": "Book a slot manually for a walk-in guest. Auto-confirmed by admin."
           },
           "response": []
         },
@@ -206,34 +175,19 @@
           "request": {
             "auth": {
               "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
             },
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/bookings/:id",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "bookings",
-                ":id"
-              ],
+              "host": ["{{baseUrl}}"],
+              "path": ["bookings", ":id"],
               "variable": [
-                {
-                  "key": "id",
-                  "value": "65b5e3a2bf92fa001dc11001",
-                  "description": "ID of the target booking"
-                }
+                { "key": "id", "value": "1", "description": "MySQL auto-increment booking ID" }
               ]
             },
-            "description": "Fetch deep details of a specific booking."
+            "description": "Fetch full details of a specific booking by its integer ID."
           },
           "response": []
         },
@@ -242,20 +196,11 @@
           "request": {
             "auth": {
               "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
             },
             "method": "PATCH",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
+              { "key": "Content-Type", "value": "application/json" }
             ],
             "body": {
               "mode": "raw",
@@ -263,21 +208,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/bookings/:id",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "bookings",
-                ":id"
-              ],
+              "host": ["{{baseUrl}}"],
+              "path": ["bookings", ":id"],
               "variable": [
-                {
-                  "key": "id",
-                  "value": "65b5e3a2bf92fa001dc11001"
-                }
+                { "key": "id", "value": "1" }
               ]
             },
-            "description": "Modify customer contact details on a booking."
+            "description": "Update customer details on a booking. Uses optimistic locking (version column)."
           },
           "response": []
         },
@@ -286,20 +223,11 @@
           "request": {
             "auth": {
               "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
             },
             "method": "PATCH",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
+              { "key": "Content-Type", "value": "application/json" }
             ],
             "body": {
               "mode": "raw",
@@ -307,21 +235,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/booking-status/:id",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "booking-status",
-                ":id"
-              ],
+              "host": ["{{baseUrl}}"],
+              "path": ["booking-status", ":id"],
               "variable": [
-                {
-                  "key": "id",
-                  "value": "65b5e3a2bf92fa001dc11001"
-                }
+                { "key": "id", "value": "1" }
               ]
             },
-            "description": "Approve or decline a booking by setting status to 'Pending', 'Confirmed', 'Completed', or 'Cancelled'."
+            "description": "Change booking status: Pending → Confirmed → Completed or Cancelled. Creates a BookingStatusHistory record."
           },
           "response": []
         },
@@ -330,33 +250,19 @@
           "request": {
             "auth": {
               "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
             },
             "method": "DELETE",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/bookings/:id",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "bookings",
-                ":id"
-              ],
+              "host": ["{{baseUrl}}"],
+              "path": ["bookings", ":id"],
               "variable": [
-                {
-                  "key": "id",
-                  "value": "65b5e3a2bf92fa001dc11001"
-                }
+                { "key": "id", "value": "1" }
               ]
             },
-            "description": "Cancel and permanently delete a booking record."
+            "description": "Soft-delete a booking (paranoid mode — recoverable via database)."
           },
           "response": []
         }
@@ -372,20 +278,13 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/available-slots?date=2026-07-10",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "available-slots"
-              ],
+              "host": ["{{baseUrl}}"],
+              "path": ["available-slots"],
               "query": [
-                {
-                  "key": "date",
-                  "value": "2026-07-10"
-                }
+                { "key": "date", "value": "2026-07-10" }
               ]
             },
-            "description": "Retrieve available time slots for a specific date."
+            "description": "Query available time slots for a specific date. Resolves through: 1) specific date overrides, 2) weekday overrides, 3) default slots."
           },
           "response": []
         },
@@ -394,26 +293,16 @@
           "request": {
             "auth": {
               "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
             },
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/slots",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "slots"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["slots"]
             },
-            "description": "Fetch the master schedule time slots configured."
+            "description": "Fetch all master schedule slot configurations."
           },
           "response": []
         },
@@ -422,35 +311,22 @@
           "request": {
             "auth": {
               "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
             },
             "method": "POST",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
+              { "key": "Content-Type", "value": "application/json" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"dayOfWeek\": 1,\n  \"startTime\": \"08:00\",\n  \"endTime\": \"09:00\",\n  \"isActive\": true\n}"
+              "raw": "{\n  \"dayOfWeek\": -1,\n  \"startTime\": \"22:00\",\n  \"endTime\": \"23:00\",\n  \"isActive\": true,\n  \"rateType\": \"night\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/slots",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "slots"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["slots"]
             },
-            "description": "Add a new slot to the master schedule (dayOfWeek: 0-6, or -1 for all daily default, specificDate as YYYY-MM-DD)."
+            "description": "Add a new slot. dayOfWeek: -1 (all days default), 0-6 (Sun-Sat), or use specificDate for a one-off override."
           },
           "response": []
         },
@@ -459,20 +335,11 @@
           "request": {
             "auth": {
               "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
             },
             "method": "PATCH",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
+              { "key": "Content-Type", "value": "application/json" }
             ],
             "body": {
               "mode": "raw",
@@ -480,21 +347,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/slots/:id",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "slots",
-                ":id"
-              ],
+              "host": ["{{baseUrl}}"],
+              "path": ["slots", ":id"],
               "variable": [
-                {
-                  "key": "id",
-                  "value": "65b5e3a2bf92fa001dc11002"
-                }
+                { "key": "id", "value": "1" }
               ]
             },
-            "description": "Modify parameters or toggle availability status of a master schedule slot."
+            "description": "Toggle slot active/inactive or modify time parameters."
           },
           "response": []
         },
@@ -503,33 +362,19 @@
           "request": {
             "auth": {
               "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
             },
             "method": "DELETE",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/slots/:id",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "slots",
-                ":id"
-              ],
+              "host": ["{{baseUrl}}"],
+              "path": ["slots", ":id"],
               "variable": [
-                {
-                  "key": "id",
-                  "value": "65b5e3a2bf92fa001dc11002"
-                }
+                { "key": "id", "value": "15" }
               ]
             },
-            "description": "Permanently remove a slot from the master schedule."
+            "description": "Permanently remove a slot from the schedule."
           },
           "response": []
         }
@@ -545,14 +390,10 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/info",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "info"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["info"]
             },
-            "description": "Retrieve contact details, pricing, logo, hero variables, and public system parameters."
+            "description": "Public-facing settings — business name, pricing, hero config, social links, etc."
           },
           "response": []
         },
@@ -561,26 +402,16 @@
           "request": {
             "auth": {
               "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
             },
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/settings",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "settings"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["settings"]
             },
-            "description": "Fetch current server configuration parameters."
+            "description": "Full admin settings including holidays, maintenance days, rules, dark mode toggle, etc."
           },
           "response": []
         },
@@ -589,35 +420,22 @@
           "request": {
             "auth": {
               "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
             },
             "method": "PATCH",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
+              { "key": "Content-Type", "value": "application/json" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"businessName\": \"D-Box Indoor Sports Arena\",\n  \"contactPhone\": \"+880 1712-345678\",\n  \"theme\": \"default\",\n  \"hero\": {\n    \"tagline\": \"⚡ Professional Grade Arena\",\n    \"title1\": \"Experience Sports\",\n    \"title2\": \"Like Never Before\",\n    \"description\": \"Book our state-of-the-art climate-controlled indoor arena. Designed for futsal, basketball, badminton, and more.\",\n    \"mediaType\": \"360\",\n    \"autoPlay360\": true,\n    \"useGlassBg\": true,\n    \"darkenOverlay\": true,\n    \"blurBackground\": false,\n    \"zoomAnimation\": false\n  }\n}"
+              "raw": "{\n  \"businessName\": \"D-Box Indoor Sports Arena\",\n  \"contactPhone\": \"+880 1712-345678\",\n  \"enableDarkMode\": false,\n  \"pricing\": {\n    \"weekdayDay\": 1200,\n    \"weekdayNight\": 1400,\n    \"weekendDay\": 1700,\n    \"weekendNight\": 1800,\n    \"holidayDay\": 2000,\n    \"holidayNight\": 2200\n  },\n  \"hero\": {\n    \"tagline\": \"⚡ Professional Grade Arena\",\n    \"title1\": \"Experience Sports\",\n    \"title2\": \"Like Never Before\",\n    \"description\": \"Book our state-of-the-art climate-controlled indoor arena.\",\n    \"mediaType\": \"360\",\n    \"autoPlay360\": true,\n    \"useGlassBg\": true,\n    \"darkenOverlay\": true\n  }\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/settings",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "settings"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["settings"]
             },
-            "description": "Update general business details and hero layout styles."
+            "description": "Update business info, pricing tiers, hero config, and dark mode. Uses optimistic locking."
           },
           "response": []
         }
@@ -633,14 +451,10 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/gallery",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "gallery"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["gallery"]
             },
-            "description": "Retrieve all public gallery pictures and 360 panorama items."
+            "description": "Retrieve all gallery images and 360° panorama items."
           },
           "response": []
         },
@@ -649,82 +463,23 @@
           "request": {
             "auth": {
               "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
             },
             "method": "POST",
             "header": [],
             "body": {
               "mode": "formdata",
               "formdata": [
-                {
-                  "key": "image",
-                  "type": "file",
-                  "src": [],
-                  "description": "Choose local image file"
-                },
-                {
-                  "key": "is360",
-                  "value": "true",
-                  "type": "text"
-                },
-                {
-                  "key": "autoPlay360",
-                  "value": "true",
-                  "type": "text"
-                }
+                { "key": "image", "type": "file", "src": [], "description": "Select local image file (max 5MB)" },
+                { "key": "is360", "value": "false", "type": "text" }
               ]
             },
             "url": {
               "raw": "{{baseUrl}}/gallery",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "gallery"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["gallery"]
             },
-            "description": "Upload a new picture or 360 degree panoramic image to the public gallery."
-          },
-          "response": []
-        },
-        {
-          "name": "Delete Gallery Item (Admin)",
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/gallery/:id",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "gallery",
-                ":id"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "65b5e3a2bf92fa001dc11004"
-                }
-              ]
-            },
-            "description": "Remove an image from the gallery and delete its Cloudinary file."
+            "description": "Upload a new image to the gallery. Saved to Cloudinary (or base64 fallback in dev mode)."
           },
           "response": []
         },
@@ -733,36 +488,43 @@
           "request": {
             "auth": {
               "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
             },
             "method": "POST",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
+              { "key": "Content-Type", "value": "application/json" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderedIds\": [\n    \"65b5e3a2bf92fa001dc11004\",\n    \"65b5e3a2bf92fa001dc11005\"\n  ]\n}"
+              "raw": "{\n  \"orderedIds\": [1, 2, 3]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/gallery/reorder",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "gallery",
-                "reorder"
+              "host": ["{{baseUrl}}"],
+              "path": ["gallery", "reorder"]
+            },
+            "description": "Save custom display order of gallery items using integer IDs."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Gallery Item (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/gallery/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["gallery", ":id"],
+              "variable": [
+                { "key": "id", "value": "1" }
               ]
             },
-            "description": "Save custom sorting order of gallery pictures."
+            "description": "Remove an image from the gallery and delete its Cloudinary file."
           },
           "response": []
         }
@@ -778,14 +540,10 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/reviews",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "reviews"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["reviews"]
             },
-            "description": "Retrieve list of approved customer reviews to show on landing testimonials."
+            "description": "Fetch approved reviews displayed on the homepage testimonials section."
           },
           "response": []
         },
@@ -794,25 +552,18 @@
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
+              { "key": "Content-Type", "value": "application/json" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Satisfied Player\",\n  \"rating\": 5,\n  \"comment\": \"Amazing court! The lighting and flooring are perfect.\"\n}"
+              "raw": "{\n  \"customerName\": \"Satisfied Player\",\n  \"rating\": 5,\n  \"comment\": \"Amazing court! The lighting and flooring are perfect for futsal.\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/reviews",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "reviews"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["reviews"]
             },
-            "description": "Submit a review/rating. Pending moderation by default."
+            "description": "Submit a public review. Saved as isApproved: false (pending admin moderation)."
           },
           "response": []
         },
@@ -821,27 +572,16 @@
           "request": {
             "auth": {
               "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
             },
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/reviews/all",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "reviews",
-                "all"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["reviews", "all"]
             },
-            "description": "Retrieve both pending and approved reviews for moderation."
+            "description": "Fetch all reviews (approved + pending) for admin moderation."
           },
           "response": []
         },
@@ -850,42 +590,25 @@
           "request": {
             "auth": {
               "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
             },
             "method": "PATCH",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
+              { "key": "Content-Type", "value": "application/json" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"isApproved\": true,\n  \"isFeatured\": false\n}"
+              "raw": "{\n  \"isApproved\": true,\n  \"isFeatured\": true\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/reviews/:id",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "reviews",
-                ":id"
-              ],
+              "host": ["{{baseUrl}}"],
+              "path": ["reviews", ":id"],
               "variable": [
-                {
-                  "key": "id",
-                  "value": "65b5e3a2bf92fa001dc11007"
-                }
+                { "key": "id", "value": "1" }
               ]
             },
-            "description": "Approve or decline customer reviews (isApproved, isFeatured)."
+            "description": "Approve and optionally feature a customer review on the homepage."
           },
           "response": []
         },
@@ -894,33 +617,19 @@
           "request": {
             "auth": {
               "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
             },
             "method": "DELETE",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/reviews/:id",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "reviews",
-                ":id"
-              ],
+              "host": ["{{baseUrl}}"],
+              "path": ["reviews", ":id"],
               "variable": [
-                {
-                  "key": "id",
-                  "value": "65b5e3a2bf92fa001dc11007"
-                }
+                { "key": "id", "value": "1" }
               ]
             },
-            "description": "Permanently remove a review."
+            "description": "Soft-delete a review (paranoid mode)."
           },
           "response": []
         }
@@ -934,25 +643,18 @@
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
+              { "key": "Content-Type", "value": "application/json" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Jane Smith\",\n  \"email\": \"janesmith@example.com\",\n  \"phone\": \"+8801600000000\",\n  \"subject\": \"Tournament Booking Inquiry\",\n  \"message\": \"We would like to book the court for a weekend corporate tournament. What are the rates?\"\n}"
+              "raw": "{\n  \"name\": \"Jane Smith\",\n  \"email\": \"janesmith@example.com\",\n  \"subject\": \"Tournament Booking Inquiry\",\n  \"message\": \"We would like to book the court for a weekend corporate tournament. What are the rates?\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/contact",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "contact"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["contact"]
             },
-            "description": "Submit a message from the landing contact form."
+            "description": "Submit a contact form message. Rate limited to 20 requests/hour."
           },
           "response": []
         },
@@ -961,26 +663,16 @@
           "request": {
             "auth": {
               "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
             },
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/messages",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "messages"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["messages"]
             },
-            "description": "Fetch all contact form submissions."
+            "description": "Fetch all contact form submissions with read/reply status."
           },
           "response": []
         },
@@ -989,42 +681,25 @@
           "request": {
             "auth": {
               "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
             },
             "method": "PATCH",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
+              { "key": "Content-Type", "value": "application/json" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"isRead\": true,\n  \"replyStatus\": \"replied\"\n}"
+              "raw": "{\n  \"isRead\": true\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/messages/:id",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "messages",
-                ":id"
-              ],
+              "host": ["{{baseUrl}}"],
+              "path": ["messages", ":id"],
               "variable": [
-                {
-                  "key": "id",
-                  "value": "65b5e3a2bf92fa001dc11009"
-                }
+                { "key": "id", "value": "1" }
               ]
             },
-            "description": "Toggle message status (isRead: true/false, replyStatus: 'pending'/'replied')."
+            "description": "Toggle message read status."
           },
           "response": []
         },
@@ -1033,30 +708,16 @@
           "request": {
             "auth": {
               "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
             },
             "method": "DELETE",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/messages/:id",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "messages",
-                ":id"
-              ],
+              "host": ["{{baseUrl}}"],
+              "path": ["messages", ":id"],
               "variable": [
-                {
-                  "key": "id",
-                  "value": "65b5e3a2bf92fa001dc11009"
-                }
+                { "key": "id", "value": "1" }
               ]
             },
             "description": "Permanently delete a contact message."
@@ -1071,18 +732,14 @@
       "listen": "prerequest",
       "script": {
         "type": "text/javascript",
-        "exec": [
-          ""
-        ]
+        "exec": [""]
       }
     },
     {
       "listen": "test",
       "script": {
         "type": "text/javascript",
-        "exec": [
-          ""
-        ]
+        "exec": [""]
       }
     }
   ],

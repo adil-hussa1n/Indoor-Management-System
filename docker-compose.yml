@@ -10,9 +10,14 @@ services:
     env_file:
       - ./server/.env
     environment:
-      - MONGO_URI=mongodb+srv://adil1267:%40pass20022735822@cluster0.wgduujg.mongodb.net/indoor_sports?retryWrites=true&w=majority
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=indoor_sports_db
+      - DB_USER=root
+      - DB_PASSWORD=rootpassword
     depends_on:
-      - mongo
+      mysql:
+        condition: service_healthy
 
   client:
     build:
@@ -23,12 +28,20 @@ services:
     depends_on:
       - server
 
-  mongo:
-    image: mongo:latest
+  mysql:
+    image: mysql:8.0
     ports:
-      - "27017:27017"
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: indoor_sports_db
     volumes:
-      - mongo_data:/data/db
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
-  mongo_data:
+  mysql_data:
