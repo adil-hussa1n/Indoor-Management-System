@@ -70,8 +70,8 @@ class BookingRepository {
     });
   }
 
-  async createStatusHistory(data) {
-    return await BookingStatusHistory.create(data);
+  async createStatusHistory(data, options = {}) {
+    return await BookingStatusHistory.create(data, options);
   }
 
   async getGroupedByDate(startDate, endDate) {

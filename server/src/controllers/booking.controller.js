@@ -120,7 +120,7 @@ export const createBooking = async (req, res, next) => {
     await bookingRepository.createStatusHistory({
       bookingId: booking.id,
       status: 'Pending',
-    });
+    }, { transaction: t });
 
     await t.commit();
 
@@ -241,7 +241,7 @@ export const createManualBooking = async (req, res, next) => {
       bookingId: booking.id,
       status: 'Confirmed',
       adminId: req.admin?.id || null,
-    });
+    }, { transaction: t });
 
     await t.commit();
 
