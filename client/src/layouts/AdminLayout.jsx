@@ -60,7 +60,17 @@ export const AdminLayout = () => {
 
   useEffect(() => {
     if (settings) {
-      document.title = `Admin | ${settings.seo?.title || settings.businessName || 'Apex Arena'}`;
+      const currentSeoTitle = settings.seo?.title;
+      const defaultSeoTitles = ['Apex Indoor Sports Booking', 'Apex Arena'];
+      let baseTitle = 'Apex Arena';
+      
+      if (currentSeoTitle && !defaultSeoTitles.includes(currentSeoTitle)) {
+        baseTitle = currentSeoTitle;
+      } else {
+        baseTitle = settings.businessName || 'Apex Arena';
+      }
+      
+      document.title = `Admin | ${baseTitle}`;
       
       if (settings.theme === 'green') {
         document.documentElement.classList.add('theme-green');

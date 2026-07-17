@@ -54,7 +54,14 @@ export const PublicLayout = () => {
 
   useEffect(() => {
     if (settings) {
-      document.title = settings.seo?.title || settings.businessName || 'Apex Arena';
+      const currentSeoTitle = settings.seo?.title;
+      const defaultSeoTitles = ['Apex Indoor Sports Booking', 'Apex Arena'];
+      
+      if (currentSeoTitle && !defaultSeoTitles.includes(currentSeoTitle)) {
+        document.title = currentSeoTitle;
+      } else {
+        document.title = settings.businessName || 'Apex Arena';
+      }
       
       if (settings.theme === 'green') {
         document.documentElement.classList.add('theme-green');
