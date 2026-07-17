@@ -18,8 +18,26 @@ const WEEKDAYS = [
   { value: '6', label: 'Saturday' },
 ];
 
+const timeOptions = [];
+for (let hour = 0; hour < 24; hour++) {
+  for (let min of ['00', '30']) {
+    const h24 = String(hour).padStart(2, '0');
+    const time24 = `${h24}:${min}`;
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    let displayHour = hour % 12;
+    displayHour = displayHour ? displayHour : 12;
+    const displayHourStr = String(displayHour).padStart(2, '0');
+    const label = `${displayHourStr}:${min} ${ampm}`;
+    timeOptions.push({ value: time24, label });
+  }
+}
+
+// Add 24:00 (Midnight) as last option to allow full day-end slots
+timeOptions.push({ value: '24:00', label: '12:00 AM (Midnight)' });
+
 const format12Hour = (time24) => {
   if (!time24) return '';
+  if (time24 === '24:00') return '12:00 AM';
   const [hourStr, minStr] = time24.split(':');
   let hour = parseInt(hourStr, 10);
   const ampm = hour >= 12 ? 'PM' : 'AM';
@@ -169,20 +187,22 @@ export const AdminSlots = () => {
               />
             )}
 
-            <div className="grid grid-cols-2 gap-4">
-              <Input
-                label="Start Time (HH:MM)"
-                placeholder="e.g. 08:00"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-              />
-              <Input
-                label="End Time (HH:MM)"
-                placeholder="e.g. 09:00"
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-              />
-            </div>
+             <div className="grid grid-cols-2 gap-4">
+               <Select
+                 label="Start Time"
+                 value={startTime}
+                 onChange={(e) => setStartTime(e.target.value)}
+                 options={timeOptions}
+                 placeholder="Select start"
+               />
+               <Select
+                 label="End Time"
+                 value={endTime}
+                 onChange={(e) => setEndTime(e.target.value)}
+                 options={timeOptions}
+                 placeholder="Select end"
+               />
+             </div>
 
             <Select
               label="Shift / Rate Type"
