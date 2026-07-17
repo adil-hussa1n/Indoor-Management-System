@@ -75,9 +75,9 @@ const calculatePrice = async (dateStr, startTime, endTime) => {
 };
 
 // Helper to check for double bookings
-const checkDoubleBooking = async (dateStr, startTime, endTime) => {
+const checkDoubleBooking = async (dateStr, startTime, endTime, transaction = null) => {
   const dateString = dateStr.split('T')[0];
-  const overlaps = await bookingRepository.findOverlapping(dateString, startTime, endTime);
+  const overlaps = await bookingRepository.findOverlapping(dateString, startTime, endTime, { transaction });
   return overlaps.length > 0;
 };
 
@@ -96,8 +96,17 @@ export const createBooking = async (req, res, next) => {
 
     const data = validation.data;
     const dateString = data.bookingDate.split('T')[0];
+    const todayString = new Date().toISOString().split('T')[0];
 
-    const isBooked = await checkDoubleBooking(data.bookingDate, data.startTime, data.endTime);
+    if (dateString < todayString) {
+      await t.rollback();
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot book slots in the past.',
+      });
+    }
+
+    const isBooked = await checkDoubleBooking(data.bookingDate, data.startTime, data.endTime, t);
     if (isBooked) {
       await t.rollback();
       return res.status(400).json({
@@ -220,7 +229,7 @@ export const createManualBooking = async (req, res, next) => {
     const data = validation.data;
     const dateString = data.bookingDate.split('T')[0];
 
-    const isBooked = await checkDoubleBooking(data.bookingDate, data.startTime, data.endTime);
+    const isBooked = await checkDoubleBooking(data.bookingDate, data.startTime, data.endTime, t);
     if (isBooked) {
       await t.rollback();
       return res.status(400).json({ success: false, message: 'This slot is already booked.' });

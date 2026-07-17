@@ -45,7 +45,7 @@ class BookingRepository {
     return booking;
   }
 
-  async findOverlapping(dateStr, startTime, endTime) {
+  async findOverlapping(dateStr, startTime, endTime, options = {}) {
     return await Booking.findAll({
       where: {
         bookingDate: dateStr,
@@ -59,6 +59,8 @@ class BookingRepository {
           },
         ],
       },
+      lock: options.transaction ? options.transaction.LOCK.UPDATE : undefined,
+      ...options,
     });
   }
 
@@ -67,6 +69,7 @@ class BookingRepository {
       where: {
         bookingId: { [Op.like]: `${prefix}%` },
       },
+      paranoid: false,
     });
   }
 
