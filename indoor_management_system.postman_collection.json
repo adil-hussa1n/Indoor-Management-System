@@ -95,7 +95,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"customerName\": \"John Doe\",\n  \"phone\": \"+8801700000000\",\n  \"email\": \"johndoe@example.com\",\n  \"sport\": \"Football\",\n  \"bookingDate\": \"2026-07-10\",\n  \"startTime\": \"10:00\",\n  \"endTime\": \"11:00\",\n  \"duration\": 1,\n  \"players\": 10,\n  \"notes\": \"Please provide a tournament ball.\"\n}"
+              "raw": "{\n  \"customerName\": \"John Doe\",\n  \"phone\": \"+8801700000000\",\n  \"email\": \"johndoe@example.com\",\n  \"sport\": \"Futsal\",\n  \"bookingDate\": \"2026-09-10\",\n  \"startTime\": \"10:00\",\n  \"endTime\": \"11:00\",\n  \"duration\": 1,\n  \"players\": 10,\n  \"notes\": \"Please provide a tournament ball.\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/booking",
@@ -134,12 +134,12 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/bookings?status=Pending&sport=Football",
+              "raw": "{{baseUrl}}/bookings?status=Pending&sport=Futsal",
               "host": ["{{baseUrl}}"],
               "path": ["bookings"],
               "query": [
                 { "key": "status", "value": "Pending" },
-                { "key": "sport", "value": "Football" }
+                { "key": "sport", "value": "Futsal" }
               ]
             },
             "description": "List all bookings with optional filters (status, sport, search, date range)."
@@ -159,7 +159,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"customerName\": \"Walk-in Guest\",\n  \"phone\": \"+8801800000000\",\n  \"email\": \"walkin@example.com\",\n  \"sport\": \"Basketball\",\n  \"bookingDate\": \"2026-07-15\",\n  \"startTime\": \"18:00\",\n  \"endTime\": \"19:00\",\n  \"duration\": 1,\n  \"players\": 10,\n  \"notes\": \"Cash booking on site.\"\n}"
+              "raw": "{\n  \"customerName\": \"Walk-in Guest\",\n  \"phone\": \"+8801800000000\",\n  \"email\": \"walkin@example.com\",\n  \"sport\": \"Futsal\",\n  \"bookingDate\": \"2026-09-15\",\n  \"startTime\": \"18:00\",\n  \"endTime\": \"19:00\",\n  \"duration\": 1,\n  \"players\": 10,\n  \"notes\": \"Cash booking on site.\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/bookings",

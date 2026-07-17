@@ -36,6 +36,20 @@ export const AdminLayout = () => {
     return localStorage.getItem('theme') === 'dark';
   });
 
+  const [cachedSettings] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('cached_settings') || 'null');
+    } catch {
+      return null;
+    }
+  });
+
+  useEffect(() => {
+    if (settings) {
+      localStorage.setItem('cached_settings', JSON.stringify(settings));
+    }
+  }, [settings]);
+
   useEffect(() => {
     if (settings && settings.enableDarkMode === false) {
       setDarkMode(false);
@@ -59,47 +73,48 @@ export const AdminLayout = () => {
   }, [darkMode]);
 
   useEffect(() => {
-    if (settings) {
-      const currentSeoTitle = settings.seo?.title;
+    const activeSettings = settings || cachedSettings;
+    if (activeSettings) {
+      const currentSeoTitle = activeSettings.seo?.title;
       const defaultSeoTitles = ['Apex Indoor Sports Booking', 'Apex Arena'];
       let baseTitle = 'Apex Arena';
       
       if (currentSeoTitle && !defaultSeoTitles.includes(currentSeoTitle)) {
         baseTitle = currentSeoTitle;
       } else {
-        baseTitle = settings.businessName || 'Apex Arena';
+        baseTitle = activeSettings.businessName || 'Apex Arena';
       }
       
       document.title = `Admin | ${baseTitle}`;
       
-      if (settings.theme === 'green') {
+      if (activeSettings.theme === 'green') {
         document.documentElement.classList.add('theme-green');
       } else {
         document.documentElement.classList.remove('theme-green');
       }
 
-      if (settings.logo) {
+      if (activeSettings.logo) {
         let link = document.querySelector("link[rel~='icon']");
         if (!link) {
           link = document.createElement('link');
           link.rel = 'icon';
           document.getElementsByTagName('head')[0].appendChild(link);
         }
-        link.href = settings.logo;
+        link.href = activeSettings.logo;
         
         // Dynamically update link type attribute based on the image format
-        if (settings.logo.startsWith('data:image/svg+xml') || settings.logo.endsWith('.svg')) {
+        if (activeSettings.logo.startsWith('data:image/svg+xml') || activeSettings.logo.endsWith('.svg')) {
           link.setAttribute('type', 'image/svg+xml');
-        } else if (settings.logo.startsWith('data:image/png') || settings.logo.endsWith('.png')) {
+        } else if (activeSettings.logo.startsWith('data:image/png') || activeSettings.logo.endsWith('.png')) {
           link.setAttribute('type', 'image/png');
-        } else if (settings.logo.startsWith('data:image/jpeg') || settings.logo.endsWith('.jpg') || settings.logo.endsWith('.jpeg')) {
+        } else if (activeSettings.logo.startsWith('data:image/jpeg') || activeSettings.logo.endsWith('.jpg') || activeSettings.logo.endsWith('.jpeg')) {
           link.setAttribute('type', 'image/jpeg');
         } else {
           link.removeAttribute('type'); // Let browser infer
         }
       }
     }
-  }, [settings]);
+  }, [settings, cachedSettings]);
 
   // Protect route
   useEffect(() => {
@@ -180,11 +195,11 @@ export const AdminLayout = () => {
       {/* Sidebar for Desktop */}
       <aside className="hidden lg:flex flex-col w-64 h-screen sticky top-0 border-r border-zinc-200/50 dark:border-zinc-900 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
         <div className="h-16 flex items-center gap-2 px-6 border-b border-zinc-100 dark:border-zinc-900">
-          {settings?.logo ? (
-            <img src={settings.logo} alt="Logo" className="w-8 h-8 object-contain rounded-lg" />
+          {(settings?.logo || cachedSettings?.logo) ? (
+            <img src={settings?.logo || cachedSettings?.logo} alt="Logo" className="w-8 h-8 object-contain rounded-lg" />
           ) : (
             <div className="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center text-white font-bold text-sm">
-              A
+              {(settings?.businessName || cachedSettings?.businessName || 'A')[0].toUpperCase()}
             </div>
           )}
           <span className="font-extrabold text-md tracking-wider bg-gradient-to-r from-purple-500 to-indigo-500 bg-clip-text text-transparent uppercase">
@@ -215,7 +230,7 @@ export const AdminLayout = () => {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-zinc-100 dark:border-zinc-900">
+        <div className="p-4 border-t border-zinc-100 dark:border-zinc-900 space-y-3">
           <button
             onClick={handleLogout}
             className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all cursor-pointer"
@@ -223,6 +238,11 @@ export const AdminLayout = () => {
             <LogOut className="w-5 h-5" />
             Sign Out
           </button>
+          <div className="pt-2 border-t border-zinc-100/50 dark:border-zinc-900/50 text-center">
+            <a href="https://daruntech.com" target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500/80 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
+              System by Darun Tech
+            </a>
+          </div>
         </div>
       </aside>
 

@@ -6,6 +6,41 @@
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title></title>
+  <script>
+    (function() {
+      try {
+        var cached = localStorage.getItem('cached_settings');
+        if (cached) {
+          var settings = JSON.parse(cached);
+          if (settings) {
+            // Set title
+            var title = settings.seo?.title || settings.businessName || 'Apex Arena';
+            document.title = title;
+            
+            // Set favicon
+            if (settings.logo) {
+              var link = document.querySelector("link[rel~='icon']");
+              if (!link) {
+                link = document.createElement('link');
+                link.rel = 'icon';
+                document.getElementsByTagName('head')[0].appendChild(link);
+              }
+              link.href = settings.logo;
+              if (settings.logo.indexOf('data:image/svg+xml') === 0 || settings.logo.indexOf('.svg') !== -1) {
+                link.setAttribute('type', 'image/svg+xml');
+              } else if (settings.logo.indexOf('data:image/png') === 0 || settings.logo.indexOf('.png') !== -1) {
+                link.setAttribute('type', 'image/png');
+              } else if (settings.logo.indexOf('data:image/jpeg') === 0 || settings.logo.indexOf('.jpg') !== -1 || settings.logo.indexOf('.jpeg') !== -1) {
+                link.setAttribute('type', 'image/jpeg');
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Error loading cached settings in head:', e);
+      }
+    })();
+  </script>
 </head>
 
 <body>

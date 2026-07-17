@@ -7,13 +7,12 @@ export const Dialog = ({ isOpen, onClose, children, title, className = '' }) => 
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 bg-zinc-950/40 backdrop-blur-md"
           />
 
           {/* Modal Container */}
@@ -22,7 +21,7 @@ export const Dialog = ({ isOpen, onClose, children, title, className = '' }) => 
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.95, opacity: 0, y: 15 }}
             transition={{ type: 'spring', duration: 0.4 }}
-            className={`relative w-full max-w-lg overflow-hidden rounded-2xl bg-white dark:bg-zinc-950 p-6 shadow-xl border border-zinc-200/50 dark:border-zinc-800/80 z-10 ${className}`}
+            className={`relative w-full overflow-hidden rounded-2xl bg-white dark:bg-zinc-950 p-6 shadow-xl border border-zinc-200/50 dark:border-zinc-800/80 z-10 ${className || 'max-w-lg'}`}
           >
             {/* Header */}
             <div className="flex items-center justify-between mb-4">

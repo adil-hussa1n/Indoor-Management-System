@@ -49,8 +49,10 @@ const Settings = sequelize.define('Settings', {
   businessHours: {
     type: DataTypes.JSON,
     defaultValue: {
-      weekday: '08:00 - 22:00',
-      weekend: '09:00 - 23:00',
+      weekday: '08:00 AM - 10:00 PM',
+      weekend: '09:00 AM - 11:00 PM',
+      dayShift: '06:00 AM - 04:00 PM',
+      nightShift: '04:00 PM - 02:00 AM',
     },
   },
   pricing: {

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAdminBookings, useCreateManualBooking, useUpdateBookingStatus, useDeleteBooking, useAdminSettings } from '../hooks/useApi';
+import { useAdminBookings, useCreateManualBooking, useUpdateBookingStatus, useDeleteBooking, useAdminSettings, useAvailableSlots } from '../hooks/useApi';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input, Select } from '../components/ui/Input';
@@ -10,8 +10,9 @@ import { DatePicker } from '../components/ui/DatePicker';
 import { Dialog } from '../components/ui/Dialog';
 import { Loader } from '../components/ui/Loader';
 import { useToast } from '../components/ui/Toast';
+import { useConfirm } from '../contexts/ConfirmContext';
 import { useSocket } from '../contexts/SocketContext';
-import { Search, Plus, Trash2, Edit3, ArrowLeft, ArrowRight, UserCheck } from 'lucide-react';
+import { Search, Plus, Trash2, Edit3, ArrowLeft, ArrowRight, UserCheck, Clock, RefreshCw } from 'lucide-react';
 
 const format12Hour = (time24) => {
   if (!time24) return '';
@@ -75,7 +76,9 @@ export const AdminBookings = () => {
   const updateStatusMutation = useUpdateBookingStatus();
   const deleteBookingMutation = useDeleteBooking();
 
-  const { register, handleSubmit, control, formState: { errors }, reset } = useForm({
+  const [selectedSlots, setSelectedSlots] = useState([]);
+
+  const { register, handleSubmit, control, formState: { errors }, reset, watch, setValue } = useForm({
     resolver: zodResolver(manualBookingSchema),
     defaultValues: {
       customerName: '',
@@ -83,20 +86,75 @@ export const AdminBookings = () => {
       email: '',
       sport: 'Futsal',
       bookingDate: new Date().toISOString().split('T')[0],
-      startTime: '09:00',
-      endTime: '10:00',
-      duration: 1,
+      startTime: '',
+      endTime: '',
+      duration: 0,
       players: 10,
       notes: '',
     },
   });
 
+  const selectedDate = watch('bookingDate');
+  const { data: slotData, isLoading: slotsLoading, refetch: refetchSlots } = useAvailableSlots(selectedDate);
+
+  // Clear slot selection when date changes
+  useEffect(() => {
+    setSelectedSlots([]);
+    setValue('startTime', '');
+    setValue('endTime', '');
+    setValue('duration', 0);
+  }, [selectedDate, setValue]);
+
+  const handleSlotClick = (slot) => {
+    if (!slot.isAvailable) return;
+    const exists = selectedSlots.some((s) => s.id === slot.id);
+    let newSelection = [];
+    if (exists) {
+      newSelection = selectedSlots.filter((s) => s.id !== slot.id);
+    } else {
+      newSelection = [...selectedSlots, slot];
+    }
+    newSelection.sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+    let isContiguous = true;
+    for (let i = 0; i < newSelection.length - 1; i++) {
+      if (newSelection[i].endTime !== newSelection[i + 1].startTime) {
+        isContiguous = false;
+        break;
+      }
+    }
+
+    if (isContiguous) {
+      setSelectedSlots(newSelection);
+      if (newSelection.length > 0) {
+        setValue('startTime', newSelection[0].startTime);
+        setValue('endTime', newSelection[newSelection.length - 1].endTime);
+        setValue('duration', newSelection.length);
+      } else {
+        setValue('startTime', '');
+        setValue('endTime', '');
+        setValue('duration', 0);
+      }
+    } else {
+      setSelectedSlots([slot]);
+      setValue('startTime', slot.startTime);
+      setValue('endTime', slot.endTime);
+      setValue('duration', 1);
+      toast.info('Selected slots must be contiguous.');
+    }
+  };
+
   const handleCreateManual = (data) => {
+    if (selectedSlots.length === 0) {
+      toast.error('Please select at least one time slot.');
+      return;
+    }
     createManualBookingMutation.mutate(data, {
       onSuccess: () => {
         toast.success('Manual booking added successfully!');
         setIsModalOpen(false);
         reset();
+        setSelectedSlots([]);
         refetch();
       },
       onError: (err) => {
@@ -299,84 +357,153 @@ export const AdminBookings = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title="Create Manual Admin Booking"
+        className="max-w-4xl"
       >
-        <form onSubmit={handleSubmit(handleCreateManual)} className="space-y-4 pt-4 text-left">
-          <Input
-            label="Customer Name"
-            placeholder="John Doe"
-            error={errors.customerName?.message}
-            {...register('customerName')}
-          />
-          <Input
-            label="Phone"
-            placeholder="555-0199"
-            error={errors.phone?.message}
-            {...register('phone')}
-          />
-          <Input
-            label="Email"
-            placeholder="john@example.com"
-            error={errors.email?.message}
-            {...register('email')}
-          />
-          <div className="grid grid-cols-2 gap-4">
-            <Select
-              label="Sport"
-              options={sportOptions}
-              error={errors.sport?.message}
-              {...register('sport')}
-            />
-            <Input
-              label="Players"
-              type="number"
-              error={errors.players?.message}
-              {...register('players')}
-            />
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            <Controller
-              name="bookingDate"
-              control={control}
-              render={({ field }) => (
-                <DatePicker
-                  label="Date"
-                  value={field.value}
-                  onChange={field.onChange}
-                  error={errors.bookingDate?.message}
+        <form onSubmit={handleSubmit(handleCreateManual)} className="space-y-6 pt-4 text-left">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+            {/* Left Column: Customer Info */}
+            <div className="space-y-4">
+              <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-widest border-b border-zinc-100 dark:border-zinc-900 pb-2">
+                👤 Customer Information
+              </h4>
+              <Input
+                label="Customer Name"
+                placeholder="John Doe"
+                error={errors.customerName?.message}
+                {...register('customerName')}
+              />
+              <Input
+                label="Phone Number"
+                placeholder="e.g. +88017..."
+                error={errors.phone?.message}
+                {...register('phone')}
+              />
+              <Input
+                label="Email (Optional)"
+                placeholder="john@example.com"
+                error={errors.email?.message}
+                {...register('email')}
+              />
+              <div className="grid grid-cols-2 gap-4">
+                <Select
+                  label="Sport"
+                  options={sportOptions}
+                  error={errors.sport?.message}
+                  {...register('sport')}
                 />
-              )}
-            />
-            <Input
-              label="Start (HH:MM)"
-              placeholder="09:00"
-              error={errors.startTime?.message}
-              {...register('startTime')}
-            />
-            <Input
-              label="End (HH:MM)"
-              placeholder="10:00"
-              error={errors.endTime?.message}
-              {...register('endTime')}
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="Duration (Hours)"
-              type="number"
-              error={errors.duration?.message}
-              {...register('duration')}
-            />
-            <Input
-              label="Booking Notes"
-              placeholder="Admin manual entry..."
-              error={errors.notes?.message}
-              {...register('notes')}
-            />
+                <Input
+                  label="Player Count"
+                  type="number"
+                  error={errors.players?.message}
+                  {...register('players')}
+                />
+              </div>
+              <Input
+                label="Internal Booking Notes (Optional)"
+                placeholder="e.g. VIP client, offline cash paid..."
+                error={errors.notes?.message}
+                {...register('notes')}
+              />
+            </div>
+
+            {/* Right Column: Slot Selection */}
+            <div className="space-y-4">
+              <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-widest border-b border-zinc-100 dark:border-zinc-900 pb-2">
+                📅 Slot Selection
+              </h4>
+              
+              <Controller
+                name="bookingDate"
+                control={control}
+                render={({ field }) => (
+                  <DatePicker
+                    label="Select Date"
+                    value={field.value}
+                    onChange={field.onChange}
+                    error={errors.bookingDate?.message}
+                    className="w-full"
+                  />
+                )}
+              />
+
+              {/* Slots Selection Box */}
+              <div className="bg-zinc-50/50 dark:bg-zinc-900/10 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-indigo-500" /> Choose Time Slots
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => refetchSlots()}
+                    className="p-1 text-zinc-400 hover:text-zinc-650 cursor-pointer"
+                    title="Refresh slots"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                {slotsLoading ? (
+                  <Loader className="py-6" />
+                ) : slotData?.isBlocked ? (
+                  <div className="text-center py-4 text-xs font-bold text-rose-500 border border-rose-100 dark:border-rose-955/20 bg-rose-50/20 rounded-xl">
+                    ⚠️ Closed on this date ({slotData.reason})
+                  </div>
+                ) : !slotData?.slots?.length ? (
+                  <div className="text-center py-4 text-xs font-semibold text-zinc-450 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl">
+                    No slots configured for this date.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-56 overflow-y-auto custom-scrollbar pr-1">
+                    {slotData.slots.map((slot) => {
+                      const isSelected = selectedSlots.some((s) => s.id === slot.id);
+                      return (
+                        <button
+                          key={slot.id}
+                          type="button"
+                          onClick={() => handleSlotClick(slot)}
+                          className={`p-2 rounded-xl border text-xs font-bold transition-all duration-200 flex flex-col items-center justify-center gap-1 select-none cursor-pointer ${
+                            !slot.isAvailable
+                              ? 'bg-rose-50/20 dark:bg-rose-955/5 border-rose-100 dark:border-rose-900/30 text-rose-700 dark:text-rose-500 opacity-60 cursor-not-allowed'
+                              : isSelected
+                              ? 'bg-purple-650 border-purple-650 text-white shadow-md shadow-purple-500/20'
+                              : 'bg-white hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-650 dark:text-zinc-400'
+                          }`}
+                          disabled={!slot.isAvailable}
+                        >
+                          <span className="font-extrabold text-[11px]">{format12Hour(slot.startTime)}</span>
+                          <span className={`text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${
+                            !slot.isAvailable
+                              ? 'bg-rose-100/50 dark:bg-rose-950/30 text-rose-600'
+                              : isSelected
+                              ? 'bg-purple-500/30 text-white'
+                              : 'bg-emerald-100 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-400'
+                          }`}>
+                            {slot.isAvailable ? (slot.rateType === 'night' ? 'Night' : 'Day') : 'Booked'}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Schedule Summary */}
+              <div className="bg-purple-500/5 dark:bg-purple-950/10 border border-purple-500/10 dark:border-purple-900/20 rounded-2xl p-4 flex justify-between items-center text-xs">
+                <span className="font-semibold text-zinc-500">Selected Schedule:</span>
+                <span className="font-extrabold text-sm text-purple-650 dark:text-purple-400">
+                  {selectedSlots.length > 0
+                    ? `${format12Hour(selectedSlots[0].startTime)} - ${format12Hour(selectedSlots[selectedSlots.length - 1].endTime)} (${watch('duration')} hr)`
+                    : 'No Slots Selected'}
+                </span>
+              </div>
+            </div>
           </div>
 
-          <Button type="submit" className="w-full mt-4">
-            Confirm Manual Entry
-          </Button>
+          <div className="border-t border-zinc-150 dark:border-zinc-800/80 pt-4 flex justify-end">
+            <Button type="submit" className="w-full sm:w-auto px-8 py-3 font-bold" disabled={createManualBookingMutation.isPending}>
+              {createManualBookingMutation.isPending ? 'Saving Booking...' : 'Confirm Manual Entry'}
+            </Button>
+          </div>
         </form>
       </Dialog>
     </div>

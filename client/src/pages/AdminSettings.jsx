@@ -127,8 +127,10 @@ export const AdminSettings = () => {
         enableDarkMode: settings.enableDarkMode ?? true,
         rules: settings.rules || [],
         businessHours: {
-          weekday: settings.businessHours?.weekday || '08:00 - 22:00',
-          weekend: settings.businessHours?.weekend || '09:00 - 23:00',
+          weekday: settings.businessHours?.weekday || '08:00 AM - 10:00 PM',
+          weekend: settings.businessHours?.weekend || '09:00 AM - 11:00 PM',
+          dayShift: settings.businessHours?.dayShift || '06:00 AM - 04:00 PM',
+          nightShift: settings.businessHours?.nightShift || '04:00 PM - 02:00 AM',
         },
         weekendDays: settings.weekendDays || [5],
         pricing: {
@@ -720,11 +722,27 @@ export const AdminSettings = () => {
                     label="Weekday Hours"
                     value={formData.businessHours.weekday}
                     onChange={(e) => handleChange('businessHours', 'weekday', e.target.value)}
+                    placeholder="e.g. 08:00 AM - 10:00 PM"
                   />
                   <Input
                     label="Weekend Hours"
                     value={formData.businessHours.weekend}
                     onChange={(e) => handleChange('businessHours', 'weekend', e.target.value)}
+                    placeholder="e.g. 09:00 AM - 11:00 PM"
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-zinc-100 dark:border-zinc-900 pt-4">
+                  <Input
+                    label="Day Shift Hours"
+                    value={formData.businessHours.dayShift}
+                    onChange={(e) => handleChange('businessHours', 'dayShift', e.target.value)}
+                    placeholder="e.g. 06:00 AM - 04:00 PM"
+                  />
+                  <Input
+                    label="Night Shift Hours"
+                    value={formData.businessHours.nightShift}
+                    onChange={(e) => handleChange('businessHours', 'nightShift', e.target.value)}
+                    placeholder="e.g. 04:00 PM - 02:00 AM"
                   />
                 </div>
                 <div className="flex flex-col gap-2 border-t border-zinc-100 dark:border-zinc-900 pt-4 text-left">

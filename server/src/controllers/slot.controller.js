@@ -72,6 +72,7 @@ export const getAvailableSlots = async (req, res, next) => {
         startTime: slot.startTime,
         endTime: slot.endTime,
         isAvailable: !isBooked,
+        rateType: slot.rateType,
       };
     });
 

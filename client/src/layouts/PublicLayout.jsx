@@ -13,6 +13,20 @@ export const PublicLayout = () => {
   const location = useLocation();
   const { data: settings, isLoading, refetch } = usePublicSettings();
 
+  const [cachedSettings] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('cached_settings') || 'null');
+    } catch {
+      return null;
+    }
+  });
+
+  useEffect(() => {
+    if (settings) {
+      localStorage.setItem('cached_settings', JSON.stringify(settings));
+    }
+  }, [settings]);
+
   useEffect(() => {
     if (settings && settings.enableDarkMode === false) {
       setDarkMode(false);
@@ -53,44 +67,45 @@ export const PublicLayout = () => {
   }, [darkMode]);
 
   useEffect(() => {
-    if (settings) {
-      const currentSeoTitle = settings.seo?.title;
+    const activeSettings = settings || cachedSettings;
+    if (activeSettings) {
+      const currentSeoTitle = activeSettings.seo?.title;
       const defaultSeoTitles = ['Apex Indoor Sports Booking', 'Apex Arena'];
       
       if (currentSeoTitle && !defaultSeoTitles.includes(currentSeoTitle)) {
         document.title = currentSeoTitle;
       } else {
-        document.title = settings.businessName || 'Apex Arena';
+        document.title = activeSettings.businessName || 'Apex Arena';
       }
       
-      if (settings.theme === 'green') {
+      if (activeSettings.theme === 'green') {
         document.documentElement.classList.add('theme-green');
       } else {
         document.documentElement.classList.remove('theme-green');
       }
 
-      if (settings.logo) {
+      if (activeSettings.logo) {
         let link = document.querySelector("link[rel~='icon']");
         if (!link) {
           link = document.createElement('link');
           link.rel = 'icon';
           document.getElementsByTagName('head')[0].appendChild(link);
         }
-        link.href = settings.logo;
+        link.href = activeSettings.logo;
         
         // Dynamically update link type attribute based on the image format
-        if (settings.logo.startsWith('data:image/svg+xml') || settings.logo.endsWith('.svg')) {
+        if (activeSettings.logo.startsWith('data:image/svg+xml') || activeSettings.logo.endsWith('.svg')) {
           link.setAttribute('type', 'image/svg+xml');
-        } else if (settings.logo.startsWith('data:image/png') || settings.logo.endsWith('.png')) {
+        } else if (activeSettings.logo.startsWith('data:image/png') || activeSettings.logo.endsWith('.png')) {
           link.setAttribute('type', 'image/png');
-        } else if (settings.logo.startsWith('data:image/jpeg') || settings.logo.endsWith('.jpg') || settings.logo.endsWith('.jpeg')) {
+        } else if (activeSettings.logo.startsWith('data:image/jpeg') || activeSettings.logo.endsWith('.jpg') || activeSettings.logo.endsWith('.jpeg')) {
           link.setAttribute('type', 'image/jpeg');
         } else {
           link.removeAttribute('type'); // Let browser infer
         }
       }
     }
-  }, [settings]);
+  }, [settings, cachedSettings]);
 
   const navLinks = [
     { name: 'Home', path: '/', icon: <Info className="w-4 h-4" /> },
@@ -117,11 +132,11 @@ export const PublicLayout = () => {
             
             {/* Main glassmorphic logo box */}
             <div className="w-20 h-20 rounded-2xl bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/50 dark:border-zinc-800 backdrop-blur-md flex items-center justify-center shadow-2xl relative z-10 scale-[0.97]">
-              {settings?.logo ? (
-                <img src={settings.logo} alt="Loading..." className="w-14 h-14 object-contain rounded-lg animate-pulse" />
+              {(settings?.logo || cachedSettings?.logo) ? (
+                <img src={settings?.logo || cachedSettings?.logo} alt="Loading..." className="w-14 h-14 object-contain rounded-lg animate-pulse" />
               ) : (
                 <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-650 to-indigo-600 flex items-center justify-center text-white font-extrabold text-2xl shadow-inner animate-pulse">
-                  A
+                  {(settings?.businessName || cachedSettings?.businessName || 'A')[0].toUpperCase()}
                 </div>
               )}
             </div>
@@ -130,7 +145,7 @@ export const PublicLayout = () => {
           <div className="space-y-3">
             {/* Dynamic business name with premium gradient */}
             <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-purple-650 via-violet-500 to-indigo-650 bg-clip-text text-transparent animate-pulse">
-              {settings?.businessName || 'Apex Arena'}
+              {settings?.businessName || cachedSettings?.businessName || 'Apex Arena'}
             </h2>
             
             {/* Sleek progress bar */}
@@ -141,6 +156,22 @@ export const PublicLayout = () => {
             <p className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mt-2">
               Preparing Your Arena
             </p>
+          </div>
+
+          {/* Developer credit at bottom of preloader */}
+          <div className="absolute -bottom-28 left-1/2 transform -translate-x-1/2 flex flex-col items-center gap-1.5 opacity-70">
+            <span className="text-[8px] uppercase tracking-[0.25em] text-zinc-400 dark:text-zinc-500 font-bold whitespace-nowrap">
+              Designed & Developed By
+            </span>
+            <div className="flex items-center gap-1.5">
+              <svg className="w-5 h-5 text-purple-600 dark:text-purple-400" viewBox="0 0 100 100" fill="currentColor">
+                <path fillRule="evenodd" d="M70.8 20L70.8 80L42.8 80L29.2 66.4L40 66.4L40 63.4L29.2 63.4L29.2 61.4L40 61.4L40 58.4L29.2 58.4L42.8 44.8L61.2 44.8L61.2 29.6 Z M47.2 54.4L61.2 54.4L61.2 70.4L47.2 70.4L41.2 64.4L41.2 60.4 Z" />
+                <circle cx="51.2" cy="62.4" r="3.5" />
+              </svg>
+              <span className="text-xs font-black text-zinc-850 dark:text-zinc-200 tracking-wider">
+                DARUN <span className="text-purple-650 dark:text-purple-400">TECH</span>
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -164,15 +195,15 @@ export const PublicLayout = () => {
       <header className="sticky top-0 z-40 w-full border-b border-zinc-200/50 dark:border-zinc-800/80 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            {settings?.logo ? (
-              <img src={settings.logo} alt="Logo" className="w-9 h-9 object-contain rounded-lg" />
+            {(settings?.logo || cachedSettings?.logo) ? (
+              <img src={settings?.logo || cachedSettings?.logo} alt="Logo" className="w-9 h-9 object-contain rounded-lg" />
             ) : (
               <div className="w-9 h-9 rounded-xl bg-purple-600 flex items-center justify-center text-white font-bold text-lg shadow-md shadow-purple-500/20">
-                A
+                {(settings?.businessName || cachedSettings?.businessName || 'A')[0].toUpperCase()}
               </div>
             )}
             <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
-              {settings?.businessName || 'Apex Arena'}
+              {settings?.businessName || cachedSettings?.businessName || 'Apex Arena'}
             </span>
           </Link>
 
@@ -314,9 +345,17 @@ export const PublicLayout = () => {
         </div>
 
         <div className="max-w-7xl mx-auto border-t border-zinc-150 dark:border-zinc-900 mt-8 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-zinc-400 dark:text-zinc-500">
-            &copy; {new Date().getFullYear()} {settings?.businessName || 'Apex Arena'}. All rights reserved.
-          </p>
+          <div className="text-center sm:text-left space-y-1">
+            <p className="text-xs text-zinc-400 dark:text-zinc-500">
+              &copy; {new Date().getFullYear()} {settings?.businessName || 'Apex Arena'}. All rights reserved.
+            </p>
+            <p className="text-[10px] text-zinc-400 dark:text-zinc-500/80 flex items-center justify-center sm:justify-start gap-1">
+              <span>Designed & Developed by</span>
+              <a href="https://daruntech.com" target="_blank" rel="noopener noreferrer" className="font-bold text-purple-650 hover:text-purple-750 dark:text-purple-400 dark:hover:text-purple-300 transition-colors">
+                Darun Tech Private Limited
+              </a>
+            </p>
+          </div>
           <div className="flex gap-4 text-xs text-zinc-400 dark:text-zinc-500">
             <Link to="/about" className="hover:underline">Rules & Regulations</Link>
             <span>&bull;</span>

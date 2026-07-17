@@ -25,6 +25,8 @@ A premium, production-ready **Full-Stack Indoor Sports Booking System** built wi
 - **Responsive Layout**: All dashboard metrics, calendars, and booking tables have horizontal-scroll prevention wrappers for mobile/tablet viewports.
 - **Scroll Restoration**: Automatic scroll-to-top on route transitions via a custom `ScrollToTop` hook.
 - **Admin Login Isolation**: `/admin/login` renders without the public navbar/footer for a clean login experience.
+- **Custom Confirm Dialogs**: Default browser alert pop-ups (`window.confirm`) are replaced with animated custom dialog modals built with Framer Motion, matching the glassmorphic theme.
+- **Zero-Flicker Settings Caching**: Syncs branding configuration (logo, colors, business name) to `localStorage` on initial fetch to ensure zero layout-flashing of defaults on page reloads.
 
 ### 🔌 Real-time Syncing & Push Notifications
 - **Broadcasting Socket Events**: Emits WebSocket alerts (`slot-status-changed`, `settings-updated`, `gallery-updated`) for instant frontend sync.
@@ -39,11 +41,12 @@ A premium, production-ready **Full-Stack Indoor Sports Booking System** built wi
 
 ### 📸 360° Gallery & Virtual Tour
 - **Pannellum Panorama Viewer**: Pinned 360° photos/videos at the top of the public Gallery.
-- **Auto-Rotation & Video Autoplay**: Configurable via `is360`, `mediaType`, and `autoPlay360` in Admin Media Dashboard.
+- **Auto-Rotation & Video Autoplay**: Configurable via `is365`, `mediaType`, and `autoPlay360` in Admin Media Dashboard.
 
 ### ⏰ Shift-Based Rates & Formatting
 - **6-Tier Pricing**: Day and Night shift rates for Weekdays, Weekends, and Holidays.
-- **12-Hour AM/PM Display**: All slot listings, calendars, and receipts in local Dhaka time format.
+- **12-Hour AM/PM Dropdowns**: Replaced typed slot strings with a robust dropdown selection system for creating slots.
+- **Interactive Manual Booking**: Added an interactive slots availability grid selector inside the manual booking dialog. Admins can view available/booked slots in real-time, and clicking contiguous slots automatically calculates scheduling details.
 - **BDT Currency**: All prices formatted in Bangladesh Taka (৳/BDT).
 
 ### ⭐ Public Review Submission
@@ -226,6 +229,23 @@ cd client && npm run dev
 docker-compose up --build
 ```
 This spins up MySQL 8.0, the Node.js API server, and the Vite frontend with healthcheck-based startup ordering.
+
+### 🧪 Automated API Testing
+Verify all server endpoints, authentication logic, slot availability algorithms, and edge-case exceptions using the native test suite.
+```bash
+cd server
+npm run test:api
+```
+This runs a zero-dependency test runner confirming health status, database operations, manual overrides, token expiry handling, and review moderation.
+
+### 📬 Manual Testing (Postman)
+An interactive Postman Collection is included in the project root:
+- File: [indoor_management_system.postman_collection.json](file:///f:/GITHUB/indoor%20ms/Indoor-Management-System/indoor_management_system.postman_collection.json)
+- **How to Use**:
+  1. Open Postman and click **Import** in the top-left corner.
+  2. Drag and drop this collection file.
+  3. Configure the environment variable `{{baseUrl}}` to `http://localhost:5000/api/v1`.
+  4. Run the **Admin Login** query first — it will automatically capture and save the bearer token to your collection variables to authenticate all other admin endpoints automatically.
 
 ---
 

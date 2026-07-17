@@ -365,11 +365,11 @@ export const Home = () => {
             <div className="grid grid-cols-3 gap-4 pt-4 border-t border-zinc-200 dark:border-zinc-800/80">
               <div>
                 <span className="text-xs text-zinc-400 dark:text-zinc-500 font-bold uppercase tracking-wider">Day Shift</span>
-                <p className="text-sm font-extrabold mt-1 text-zinc-700 dark:text-zinc-350">06:00 AM - 04:00 PM</p>
+                <p className="text-sm font-extrabold mt-1 text-zinc-700 dark:text-zinc-350">{settings?.businessHours?.dayShift || '06:00 AM - 04:00 PM'}</p>
               </div>
               <div>
                 <span className="text-xs text-zinc-400 dark:text-zinc-500 font-bold uppercase tracking-wider">Night Shift</span>
-                <p className="text-sm font-extrabold mt-1 text-zinc-700 dark:text-zinc-350">04:00 PM - 02:00 AM</p>
+                <p className="text-sm font-extrabold mt-1 text-zinc-700 dark:text-zinc-350">{settings?.businessHours?.nightShift || '04:00 PM - 02:00 AM'}</p>
               </div>
               <div>
                 <span className="text-xs text-zinc-400 dark:text-zinc-500 font-bold uppercase tracking-wider">Session Slots</span>
