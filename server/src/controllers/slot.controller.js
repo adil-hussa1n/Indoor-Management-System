@@ -102,7 +102,7 @@ export const getSlots = async (req, res, next) => {
 
 export const createSlot = async (req, res, next) => {
   try {
-    const { startTime, endTime, dayOfWeek, specificDate } = req.body;
+    const { startTime, endTime, dayOfWeek, specificDate, rateType } = req.body;
     if (!startTime || !endTime) {
       return res.status(400).json({ success: false, message: 'Start time and End time are required' });
     }
@@ -112,6 +112,7 @@ export const createSlot = async (req, res, next) => {
       endTime,
       dayOfWeek: dayOfWeek !== undefined ? Number(dayOfWeek) : -1,
       specificDate: specificDate || null,
+      rateType: rateType || 'day',
     });
 
     const plain = slot.toJSON();
@@ -125,7 +126,7 @@ export const createSlot = async (req, res, next) => {
 export const updateSlot = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { startTime, endTime, isActive, dayOfWeek, specificDate } = req.body;
+    const { startTime, endTime, isActive, dayOfWeek, specificDate, rateType } = req.body;
 
     const slot = await slotRepository.findById(id);
     if (!slot) {
@@ -138,6 +139,7 @@ export const updateSlot = async (req, res, next) => {
     if (isActive !== undefined) updateData.isActive = isActive;
     if (dayOfWeek !== undefined) updateData.dayOfWeek = Number(dayOfWeek);
     if (specificDate !== undefined) updateData.specificDate = specificDate;
+    if (rateType !== undefined) updateData.rateType = rateType;
 
     await slotRepository.update(slot, updateData);
 
