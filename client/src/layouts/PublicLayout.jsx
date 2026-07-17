@@ -70,6 +70,17 @@ export const PublicLayout = () => {
           document.getElementsByTagName('head')[0].appendChild(link);
         }
         link.href = settings.logo;
+        
+        // Dynamically update link type attribute based on the image format
+        if (settings.logo.startsWith('data:image/svg+xml') || settings.logo.endsWith('.svg')) {
+          link.setAttribute('type', 'image/svg+xml');
+        } else if (settings.logo.startsWith('data:image/png') || settings.logo.endsWith('.png')) {
+          link.setAttribute('type', 'image/png');
+        } else if (settings.logo.startsWith('data:image/jpeg') || settings.logo.endsWith('.jpg') || settings.logo.endsWith('.jpeg')) {
+          link.setAttribute('type', 'image/jpeg');
+        } else {
+          link.removeAttribute('type'); // Let browser infer
+        }
       }
     }
   }, [settings]);
