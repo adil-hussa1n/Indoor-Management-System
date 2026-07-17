@@ -66,7 +66,14 @@ A premium, production-ready **Full-Stack Indoor Sports Booking System** built wi
 
 ```
 Indoor-Management-System/
+├── .env.example                    # Production env template (per-client config)
+├── docker-compose.yml              # Docker Compose (development)
+├── docker-compose.prod.yml         # Docker Compose (production — VPS deploy)
+│
 ├── client/                         # Frontend — Vite + React 19
+│   ├── Dockerfile                  # Multi-stage build (Node → Nginx)
+│   ├── nginx.conf                  # SPA routing + API/WebSocket reverse proxy
+│   ├── .dockerignore
 │   ├── src/
 │   │   ├── components/             # Reusable UI (Card, Button, Input, Loader, Toast)
 │   │   ├── contexts/               # Global Contexts (AuthContext, SocketContext)
@@ -76,10 +83,11 @@ Indoor-Management-System/
 │   │   ├── services/               # Axios setup (api.js)
 │   │   ├── index.css               # Global styles & dark mode config
 │   │   └── main.jsx                # React entry point
-│   ├── tailwind.config.js
 │   └── vite.config.js
 │
 ├── server/                         # Backend — Node.js + Express + MySQL
+│   ├── Dockerfile                  # Node.js production image
+│   ├── .dockerignore
 │   ├── src/
 │   │   ├── config/                 # sequelize.js (instance), db.js (connect + sync)
 │   │   ├── models/                 # Sequelize models (Admin, Booking, Slot, Settings, etc.)
@@ -93,9 +101,9 @@ Indoor-Management-System/
 │   ├── utils/                      # seeder.js
 │   ├── server.js                   # Entry point & Socket.IO server
 │   ├── app.js                      # Express app (security, CORS, rate limits)
-│   └── .env                        # Environment variables
+│   └── .env.example                # Server environment template
 │
-└── docker-compose.yml              # Docker Compose (MySQL 8.0 + Node + Vite)
+└── indoor_management_system.postman_collection.json  # API testing collection
 ```
 
 ---
@@ -226,9 +234,12 @@ cd client && npm run dev
 
 ### 6. Docker Compose (Optional)
 ```bash
+# Development (exposes all ports for debugging)
 docker-compose up --build
+
+# Production (secured, Nginx reverse proxy)
+docker compose -f docker-compose.prod.yml up -d --build
 ```
-This spins up MySQL 8.0, the Node.js API server, and the Vite frontend with healthcheck-based startup ordering.
 
 ### 🧪 Automated API Testing
 Verify all server endpoints, authentication logic, slot availability algorithms, and edge-case exceptions using the native test suite.
@@ -249,32 +260,94 @@ An interactive Postman Collection is included in the project root:
 
 ---
 
-## 🚀 Deployment
+## 🚀 Deployment (Docker on VPS)
 
-### Backend on Render
-1. Create a Render **Web Service** connected to your GitHub repo.
-2. Set **Root Directory** to `server`, **Build Command** to `npm install`, **Start Command** to `node server.js`.
-3. Add environment variables:
-   - `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` — your cloud MySQL instance (e.g., PlanetScale, Railway, or AWS RDS)
-   - `JWT_SECRET`, `CLIENT_URL`, `NODE_ENV=production`
-   - `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`
+This project is designed as a **multi-client product** — deploy to any VPS (Hostinger, DigitalOcean, AWS EC2, etc.) with a single command.
 
-### Frontend on Vercel
-1. Create a Vercel **Project** connected to your GitHub repo.
-2. Set **Root Directory** to `client`, **Framework** to `Vite`, **Build Command** to `npm run build`, **Output** to `dist`.
-3. Add environment variable:
-   - `VITE_API_URL` = `https://your-backend.onrender.com/api/v1`
-4. Copy your Vercel URL back to Render's `CLIENT_URL` for CORS.
+### Architecture
+```
+Client (Browser)
+    │
+    ▼ port 80
+┌───────────────────────┐
+│  Nginx (client)       │
+│  - Serves React app   │
+│  - Proxies /api → :5000
+│  - Proxies /socket.io │
+└──────────┬────────────┘
+           │ internal Docker network
+    ┌──────┴──────┐
+    ▼             ▼
+┌────────┐   ┌────────┐
+│ Node.js│   │ MySQL  │
+│ :5000  │──▶│ :3306  │
+└────────┘   └────────┘
+```
+
+> **Security**: MySQL is only accessible within the Docker network — **not exposed to the internet**.
+
+### Quick Deploy (5 Steps)
+
+```bash
+# 1. SSH into your VPS
+ssh root@YOUR_VPS_IP
+
+# 2. Install Docker
+curl -fsSL https://get.docker.com | sh
+
+# 3. Clone the repo
+cd /opt
+git clone https://github.com/adil-hussa1n/Indoor-Management-System.git
+cd Indoor-Management-System
+
+# 4. Configure environment
+cp .env.example .env          # Edit with your DB password, JWT secret
+cp server/.env.example server/.env  # Edit with production values
+
+# 5. Build & Deploy
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+Visit `http://YOUR_VPS_IP` — done!
+
+### Environment Variables
+
+| Variable | Where | Description |
+|----------|-------|-------------|
+| `APP_PORT` | `.env` | Port to expose (default: 80) |
+| `DB_PASSWORD` | `.env` + `server/.env` | MySQL root password (must match!) |
+| `DB_NAME` | `.env` + `server/.env` | Database name (default: indoor_sports_db) |
+| `NODE_ENV` | `server/.env` | Must be `production` |
+| `JWT_SECRET` | `server/.env` | Generate with `openssl rand -hex 64` |
+| `CLIENT_URL` | `server/.env` | Your domain URL (for CORS) |
+| `CLOUDINARY_*` | `server/.env` | Image upload credentials |
+
+### Updating a Deployment
+
+```bash
+cd /opt/Indoor-Management-System
+git pull origin main
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+### Adding SSL (Optional)
+
+Point your domain's A record to the VPS IP, then:
+```bash
+apt install certbot -y
+certbot --standalone -d yourdomain.com
+```
 
 ---
 
 ## 📄 Tech Stack
 
 | Layer | Technology |
-|-------|-----------|
+|-------|-----------| 
 | Frontend | React 19, Vite, TanStack Query, Framer Motion, Lucide Icons, Tailwind CSS |
 | Backend | Node.js, Express.js, Socket.IO, Zod, Helmet, Morgan |
 | Database | MySQL 8.0, Sequelize ORM |
 | Auth | JWT (jsonwebtoken), bcryptjs |
 | Media | Cloudinary (with base64 local fallback), Pannellum (360° viewer) |
-| DevOps | Docker Compose, Nodemon, ESLint |
+| DevOps | Docker Compose, Nginx, Nodemon, ESLint |
+
