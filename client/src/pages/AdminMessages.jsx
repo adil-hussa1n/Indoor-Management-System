@@ -4,10 +4,12 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../co
 import { Button } from '../components/ui/Button';
 import { Loader } from '../components/ui/Loader';
 import { useToast } from '../components/ui/Toast';
+import { useConfirm } from '../contexts/ConfirmContext';
 import { MailOpen, Mail, Trash2, CheckCheck } from 'lucide-react';
 
 export const AdminMessages = () => {
   const toast = useToast();
+  const confirm = useConfirm();
   const { data: messages, isLoading, refetch } = useAdminMessages();
   const updateStatusMutation = useUpdateMessageStatus();
   const deleteMessageMutation = useDeleteMessage();
@@ -39,8 +41,16 @@ export const AdminMessages = () => {
     );
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm('Delete this message permanently?')) {
+  const handleDelete = async (id) => {
+    const isConfirmed = await confirm({
+      title: 'Delete Message?',
+      message: 'Are you sure you want to delete this message permanently?',
+      confirmText: 'Delete Message',
+      cancelText: 'Cancel',
+      type: 'danger',
+    });
+
+    if (isConfirmed) {
       deleteMessageMutation.mutate(id, {
         onSuccess: () => {
           toast.success('Message deleted');

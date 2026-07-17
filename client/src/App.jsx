@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './contexts/AuthContext';
 import { SocketProvider } from './contexts/SocketContext';
 import { ToastProvider } from './components/ui/Toast';
+import { ConfirmProvider } from './contexts/ConfirmContext';
 
 import { PublicLayout } from './layouts/PublicLayout';
 import { AdminLayout } from './layouts/AdminLayout';
@@ -44,8 +45,9 @@ function App() {
       <AuthProvider>
         <SocketProvider>
           <ToastProvider>
-            <BrowserRouter>
-              <ScrollToTop />
+            <ConfirmProvider>
+              <BrowserRouter>
+                <ScrollToTop />
               <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={<PublicLayout />}>
@@ -72,7 +74,8 @@ function App() {
                   <Route path="settings" element={<AdminSettings />} />
                 </Route>
               </Routes>
-            </BrowserRouter>
+             </BrowserRouter>
+            </ConfirmProvider>
           </ToastProvider>
         </SocketProvider>
       </AuthProvider>

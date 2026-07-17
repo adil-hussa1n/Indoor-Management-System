@@ -118,8 +118,16 @@ export const AdminBookings = () => {
     );
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm('Delete this booking permanently?')) {
+  const handleDelete = async (id) => {
+    const isConfirmed = await confirm({
+      title: 'Delete Booking?',
+      message: 'Are you sure you want to delete this booking permanently?',
+      confirmText: 'Delete Booking',
+      cancelText: 'Cancel',
+      type: 'danger',
+    });
+
+    if (isConfirmed) {
       deleteBookingMutation.mutate(id, {
         onSuccess: () => {
           toast.success('Booking deleted');

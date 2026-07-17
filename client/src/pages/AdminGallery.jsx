@@ -4,11 +4,13 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../co
 import { Button } from '../components/ui/Button';
 import { Loader } from '../components/ui/Loader';
 import { useToast } from '../components/ui/Toast';
+import { useConfirm } from '../contexts/ConfirmContext';
 import { Trash2, Upload, ArrowUp, ArrowDown } from 'lucide-react';
 import { useSocket } from '../contexts/SocketContext';
 
 export const AdminGallery = () => {
   const toast = useToast();
+  const confirm = useConfirm();
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [is360, setIs360] = useState(false);
@@ -72,8 +74,16 @@ export const AdminGallery = () => {
     });
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm('Delete this image from the gallery?')) {
+  const handleDelete = async (id) => {
+    const isConfirmed = await confirm({
+      title: 'Delete Image?',
+      message: 'Are you sure you want to delete this image from the gallery?',
+      confirmText: 'Delete Image',
+      cancelText: 'Cancel',
+      type: 'danger',
+    });
+
+    if (isConfirmed) {
       deleteMutation.mutate(id, {
         onSuccess: () => {
           toast.success('Image deleted');

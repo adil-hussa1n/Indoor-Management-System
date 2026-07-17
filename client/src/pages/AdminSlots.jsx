@@ -6,6 +6,7 @@ import { Input, Select } from '../components/ui/Input';
 import { Loader } from '../components/ui/Loader';
 import { DatePicker } from '../components/ui/DatePicker';
 import { useToast } from '../components/ui/Toast';
+import { useConfirm } from '../contexts/ConfirmContext';
 import { Trash2, ToggleLeft, ToggleRight, Plus, Calendar, Clock, Sparkles } from 'lucide-react';
 
 const WEEKDAYS = [
@@ -115,8 +116,18 @@ export const AdminSlots = () => {
     );
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm('Delete this time slot? Existing bookings will not be affected.')) {
+  const confirm = useConfirm();
+
+  const handleDelete = async (id) => {
+    const isConfirmed = await confirm({
+      title: 'Delete Time Slot?',
+      message: 'Are you sure you want to delete this time slot? Existing bookings will not be affected.',
+      confirmText: 'Delete Slot',
+      cancelText: 'Cancel',
+      type: 'danger',
+    });
+
+    if (isConfirmed) {
       deleteSlotMutation.mutate(id, {
         onSuccess: () => {
           toast.success('Slot deleted');

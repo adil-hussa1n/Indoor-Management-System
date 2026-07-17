@@ -4,10 +4,12 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../co
 import { Button } from '../components/ui/Button';
 import { Loader } from '../components/ui/Loader';
 import { useToast } from '../components/ui/Toast';
+import { useConfirm } from '../contexts/ConfirmContext';
 import { Star, CheckCircle, Trash2, ShieldAlert, Heart } from 'lucide-react';
 
 export const AdminReviews = () => {
   const toast = useToast();
+  const confirm = useConfirm();
   const { data: reviews, isLoading, refetch } = useAdminReviews();
   const updateStatusMutation = useUpdateReviewStatus();
   const deleteReviewMutation = useDeleteReview();
@@ -17,10 +19,10 @@ export const AdminReviews = () => {
       { id, data: { isApproved: !currentApproval } },
       {
         onSuccess: () => {
-          toast.success(currentApproval ? 'Review unapproved' : 'Review approved and published');
+          toast.success(currentApproval ? 'Review hidden' : 'Review approved and published');
           refetch();
         },
-        onError: () => toast.error('Failed to update review status'),
+        onError: () => toast.error('Failed to update approval status'),
       }
     );
   };
@@ -38,8 +40,16 @@ export const AdminReviews = () => {
     );
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm('Delete this review permanently?')) {
+  const handleDelete = async (id) => {
+    const isConfirmed = await confirm({
+      title: 'Delete Review?',
+      message: 'Are you sure you want to delete this review permanently?',
+      confirmText: 'Delete Review',
+      cancelText: 'Cancel',
+      type: 'danger',
+    });
+
+    if (isConfirmed) {
       deleteReviewMutation.mutate(id, {
         onSuccess: () => {
           toast.success('Review deleted');
