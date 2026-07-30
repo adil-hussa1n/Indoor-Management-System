@@ -1,9 +1,9 @@
-import galleryRepository from '../repositories/gallery.repository.js';
 import { v2 as cloudinary } from 'cloudinary';
 
 export const getGallery = async (req, res, next) => {
   try {
-    const images = await galleryRepository.findAll();
+    const { galleryRepo } = req.repos;
+    const images = await galleryRepo.findAll();
     const mapped = images.map(i => { const p = i.toJSON(); p._id = p.id; return p; });
     res.status(200).json({ success: true, images: mapped });
   } catch (error) {
@@ -13,6 +13,7 @@ export const getGallery = async (req, res, next) => {
 
 export const uploadImage = async (req, res, next) => {
   try {
+    const { galleryRepo } = req.repos;
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'No image file uploaded' });
     }
@@ -47,12 +48,14 @@ export const uploadImage = async (req, res, next) => {
       publicId = `local_mock_${Date.now()}`;
     }
 
-    const { is360, mediaType, autoPlay360 } = req.body;
-    const count = await galleryRepository.count();
-    const newImage = await galleryRepository.create({
+    const { is360, mediaType } = req.body;
+    const count = await galleryRepo.count();
+    const newImage = await galleryRepo.create({
       imageUrl,
       publicId,
       is360: is360 === 'true' || is360 === true,
+      mediaType: mediaType || 'image',
+      order: count,
     });
 
     const io = req.app.get('io');
@@ -70,8 +73,9 @@ export const uploadImage = async (req, res, next) => {
 
 export const deleteImage = async (req, res, next) => {
   try {
+    const { galleryRepo } = req.repos;
     const { id } = req.params;
-    const image = await galleryRepository.findById(id);
+    const image = await galleryRepo.findById(id);
     if (!image) {
       return res.status(404).json({ success: false, message: 'Image not found' });
     }
@@ -94,7 +98,7 @@ export const deleteImage = async (req, res, next) => {
       }
     }
 
-    await galleryRepository.delete(id);
+    await galleryRepo.delete(id);
 
     const io = req.app.get('io');
     if (io) {
@@ -109,13 +113,14 @@ export const deleteImage = async (req, res, next) => {
 
 export const reorderGallery = async (req, res, next) => {
   try {
+    const { galleryRepo } = req.repos;
     const { orders } = req.body;
     if (!Array.isArray(orders)) {
       return res.status(400).json({ success: false, message: 'Orders must be an array' });
     }
 
     const promises = orders.map((item) =>
-      galleryRepository.updateOrder(item.id, item.order)
+      galleryRepo.updateOrder(item.id, item.order)
     );
     await Promise.all(promises);
 

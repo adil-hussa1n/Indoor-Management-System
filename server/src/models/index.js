@@ -19,7 +19,7 @@ BookingStatusHistory.belongsTo(Booking, { foreignKey: 'bookingId', as: 'booking'
 // Sync all models (creates tables if they don't exist)
 const syncDatabase = async () => {
   try {
-    await sequelize.sync({ alter: process.env.NODE_ENV === 'development' });
+    await sequelize.sync({ alter: false });
     console.log('All MySQL tables synced successfully');
   } catch (error) {
     console.error('Error syncing database tables:', error.message);

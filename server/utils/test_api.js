@@ -29,7 +29,9 @@ function assert(condition, msg) {
 }
 
 async function api(method, path, body = null, auth = false, isFormData = false) {
-  const headers = {};
+  const headers = {
+    'X-Tenant-Slug': 'apexarena'
+  };
   if (auth) headers['Authorization'] = `Bearer ${TOKEN}`;
   if (!isFormData && body) headers['Content-Type'] = 'application/json';
 
@@ -83,7 +85,10 @@ async function run() {
   });
 
   await test('GET /auth/me with invalid token returns 401', async () => {
-    const headers = { 'Authorization': 'Bearer invalidtoken123' };
+    const headers = { 
+      'Authorization': 'Bearer invalidtoken123',
+      'X-Tenant-Slug': 'apexarena'
+    };
     const res = await fetch(`${BASE}/auth/me`, { headers });
     assert(res.status === 401, `Expected 401, got ${res.status}`);
   });

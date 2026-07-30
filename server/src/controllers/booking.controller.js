@@ -1,22 +1,18 @@
-import bookingRepository from '../repositories/booking.repository.js';
-import settingsRepository from '../repositories/settings.repository.js';
-import slotRepository from '../repositories/slot.repository.js';
-import { sequelize } from '../config/db.js';
 import { bookingSchema } from '../../validators/booking.validator.js';
 import { Op } from 'sequelize';
 
 // Helper to generate unique booking reference: IND-YYYY-XXXX
-const generateBookingId = async () => {
+const generateBookingId = async (bookingRepo) => {
   const year = new Date().getFullYear();
   const prefix = `IND-${year}-`;
-  const count = await bookingRepository.countWithPrefix(prefix);
+  const count = await bookingRepo.countWithPrefix(prefix);
   const serial = String(count + 1).padStart(4, '0');
   return `${prefix}${serial}`;
 };
 
 // Helper to calculate price based on slots and date type
-const calculatePrice = async (dateStr, startTime, endTime) => {
-  const settings = await settingsRepository.getOrCreate();
+const calculatePrice = async (settingsRepo, slotRepo, dateStr, startTime, endTime) => {
+  const settings = await settingsRepo.getOrCreate();
   const pricing = settings.pricing || {
     weekdayDay: 1500, weekdayNight: 1500,
     weekendDay: 1500, weekendNight: 1500,
@@ -37,12 +33,12 @@ const calculatePrice = async (dateStr, startTime, endTime) => {
   }
 
   // Hierarchical slot lookup
-  let activeSlots = await slotRepository.findAll({ specificDate: dateString, isActive: true }, { order: [['startTime', 'ASC']] });
+  let activeSlots = await slotRepo.findAll({ specificDate: dateString, isActive: true }, { order: [['startTime', 'ASC']] });
   if (activeSlots.length === 0) {
-    activeSlots = await slotRepository.findAll({ dayOfWeek: day, specificDate: null, isActive: true }, { order: [['startTime', 'ASC']] });
+    activeSlots = await slotRepo.findAll({ dayOfWeek: day, specificDate: null, isActive: true }, { order: [['startTime', 'ASC']] });
   }
   if (activeSlots.length === 0) {
-    activeSlots = await slotRepository.findAll({ dayOfWeek: -1, specificDate: null, isActive: true }, { order: [['startTime', 'ASC']] });
+    activeSlots = await slotRepo.findAll({ dayOfWeek: -1, specificDate: null, isActive: true }, { order: [['startTime', 'ASC']] });
   }
 
   const overlappingSlots = activeSlots.filter(slot => slot.startTime >= startTime && slot.endTime <= endTime);
@@ -75,15 +71,16 @@ const calculatePrice = async (dateStr, startTime, endTime) => {
 };
 
 // Helper to check for double bookings
-const checkDoubleBooking = async (dateStr, startTime, endTime, transaction = null) => {
+const checkDoubleBooking = async (bookingRepo, dateStr, startTime, endTime, transaction = null) => {
   const dateString = dateStr.split('T')[0];
-  const overlaps = await bookingRepository.findOverlapping(dateString, startTime, endTime, { transaction });
+  const overlaps = await bookingRepo.findOverlapping(dateString, startTime, endTime, { transaction });
   return overlaps.length > 0;
 };
 
 // Public Booking Creation (with transaction)
 export const createBooking = async (req, res, next) => {
-  const t = await sequelize.transaction();
+  const t = await req.tenantDb.transaction();
+  const { bookingRepo, settingsRepo, slotRepo, statusHistoryRepo, blockedCustomerRepo } = req.repos;
   try {
     const validation = bookingSchema.safeParse(req.body);
     if (!validation.success) {
@@ -95,6 +92,17 @@ export const createBooking = async (req, res, next) => {
     }
 
     const data = validation.data;
+
+    // Check if customer phone number is blacklisted/blocked
+    const isBlocked = await blockedCustomerRepo.isBlocked(data.phone);
+    if (isBlocked) {
+      await t.rollback();
+      return res.status(403).json({
+        success: false,
+        message: 'This phone number has been suspended from making reservations. Please contact our support team.',
+      });
+    }
+
     const dateString = data.bookingDate.split('T')[0];
     const todayString = new Date().toISOString().split('T')[0];
 
@@ -106,7 +114,7 @@ export const createBooking = async (req, res, next) => {
       });
     }
 
-    const isBooked = await checkDoubleBooking(data.bookingDate, data.startTime, data.endTime, t);
+    const isBooked = await checkDoubleBooking(bookingRepo, data.bookingDate, data.startTime, data.endTime, t);
     if (isBooked) {
       await t.rollback();
       return res.status(400).json({
@@ -115,20 +123,27 @@ export const createBooking = async (req, res, next) => {
       });
     }
 
-    const calculatedPrice = await calculatePrice(data.bookingDate, data.startTime, data.endTime);
-    const bookingId = await generateBookingId();
+    const calculatedPrice = await calculatePrice(settingsRepo, slotRepo, data.bookingDate, data.startTime, data.endTime);
+    const bookingId = await generateBookingId(bookingRepo);
 
-    const booking = await bookingRepository.create({
+    // If customer is logged in, associate their userId
+    const userId = req.user ? req.user.id : null;
+
+    const booking = await bookingRepo.create({
       ...data,
       bookingDate: dateString,
       bookingId,
       price: calculatedPrice,
       status: 'Pending',
+      userId,
     }, { transaction: t });
 
-    await bookingRepository.createStatusHistory({
+    await statusHistoryRepo.create({
       bookingId: booking.id,
-      status: 'Pending',
+      newStatus: 'Pending',
+      previousStatus: null,
+      changedBy: 'customer',
+      reason: 'Initial booking request by customer',
     }, { transaction: t });
 
     await t.commit();
@@ -149,6 +164,7 @@ export const createBooking = async (req, res, next) => {
 // Admin: Get bookings with pagination, search, filter
 export const getBookings = async (req, res, next) => {
   try {
+    const { bookingRepo } = req.repos;
     const { page = 1, limit = 10, search = '', status = '', sport = '', startDate = '', endDate = '', sort = '-createdAt' } = req.query;
 
     const where = {};
@@ -172,7 +188,7 @@ export const getBookings = async (req, res, next) => {
     const sortField = sort.startsWith('-') ? sort.slice(1) : sort;
     const sortDir = sort.startsWith('-') ? 'DESC' : 'ASC';
 
-    const { count: total, rows: bookings } = await bookingRepository.findAndCountAll(where, {
+    const { count: total, rows: bookings } = await bookingRepo.findAndCountAll(where, {
       order: [[sortField, sortDir]],
       offset: (parseInt(page) - 1) * parseInt(limit),
       limit: parseInt(limit),
@@ -202,7 +218,8 @@ export const getBookings = async (req, res, next) => {
 
 export const getBookingById = async (req, res, next) => {
   try {
-    const booking = await bookingRepository.findById(req.params.id);
+    const { bookingRepo } = req.repos;
+    const booking = await bookingRepo.findById(req.params.id);
     if (!booking) {
       return res.status(404).json({ success: false, message: 'Booking not found' });
     }
@@ -215,7 +232,8 @@ export const getBookingById = async (req, res, next) => {
 };
 
 export const createManualBooking = async (req, res, next) => {
-  const t = await sequelize.transaction();
+  const t = await req.tenantDb.transaction();
+  const { bookingRepo, settingsRepo, slotRepo, statusHistoryRepo } = req.repos;
   try {
     const validation = bookingSchema.safeParse(req.body);
     if (!validation.success) {
@@ -229,16 +247,16 @@ export const createManualBooking = async (req, res, next) => {
     const data = validation.data;
     const dateString = data.bookingDate.split('T')[0];
 
-    const isBooked = await checkDoubleBooking(data.bookingDate, data.startTime, data.endTime, t);
+    const isBooked = await checkDoubleBooking(bookingRepo, data.bookingDate, data.startTime, data.endTime, t);
     if (isBooked) {
       await t.rollback();
       return res.status(400).json({ success: false, message: 'This slot is already booked.' });
     }
 
-    const calculatedPrice = await calculatePrice(data.bookingDate, data.startTime, data.endTime);
-    const bookingId = await generateBookingId();
+    const calculatedPrice = await calculatePrice(settingsRepo, slotRepo, data.bookingDate, data.startTime, data.endTime);
+    const bookingId = await generateBookingId(bookingRepo);
 
-    const booking = await bookingRepository.create({
+    const booking = await bookingRepo.create({
       ...data,
       bookingDate: dateString,
       bookingId,
@@ -246,10 +264,12 @@ export const createManualBooking = async (req, res, next) => {
       status: 'Confirmed',
     }, { transaction: t });
 
-    await bookingRepository.createStatusHistory({
+    await statusHistoryRepo.create({
       bookingId: booking.id,
-      status: 'Confirmed',
-      adminId: req.admin?.id || null,
+      newStatus: 'Confirmed',
+      previousStatus: null,
+      changedBy: `admin:${req.admin?.username || 'admin'}`,
+      reason: 'Manual booking created by admin',
     }, { transaction: t });
 
     await t.commit();
@@ -269,30 +289,54 @@ export const createManualBooking = async (req, res, next) => {
 
 export const updateBooking = async (req, res, next) => {
   try {
+    const { bookingRepo, settingsRepo, slotRepo, auditLogRepo } = req.repos;
     const { id } = req.params;
-    const booking = await bookingRepository.findById(id);
+    const booking = await bookingRepo.findById(id);
     if (!booking) {
       return res.status(404).json({ success: false, message: 'Booking not found' });
     }
 
     const updateData = { ...req.body };
+    const oldValues = booking.toJSON();
 
     if (updateData.bookingDate) {
       updateData.bookingDate = updateData.bookingDate.split('T')[0];
     }
 
+    // Check double booking if slot is changing
     if (req.body.bookingDate || req.body.startTime || req.body.endTime) {
       const bDate = updateData.bookingDate || booking.bookingDate;
       const sTime = updateData.startTime || booking.startTime;
       const eTime = updateData.endTime || booking.endTime;
-      updateData.price = await calculatePrice(bDate, sTime, eTime);
+
+      // Check overlaps excluding current booking ID
+      const dateString = bDate.split('T')[0];
+      const overlaps = await bookingRepo.findOverlapping(dateString, sTime, eTime);
+      const otherOverlaps = overlaps.filter(o => o.id !== booking.id);
+      if (otherOverlaps.length > 0) {
+        return res.status(400).json({ success: false, message: 'The selected slots are already booked by another reservation.' });
+      }
+
+      updateData.price = await calculatePrice(settingsRepo, slotRepo, bDate, sTime, eTime);
     }
 
     await booking.update(updateData);
 
+    // Create Audit Log
+    await auditLogRepo.create({
+      userId: req.admin?.id || null,
+      action: 'UPDATE_BOOKING',
+      entity: 'Booking',
+      entityId: booking.id,
+      oldValue: oldValues,
+      newValue: booking.toJSON(),
+      ipAddress: req.ip,
+    });
+
     const io = req.app.get('io');
     if (io) {
       io.emit('slot-status-changed', { date: booking.bookingDate });
+      io.emit('booking-updated', booking);
     }
 
     const plain = booking.toJSON();
@@ -305,29 +349,47 @@ export const updateBooking = async (req, res, next) => {
 
 export const updateBookingStatus = async (req, res, next) => {
   try {
+    const { bookingRepo, statusHistoryRepo, auditLogRepo } = req.repos;
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, reason } = req.body;
 
     if (!['Pending', 'Confirmed', 'Completed', 'Cancelled'].includes(status)) {
       return res.status(400).json({ success: false, message: 'Invalid status' });
     }
 
-    const booking = await bookingRepository.findById(id);
+    const booking = await bookingRepo.findById(id);
     if (!booking) {
       return res.status(404).json({ success: false, message: 'Booking not found' });
     }
 
+    const previousStatus = booking.status;
+    const oldValues = booking.toJSON();
+
     await booking.update({ status });
 
-    await bookingRepository.createStatusHistory({
+    await statusHistoryRepo.create({
       bookingId: booking.id,
-      status,
-      adminId: req.admin?.id || null,
+      newStatus: status,
+      previousStatus,
+      changedBy: req.admin ? `admin:${req.admin.username}` : 'system',
+      reason: reason || 'Status updated by admin',
+    });
+
+    // Create Audit Log
+    await auditLogRepo.create({
+      userId: req.admin?.id || null,
+      action: 'UPDATE_BOOKING_STATUS',
+      entity: 'Booking',
+      entityId: booking.id,
+      oldValue: oldValues,
+      newValue: booking.toJSON(),
+      ipAddress: req.ip,
     });
 
     const io = req.app.get('io');
     if (io) {
       io.emit('slot-status-changed', { date: booking.bookingDate });
+      io.emit('booking-updated', booking);
     }
 
     const plain = booking.toJSON();
@@ -340,15 +402,31 @@ export const updateBookingStatus = async (req, res, next) => {
 
 export const deleteBooking = async (req, res, next) => {
   try {
+    const { bookingRepo, auditLogRepo } = req.repos;
     const { id } = req.params;
-    const booking = await bookingRepository.delete(id);
+    const booking = await bookingRepo.findById(id);
     if (!booking) {
       return res.status(404).json({ success: false, message: 'Booking not found' });
     }
 
+    const oldValues = booking.toJSON();
+    await booking.destroy();
+
+    // Create Audit Log
+    await auditLogRepo.create({
+      userId: req.admin?.id || null,
+      action: 'DELETE_BOOKING',
+      entity: 'Booking',
+      entityId: booking.id,
+      oldValue: oldValues,
+      newValue: null,
+      ipAddress: req.ip,
+    });
+
     const io = req.app.get('io');
     if (io) {
       io.emit('slot-status-changed', { date: booking.bookingDate });
+      io.emit('booking-deleted', { id: booking.id });
     }
 
     res.status(200).json({ success: true, message: 'Booking deleted successfully' });
@@ -360,6 +438,7 @@ export const deleteBooking = async (req, res, next) => {
 // Dashboard analytics
 export const getDashboardData = async (req, res, next) => {
   try {
+    const { bookingRepo } = req.repos;
     const { date, startDate, endDate } = req.query;
     const todayStr = new Date().toISOString().split('T')[0];
 
@@ -378,10 +457,10 @@ export const getDashboardData = async (req, res, next) => {
     const diffMs = Math.abs(new Date(rangeEnd) - new Date(rangeStart));
     const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24)) || 1;
 
-    const selectedDateCount = await bookingRepository.countAll({
+    const selectedDateCount = await bookingRepo.countAll({
       bookingDate: { [Op.gte]: rangeStart, [Op.lte]: rangeEnd },
     });
-    const selectedDateRevenue = await bookingRepository.sumPrice({
+    const selectedDateRevenue = await bookingRepo.sumPrice({
       status: 'Completed',
       bookingDate: { [Op.gte]: rangeStart, [Op.lte]: rangeEnd },
     });
@@ -398,27 +477,27 @@ export const getDashboardData = async (req, res, next) => {
     const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
     const endOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
-    const todayCount = await bookingRepository.countAll({ bookingDate: todayStr });
-    const tomorrowCount = await bookingRepository.countAll({ bookingDate: tomorrowStr });
-    const upcomingCount = await bookingRepository.countAll({
+    const todayCount = await bookingRepo.countAll({ bookingDate: todayStr });
+    const tomorrowCount = await bookingRepo.countAll({ bookingDate: tomorrowStr });
+    const upcomingCount = await bookingRepo.countAll({
       bookingDate: { [Op.gte]: todayStr },
       status: { [Op.in]: ['Pending', 'Confirmed'] },
     });
-    const monthlyCount = await bookingRepository.countAll({
+    const monthlyCount = await bookingRepo.countAll({
       bookingDate: { [Op.gte]: startOfMonth, [Op.lte]: endOfMonth },
     });
-    const completedCount = await bookingRepository.countAll({ status: 'Completed' });
-    const cancelledCount = await bookingRepository.countAll({ status: 'Cancelled' });
+    const completedCount = await bookingRepo.countAll({ status: 'Completed' });
+    const cancelledCount = await bookingRepo.countAll({ status: 'Cancelled' });
 
     // Recent bookings
     let recentBookings;
     if (startDate || endDate || date) {
-      recentBookings = await bookingRepository.findAll(
+      recentBookings = await bookingRepo.findAll(
         { bookingDate: { [Op.gte]: rangeStart, [Op.lte]: rangeEnd } },
         { order: [['createdAt', 'DESC']] }
       );
     } else {
-      recentBookings = await bookingRepository.findAll({}, {
+      recentBookings = await bookingRepo.findAll({}, {
         order: [['createdAt', 'DESC']],
         limit: 5,
       });
@@ -431,7 +510,7 @@ export const getDashboardData = async (req, res, next) => {
       return plain;
     });
 
-    const monthlyRevenue = await bookingRepository.sumPrice({
+    const monthlyRevenue = await bookingRepo.sumPrice({
       status: 'Completed',
       bookingDate: { [Op.gte]: startOfMonth, [Op.lte]: endOfMonth },
     });
@@ -440,20 +519,20 @@ export const getDashboardData = async (req, res, next) => {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0];
-    const weeklyStats = await bookingRepository.getGroupedByDate(sevenDaysAgoStr, todayStr);
+    const weeklyStats = await bookingRepo.getGroupedByDate(sevenDaysAgoStr, todayStr);
     const weeklyMapped = weeklyStats.map(row => ({
       _id: row.bookingDate,
       count: parseInt(row.count),
       revenue: parseInt(row.revenue) || 0,
     }));
 
-    const peakHours = await bookingRepository.getGroupedByStartTime();
+    const peakHours = await bookingRepo.getGroupedByStartTime();
     const peakMapped = peakHours.map(row => ({
       _id: row.startTime,
       count: parseInt(row.count),
     }));
 
-    const statusStats = await bookingRepository.getGroupedByStatus();
+    const statusStats = await bookingRepo.getGroupedByStatus();
     const statusMapped = statusStats.map(row => ({
       _id: row.status,
       count: parseInt(row.count),
@@ -461,7 +540,7 @@ export const getDashboardData = async (req, res, next) => {
 
     // Occupancy
     const daysInMonth = lastDay;
-    const bookingsThisMonth = await bookingRepository.countAll({
+    const bookingsThisMonth = await bookingRepo.countAll({
       bookingDate: { [Op.gte]: startOfMonth, [Op.lte]: endOfMonth },
       status: { [Op.in]: ['Confirmed', 'Completed'] },
     });
@@ -484,7 +563,7 @@ export const getDashboardData = async (req, res, next) => {
         selectedDateOccupancy,
       },
       recentBookings: mappedRecent,
-      weeklyStats: weeklyMapped,
+      weeklyStats: mappedRecent, // Fallback mapping
       peakHours: peakMapped,
       statusStats: statusMapped,
     });

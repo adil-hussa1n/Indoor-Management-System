@@ -1,16 +1,8 @@
 import 'dotenv/config';
 import bcrypt from 'bcryptjs';
-import {
-  sequelize,
-  Admin,
-  Slot,
-  Settings,
-  Review,
-  Contact,
-  Booking,
-  Gallery,
-  BookingStatusHistory,
-} from '../src/models/index.js';
+import { masterSequelize, Tenant, SuperAdmin, syncMasterDatabase } from '../src/models/master/index.js';
+import { getTenantConnection } from '../src/config/sequelize.js';
+import { createModels } from '../src/models/model-factory.js';
 
 const defaultSlots = [
   { startTime: '08:00', endTime: '09:00', rateType: 'day' },
@@ -45,46 +37,86 @@ const mockContacts = [
 
 const seedDB = async () => {
   try {
-    console.log('Authenticating database connection for seeding...');
-    await sequelize.authenticate();
-    console.log('Connection established. Re-syncing database tables...');
+    console.log('--- STARTING DATABASE SEEDING ---');
 
-    // Force recreate tables to start fresh
-    await sequelize.sync({ force: true });
-    console.log('Tables recreated.');
+    // 1. Sync the Master Database
+    console.log('Connecting to master database...');
+    await syncMasterDatabase();
+    
+    // Clear master tables
+    console.log('Clearing master tables...');
+    await SuperAdmin.destroy({ where: {} });
+    await Tenant.destroy({ where: {} });
 
-    // Seed default 360 degree panoramic image
-    await Gallery.create({
+    // Seed Super Admin
+    const superAdminPassword = await bcrypt.hash('superadminpassword123', 10);
+    await SuperAdmin.create({
+      username: 'superadmin',
+      password: superAdminPassword,
+      email: 'superadmin@daruntech.com',
+    });
+    console.log('✅ Super Admin seeded: superadmin / superadminpassword123');
+
+    // 2. Provision and Seed default client tenant: apexarena
+    const slug = 'apexarena';
+    const dbName = `db_${slug}`;
+    console.log(`\n--- PROVISIONING TENANT: ${slug} (${dbName}) ---`);
+
+    // Drop and Recreate database
+    await masterSequelize.query(`DROP DATABASE IF EXISTS \`${dbName}\`;`);
+    await masterSequelize.query(`CREATE DATABASE \`${dbName}\`;`);
+    console.log(`✅ Database ${dbName} created`);
+
+    // Register in Tenant table
+    await Tenant.create({
+      slug,
+      businessName: 'Apex Indoor Sports Arena',
+      dbName,
+      adminEmail: 'admin@apexarena.com',
+      adminPhone: '+880 1712-345678',
+      plan: 'pro',
+    });
+    console.log(`✅ Tenant record registered in master table`);
+
+    // Connect to tenant DB & Sync
+    const tenantDb = getTenantConnection(dbName);
+    const tenantModels = createModels(tenantDb);
+    await tenantModels.syncDatabase();
+    console.log(`✅ Tenant database tables synced`);
+
+    // Seed Tenant Admin (admin / adminpassword123)
+    const adminPassword = await bcrypt.hash('adminpassword123', 10);
+    await tenantModels.Admin.create({
+      username: 'admin',
+      password: adminPassword,
+      role: 'admin',
+    });
+    console.log('✅ Tenant Admin seeded: admin / adminpassword123');
+
+    // Seed Default 360° image
+    await tenantModels.Gallery.create({
       imageUrl: 'https://pannellum.org/images/alma.jpg',
       publicId: 'default_360_panorama',
       is360: true,
+      mediaType: 'panorama',
     });
-    console.log('Default 360° gallery image seeded.');
-
-    // Seed Admin (with properly hashed password)
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash('adminpassword123', salt);
-    await Admin.create({
-      username: 'admin',
-      password: hashedPassword,
-    });
-    console.log('Admin seeded: admin / adminpassword123');
+    console.log('✅ Default 360° gallery image seeded');
 
     // Seed Slots
-    await Slot.bulkCreate(defaultSlots);
-    console.log('Default slots seeded.');
+    await tenantModels.Slot.bulkCreate(defaultSlots);
+    console.log('✅ Default slots seeded');
 
     // Seed Settings
-    await Settings.create({
+    await tenantModels.Settings.create({
       businessName: 'Apex Indoor Sports Arena',
       contactEmail: 'info@apexindoorsports.com',
       contactPhone: '+880 1712-345678',
       contactAddress: 'Sector 11, Uttara, Dhaka, Bangladesh',
       hero: {
-        tagline: '⚡ Premium Indoor Court',
-        title1: 'Experience Sports',
-        title2: 'Like Never Before',
-        description: 'Book our state-of-the-art climate-controlled indoor arena. Designed for futsal, basketball, badminton, and more. Clean, professional, and ready.',
+        mediaType: 'panorama',
+        autoRotate360: true,
+        overlayTitle: 'Apex Arena Uttara',
+        overlaySubtitle: 'Book the premium court in Dhaka',
       },
       pricing: {
         weekdayDay: 1200,
@@ -95,13 +127,14 @@ const seedDB = async () => {
         holidayNight: 2200,
       }
     });
-    console.log('Default settings seeded.');
+    console.log('✅ Default Settings seeded');
 
-    // Seed Reviews & Contacts
-    await Review.bulkCreate(mockReviews);
-    await Contact.bulkCreate(mockContacts);
-    console.log('Mock reviews and contact messages seeded.');
+    // Seed Reviews and Contacts
+    await tenantModels.Review.bulkCreate(mockReviews);
+    await tenantModels.Contact.bulkCreate(mockContacts);
+    console.log('✅ Mock reviews and contacts seeded');
 
+    // Seed Bookings
     const year = new Date().getFullYear();
     const todayStr = new Date().toISOString().split('T')[0];
 
@@ -200,17 +233,20 @@ const seedDB = async () => {
       }
     ];
 
-    const bookings = await Booking.bulkCreate(mockBookings);
+    const bookings = await tenantModels.Booking.bulkCreate(mockBookings);
     
     // Seed status histories
     const histories = bookings.map(b => ({
       bookingId: b.id,
-      status: b.status,
+      previousStatus: null,
+      newStatus: b.status,
+      changedBy: 'system',
+      reason: 'Seeded booking',
     }));
-    await BookingStatusHistory.bulkCreate(histories);
+    await tenantModels.BookingStatusHistory.bulkCreate(histories);
+    console.log('✅ Mock bookings and status histories seeded');
 
-    console.log('Mock bookings and status histories seeded.');
-    console.log('Seeding completed successfully!');
+    console.log('\n--- SEEDING COMPLETED SUCCESSFULLY ---');
     process.exit(0);
   } catch (error) {
     console.error('Seeding error:', error);

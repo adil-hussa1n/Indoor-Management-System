@@ -9,12 +9,12 @@ import {
   deleteBooking,
   getDashboardData,
 } from '../src/controllers/booking.controller.js';
-import { protect } from '../src/middlewares/auth.js';
+import { protect, protectUser } from '../src/middlewares/auth.js';
 
 const router = express.Router();
 
-// Public route
-router.post('/booking', createBooking);
+// Public route (requires logged in user context)
+router.post('/booking', protectUser, createBooking);
 
 // Admin protected routes
 router.get('/dashboard', protect, getDashboardData);

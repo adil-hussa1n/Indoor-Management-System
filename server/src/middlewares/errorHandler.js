@@ -7,7 +7,26 @@ export const errorHandler = (err, req, res, next) => {
   // Handle Sequelize UniqueConstraintError (duplicate entry)
   if (err.name === 'SequelizeUniqueConstraintError') {
     statusCode = 400;
-    message = 'This time slot is already booked or a duplicate entry was detected.';
+    const firstError = err.errors?.[0];
+    if (firstError) {
+      const path = firstError.path;
+      const modelName = firstError.model?.name || firstError.instance?.constructor?.name;
+      if (path === 'slug') {
+        message = 'This subdomain slug is already taken by another business.';
+      } else if (path === 'customDomain') {
+        message = 'This custom domain is already in use by another business.';
+      } else if (path === 'username' && (modelName === 'Admin' || modelName === 'admins')) {
+        message = 'This administrator username is already registered.';
+      } else if (path === 'phone' && (modelName === 'User' || modelName === 'users')) {
+        message = 'This phone number is already registered to a user account.';
+      } else if (path === 'bookingId') {
+        message = 'A booking with this ID already exists.';
+      } else {
+        message = firstError.message || 'A duplicate entry was detected.';
+      }
+    } else {
+      message = 'A duplicate entry was detected.';
+    }
   }
   // Handle Sequelize ForeignKeyConstraintError
   else if (err.name === 'SequelizeForeignKeyConstraintError') {

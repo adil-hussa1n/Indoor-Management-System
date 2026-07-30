@@ -1,9 +1,9 @@
-import settingsRepository from '../repositories/settings.repository.js';
 import { uploadToCloudinary } from '../utils/cloudinary.js';
 
 export const getSettings = async (req, res, next) => {
   try {
-    const settings = await settingsRepository.getOrCreate();
+    const { settingsRepo } = req.repos;
+    const settings = await settingsRepo.getOrCreate();
     const plain = settings.toJSON();
     plain._id = plain.id;
     res.status(200).json({ success: true, settings: plain });
@@ -14,7 +14,8 @@ export const getSettings = async (req, res, next) => {
 
 export const updateSettings = async (req, res, next) => {
   try {
-    const settings = await settingsRepository.getOrCreate();
+    const { settingsRepo } = req.repos;
+    const settings = await settingsRepo.getOrCreate();
     const body = { ...req.body };
 
     // Process file uploads
@@ -30,7 +31,7 @@ export const updateSettings = async (req, res, next) => {
     }
 
     // Parse stringified JSON fields
-    const jsonFields = ['businessHours', 'pricing', 'socialLinks', 'seo', 'availableSports', 'holidays', 'maintenanceDays', 'weekendDays', 'hero', 'rules'];
+    const jsonFields = ['businessHours', 'pricing', 'socialLinks', 'seo', 'availableSports', 'holidays', 'maintenanceDays', 'weekendDays', 'hero', 'rules', 'theme'];
     for (const field of jsonFields) {
       if (body[field]) {
         try {
@@ -63,7 +64,8 @@ export const updateSettings = async (req, res, next) => {
 
 export const getPublicInfo = async (req, res, next) => {
   try {
-    const settings = await settingsRepository.getOrCreate();
+    const { settingsRepo } = req.repos;
+    const settings = await settingsRepo.getOrCreate();
     const publicSettings = {
       businessName: settings.businessName,
       contactEmail: settings.contactEmail,

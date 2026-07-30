@@ -1,4 +1,3 @@
-import adminRepository from '../repositories/admin.repository.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { loginSchema } from '../../validators/auth.validator.js';
@@ -14,14 +13,14 @@ export const login = async (req, res, next) => {
     }
 
     const { username, password } = validation.data;
-    const admin = await adminRepository.findByUsername(username);
+    const admin = await req.repos.adminRepo.findByUsername(username);
 
     if (!admin || !(await bcrypt.compare(password, admin.password))) {
       return res.status(401).json({ success: false, message: 'Invalid username or password' });
     }
 
     const token = jwt.sign(
-      { id: admin.id },
+      { id: admin.id, tenant: req.tenant.slug, type: 'admin' },
       process.env.JWT_SECRET || 'super_secret_jwt_key_change_me_in_production',
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );

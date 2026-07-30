@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAdminBookings, useCreateManualBooking, useUpdateBookingStatus, useDeleteBooking, useAdminSettings, useAvailableSlots } from '../hooks/useApi';
+import { useAdminBookings, useCreateManualBooking, useUpdateBookingStatus, useDeleteBooking, useAdminSettings, useAvailableSlots, useUpdateBooking } from '../hooks/useApi';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input, Select } from '../components/ui/Input';
@@ -38,9 +38,12 @@ const manualBookingSchema = z.object({
   notes: z.string().optional(),
 });
 
+
 export const AdminBookings = () => {
   const toast = useToast();
   const socket = useSocket();
+  
+  // Navigation & Filters
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -65,7 +68,9 @@ export const AdminBookings = () => {
         console.log('Realtime update: Refreshing bookings...');
         refetch();
       };
+
       socket.on('slot-status-changed', handleRealtimeUpdate);
+      
       return () => {
         socket.off('slot-status-changed', handleRealtimeUpdate);
       };
@@ -75,6 +80,11 @@ export const AdminBookings = () => {
   const createManualBookingMutation = useCreateManualBooking();
   const updateStatusMutation = useUpdateBookingStatus();
   const deleteBookingMutation = useDeleteBooking();
+  const updateBookingMutation = useUpdateBooking();
+
+  // Booking Edit states
+  const [editingBooking, setEditingBooking] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const [selectedSlots, setSelectedSlots] = useState([]);
 
@@ -163,6 +173,50 @@ export const AdminBookings = () => {
     });
   };
 
+  const handleEditClick = (booking) => {
+    setEditingBooking(booking);
+    setValue('customerName', booking.customerName);
+    setValue('phone', booking.phone);
+    setValue('email', booking.email || '');
+    setValue('sport', booking.sport);
+    setValue('bookingDate', booking.bookingDate);
+    setValue('startTime', booking.startTime);
+    setValue('endTime', booking.endTime);
+    setValue('duration', booking.duration);
+    setValue('players', booking.players);
+    setValue('notes', booking.notes || '');
+    
+    // Clear slots so that new selection handles slot highlights if they want to reschedule
+    setSelectedSlots([]);
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateBookingSubmit = (data) => {
+    // If they picked new slots, use them. Otherwise, keep the original time slots.
+    const payload = { ...data };
+    if (selectedSlots.length > 0) {
+      payload.startTime = selectedSlots[0].startTime;
+      payload.endTime = selectedSlots[selectedSlots.length - 1].endTime;
+      payload.duration = selectedSlots.length;
+    }
+
+    updateBookingMutation.mutate(
+      { id: editingBooking._id, data: payload },
+      {
+        onSuccess: () => {
+          toast.success('Booking updated successfully!');
+          setIsEditModalOpen(false);
+          setEditingBooking(null);
+          setSelectedSlots([]);
+          refetch();
+        },
+        onError: (err) => {
+          toast.error(err.response?.data?.message || 'Failed to update booking.');
+        },
+      }
+    );
+  };
+
   const handleStatusChange = (id, newStatus) => {
     updateStatusMutation.mutate(
       { id, status: newStatus },
@@ -205,152 +259,162 @@ export const AdminBookings = () => {
 
   return (
     <div className="space-y-6 text-left animate-fade-in">
-      {/* Header filter bar */}
-      <div className="glass-card p-6 rounded-3xl shadow-sm flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <input
-            type="text"
-            placeholder="Search name, phone, ref..."
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            className="px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-sm focus:outline-none focus:ring-2 focus:ring-purple-650"
-          />
-          <select
-            value={statusFilter}
-            onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-            className="px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-sm focus:outline-none focus:ring-2 focus:ring-purple-655"
-          >
-            <option value="">All Statuses</option>
-            <option value="Pending">Pending</option>
-            <option value="Confirmed">Confirmed</option>
-            <option value="Completed">Completed</option>
-            <option value="Cancelled">Cancelled</option>
-          </select>
-          <DatePicker
-            value={dateFilter}
-            onChange={(val) => { setDateFilter(val); setPage(1); }}
-            className="w-48"
-          />
-          {dateFilter && (
-            <button
-              onClick={() => { setDateFilter(''); setPage(1); }}
-              className="text-xs text-rose-500 font-bold hover:underline whitespace-nowrap"
-            >
-              Clear Date
-            </button>
-          )}
-        </div>
+      {/* Bookings Content */}
+      <>
+          {/* Header filter bar */}
+          <div className="glass-card p-6 rounded-3xl shadow-sm flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <input
+                type="text"
+                placeholder="Search name, phone, ref..."
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                className="px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-sm focus:outline-none focus:ring-2 focus:ring-purple-650"
+              />
+              <select
+                value={statusFilter}
+                onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+                className="px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-sm focus:outline-none focus:ring-2 focus:ring-purple-655"
+              >
+                <option value="">All Statuses</option>
+                <option value="Pending">Pending</option>
+                <option value="Confirmed">Confirmed</option>
+                <option value="Completed">Completed</option>
+                <option value="Cancelled">Cancelled</option>
+              </select>
+              <DatePicker
+                value={dateFilter}
+                onChange={(val) => { setDateFilter(val); setPage(1); }}
+                className="w-48"
+              />
+              {dateFilter && (
+                <button
+                  onClick={() => { setDateFilter(''); setPage(1); }}
+                  className="text-xs text-rose-500 font-bold hover:underline whitespace-nowrap"
+                >
+                  Clear Date
+                </button>
+              )}
+            </div>
 
-        <Button onClick={() => setIsModalOpen(true)} className="flex items-center gap-2 font-bold shadow-md shadow-purple-500/10">
-          <Plus className="w-4 h-4" /> Add Manual Booking
-        </Button>
-      </div>
-
-      {isLoading ? (
-        <Loader size="large" className="py-20" />
-      ) : (
-        <div className="glass-card rounded-3xl shadow-sm border border-zinc-200 dark:border-zinc-800 overflow-hidden">
-          <div className="p-6 overflow-x-auto custom-scrollbar">
-            <table className="w-full text-sm text-left border-collapse min-w-[800px]">
-              <thead>
-                <tr className="border-b border-zinc-150 dark:border-zinc-800 text-zinc-500 uppercase tracking-wider text-xs font-extrabold">
-                  <th className="py-3 px-4">Ref ID</th>
-                  <th className="py-3 px-4">Customer</th>
-                  <th className="py-3 px-4">Sport</th>
-                  <th className="py-3 px-4">Schedule</th>
-                  <th className="py-3 px-4">Price</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
-                {bookingData?.bookings?.map((b) => (
-                  <tr key={b._id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30">
-                    <td className="py-3.5 px-4 font-bold text-purple-650">{b.bookingId}</td>
-                    <td className="py-3.5 px-4">
-                      <div className="font-bold text-zinc-800 dark:text-zinc-200">{b.customerName}</div>
-                      <div className="text-xs text-zinc-450">{b.phone} | {b.email || 'No email'}</div>
-                    </td>
-                    <td className="py-3.5 px-4 font-bold text-zinc-650 dark:text-zinc-350">{b.sport}</td>
-                    <td className="py-3.5 px-4">
-                      <div className="text-zinc-855 dark:text-zinc-200 font-semibold">{new Date(b.bookingDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}</div>
-                      <div className="text-xs text-zinc-500">{format12Hour(b.startTime)} - {format12Hour(b.endTime)} ({b.duration} hr)</div>
-                    </td>
-                    <td className="py-3.5 px-4 font-extrabold text-zinc-855 dark:text-zinc-100">৳{b.price}</td>
-                    <td className="py-3.5 px-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                        b.status === 'Confirmed'
-                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400'
-                          : b.status === 'Pending'
-                          ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/30 dark:text-amber-400'
-                          : b.status === 'Completed'
-                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/30 dark:text-blue-400'
-                          : 'bg-zinc-100 text-zinc-850 dark:bg-zinc-900 dark:text-zinc-400'
-                      }`}>
-                        {b.status}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4 flex items-center justify-center gap-2">
-                      <select
-                        value={b.status}
-                        onChange={(e) => handleStatusChange(b._id, e.target.value)}
-                        className={`text-xs px-3 py-1.5 border rounded-full font-bold focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all duration-200 cursor-pointer shadow-sm ${
-                          b.status === 'Confirmed'
-                            ? 'border-emerald-250 text-emerald-700 bg-emerald-50/30 dark:border-emerald-900/40 dark:text-emerald-400 dark:bg-emerald-950/20'
-                            : b.status === 'Pending'
-                            ? 'border-amber-250 text-amber-700 bg-amber-50/30 dark:border-amber-900/40 dark:text-amber-455 dark:bg-amber-950/20'
-                            : b.status === 'Completed'
-                            ? 'border-blue-250 text-blue-700 bg-blue-50/30 dark:border-blue-900/40 dark:text-blue-400 dark:bg-blue-950/20'
-                            : 'border-zinc-200 text-zinc-500 bg-zinc-50/30 dark:border-zinc-800 dark:text-zinc-400 dark:bg-zinc-900/20'
-                        }`}
-                      >
-                        <option value="Pending">Pending</option>
-                        <option value="Confirmed">Confirmed</option>
-                        <option value="Completed">Completed</option>
-                        <option value="Cancelled">Cancelled</option>
-                      </select>
-                      <button
-                        onClick={() => handleDelete(b._id)}
-                        className="p-2 rounded-xl text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all duration-200 cursor-pointer"
-                        title="Delete booking"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            {/* Pagination Controls */}
-            {bookingData?.pagination && (
-              <div className="mt-6 flex items-center justify-between border-t border-zinc-150 dark:border-zinc-800 pt-4">
-                <span className="text-xs text-zinc-500">
-                  Showing page {bookingData.pagination.page} of {bookingData.pagination.totalPages}
-                </span>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    disabled={page === 1}
-                    onClick={() => setPage(p => p - 1)}
-                    className="p-2 text-xs font-bold"
-                  >
-                    <ArrowLeft className="w-4 h-4" /> Previous
-                  </Button>
-                  <Button
-                    variant="outline"
-                    disabled={page >= bookingData.pagination.totalPages}
-                    onClick={() => setPage(p => p + 1)}
-                    className="p-2 text-xs font-bold"
-                  >
-                    Next <ArrowRight className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            )}
+            <Button onClick={() => setIsModalOpen(true)} className="flex items-center gap-2 font-bold shadow-md shadow-purple-500/10">
+              <Plus className="w-4 h-4" /> Add Manual Booking
+            </Button>
           </div>
-        </div>
-      )}
+
+          {isLoading ? (
+            <Loader size="large" className="py-20" />
+          ) : (
+            <div className="glass-card rounded-3xl shadow-sm border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+              <div className="p-6 overflow-x-auto custom-scrollbar">
+                <table className="w-full text-sm text-left border-collapse min-w-[800px]">
+                  <thead>
+                    <tr className="border-b border-zinc-150 dark:border-zinc-800 text-zinc-500 uppercase tracking-wider text-xs font-extrabold">
+                      <th className="py-3 px-4">Ref ID</th>
+                      <th className="py-3 px-4">Customer</th>
+                      <th className="py-3 px-4">Sport</th>
+                      <th className="py-3 px-4">Schedule</th>
+                      <th className="py-3 px-4">Price</th>
+                      <th className="py-3 px-4">Status</th>
+                      <th className="py-3 px-4 text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
+                    {bookingData?.bookings?.map((b) => (
+                      <tr key={b._id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30">
+                        <td className="py-3.5 px-4 font-bold text-purple-650">{b.bookingId}</td>
+                        <td className="py-3.5 px-4">
+                          <div className="font-bold text-zinc-800 dark:text-zinc-200">{b.customerName}</div>
+                          <div className="text-xs text-zinc-450">{b.phone} | {b.email || 'No email'}</div>
+                        </td>
+                        <td className="py-3.5 px-4 font-bold text-zinc-655 dark:text-zinc-355">{b.sport}</td>
+                        <td className="py-3.5 px-4">
+                          <div className="text-zinc-855 dark:text-zinc-200 font-semibold">{new Date(b.bookingDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}</div>
+                          <div className="text-xs text-zinc-500">{format12Hour(b.startTime)} - {format12Hour(b.endTime)} ({b.duration} hr)</div>
+                        </td>
+                        <td className="py-3.5 px-4 font-extrabold text-zinc-855 dark:text-zinc-100">৳{b.price}</td>
+                        <td className="py-3.5 px-4">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                            b.status === 'Confirmed'
+                              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400'
+                              : b.status === 'Pending'
+                              ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/30 dark:text-amber-400'
+                              : b.status === 'Completed'
+                              ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/30 dark:text-blue-400'
+                              : 'bg-rose-100 text-rose-800 dark:bg-rose-955/30 dark:text-rose-400'
+                          }`}>
+                            {b.status}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 flex items-center justify-center gap-2">
+                          <select
+                            value={b.status}
+                            onChange={(e) => handleStatusChange(b._id, e.target.value)}
+                            className={`text-xs px-3 py-1.5 border rounded-full font-bold focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all duration-200 cursor-pointer shadow-sm ${
+                              b.status === 'Confirmed'
+                                ? 'border-emerald-250 text-emerald-700 bg-emerald-50/30 dark:border-emerald-900/40 dark:text-emerald-400 dark:bg-emerald-950/20'
+                                : b.status === 'Pending'
+                                ? 'border-amber-250 text-amber-700 bg-amber-50/30 dark:border-amber-900/40 dark:text-amber-455 dark:bg-amber-950/20'
+                                : b.status === 'Completed'
+                                ? 'border-blue-250 text-blue-700 bg-blue-50/30 dark:border-blue-900/40 dark:text-blue-400 dark:bg-blue-950/20'
+                                : 'border-zinc-200 text-zinc-500 bg-zinc-50/30 dark:border-zinc-800 dark:text-zinc-400 dark:bg-zinc-900/20'
+                            }`}
+                          >
+                            <option value="Pending">Pending</option>
+                            <option value="Confirmed">Confirmed</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Cancelled">Cancelled</option>
+                          </select>
+                          <button
+                            onClick={() => handleEditClick(b)}
+                            className="p-2 rounded-xl text-zinc-400 hover:text-purple-650 hover:bg-purple-50 dark:hover:bg-purple-955/30 transition-all duration-200 cursor-pointer"
+                            title="Edit booking"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(b._id)}
+                            className="p-2 rounded-xl text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-955/30 transition-all duration-200 cursor-pointer"
+                            title="Delete booking"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                {/* Pagination Controls */}
+                {bookingData?.pagination && (
+                  <div className="mt-6 flex items-center justify-between border-t border-zinc-150 dark:border-zinc-800 pt-4">
+                    <span className="text-xs text-zinc-500">
+                      Showing page {bookingData.pagination.page} of {bookingData.pagination.totalPages}
+                    </span>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        disabled={page === 1}
+                        onClick={() => setPage(p => p - 1)}
+                        className="p-2 text-xs font-bold"
+                      >
+                        <ArrowLeft className="w-4 h-4" /> Previous
+                      </Button>
+                      <Button
+                        variant="outline"
+                        disabled={page >= bookingData.pagination.totalPages}
+                        onClick={() => setPage(p => p + 1)}
+                        className="p-2 text-xs font-bold"
+                      >
+                        Next <ArrowRight className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+      </>
 
       {/* Manual Booking Dialog */}
       <Dialog
@@ -502,6 +566,165 @@ export const AdminBookings = () => {
           <div className="border-t border-zinc-150 dark:border-zinc-800/80 pt-4 flex justify-end">
             <Button type="submit" className="w-full sm:w-auto px-8 py-3 font-bold" disabled={createManualBookingMutation.isPending}>
               {createManualBookingMutation.isPending ? 'Saving Booking...' : 'Confirm Manual Entry'}
+            </Button>
+          </div>
+        </form>
+      </Dialog>
+
+      {/* Edit Booking Dialog */}
+      <Dialog
+        isOpen={isEditModalOpen}
+        onClose={() => { setIsEditModalOpen(false); setEditingBooking(null); }}
+        title="Modify Booking Details"
+        className="max-w-4xl"
+      >
+        <form onSubmit={handleSubmit(handleUpdateBookingSubmit)} className="space-y-6 pt-4 text-left">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+            {/* Left Column: Customer Info */}
+            <div className="space-y-4">
+              <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-widest border-b border-zinc-100 dark:border-zinc-900 pb-2">
+                👤 Customer Information
+              </h4>
+              <Input
+                label="Customer Name"
+                placeholder="John Doe"
+                error={errors.customerName?.message}
+                {...register('customerName')}
+              />
+              <Input
+                label="Phone Number"
+                placeholder="e.g. 017..."
+                error={errors.phone?.message}
+                {...register('phone')}
+              />
+              <Input
+                label="Email Address"
+                placeholder="john@example.com"
+                error={errors.email?.message}
+                {...register('email')}
+              />
+              <div className="grid grid-cols-2 gap-4">
+                <Select
+                  label="Sport"
+                  options={sportOptions}
+                  error={errors.sport?.message}
+                  {...register('sport')}
+                />
+                <Input
+                  label="Players"
+                  type="number"
+                  error={errors.players?.message}
+                  {...register('players')}
+                />
+              </div>
+              <Input
+                label="Notes / Comments"
+                placeholder="Any special requests"
+                error={errors.notes?.message}
+                {...register('notes')}
+              />
+            </div>
+
+            {/* Right Column: Slot Selection */}
+            <div className="space-y-4">
+              <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-widest border-b border-zinc-100 dark:border-zinc-900 pb-2">
+                📅 Slot Selection
+              </h4>
+              
+              <Controller
+                name="bookingDate"
+                control={control}
+                render={({ field }) => (
+                  <DatePicker
+                    label="Select Date"
+                    value={field.value}
+                    onChange={field.onChange}
+                    error={errors.bookingDate?.message}
+                    className="w-full"
+                  />
+                )}
+              />
+
+              {/* Slots Selection Box */}
+              <div className="bg-zinc-50/50 dark:bg-zinc-900/10 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-indigo-500" /> Choose Time Slots
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => refetchSlots()}
+                    className="p-1 text-zinc-400 hover:text-zinc-650 cursor-pointer"
+                    title="Refresh slots"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                <div className="text-[10px] text-zinc-400 dark:text-zinc-500 mb-2 italic">
+                  💡 Leave slots empty to keep the original schedule ({editingBooking?.startTime && format12Hour(editingBooking.startTime)} - {editingBooking?.endTime && format12Hour(editingBooking.endTime)}).
+                </div>
+
+                {slotsLoading ? (
+                  <Loader className="py-6" />
+                ) : slotData?.isBlocked ? (
+                  <div className="text-center py-4 text-xs font-bold text-rose-500 border border-rose-100 dark:border-rose-955/20 bg-rose-50/20 rounded-xl">
+                    ⚠️ Closed on this date ({slotData.reason})
+                  </div>
+                ) : !slotData?.slots?.length ? (
+                  <div className="text-center py-4 text-xs font-semibold text-zinc-450 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl">
+                    No slots configured for this date.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-56 overflow-y-auto custom-scrollbar pr-1">
+                    {slotData.slots.map((slot) => {
+                      const isSelected = selectedSlots.some((s) => s.id === slot.id);
+                      return (
+                        <button
+                          key={slot.id}
+                          type="button"
+                          onClick={() => handleSlotClick(slot)}
+                          className={`p-2 rounded-xl border text-xs font-bold transition-all duration-200 flex flex-col items-center justify-center gap-1 select-none cursor-pointer ${
+                            !slot.isAvailable
+                              ? 'bg-rose-50/20 dark:bg-rose-955/5 border-rose-100 dark:border-rose-900/30 text-rose-700 dark:text-rose-500 opacity-60 cursor-not-allowed'
+                              : isSelected
+                              ? 'bg-purple-650 border-purple-650 text-white shadow-md shadow-purple-500/20'
+                              : 'bg-white hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-650 dark:text-zinc-400'
+                          }`}
+                          disabled={!slot.isAvailable}
+                        >
+                          <span className="font-extrabold text-[11px]">{format12Hour(slot.startTime)}</span>
+                          <span className={`text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${
+                            !slot.isAvailable
+                              ? 'bg-rose-100/50 dark:bg-rose-950/30 text-rose-600'
+                              : isSelected
+                              ? 'bg-purple-500/30 text-white'
+                              : 'bg-emerald-100 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-400'
+                          }`}>
+                            {slot.isAvailable ? (slot.rateType === 'night' ? 'Night' : 'Day') : 'Booked'}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Schedule Summary */}
+              <div className="bg-purple-500/5 dark:bg-purple-950/10 border border-purple-500/10 dark:border-purple-900/20 rounded-2xl p-4 flex justify-between items-center text-xs">
+                <span className="font-semibold text-zinc-500">Selected Schedule:</span>
+                <span className="font-extrabold text-sm text-purple-650 dark:text-purple-400">
+                  {selectedSlots.length > 0
+                    ? `${format12Hour(selectedSlots[0].startTime)} - ${format12Hour(selectedSlots[selectedSlots.length - 1].endTime)} (${selectedSlots.length} hr)`
+                    : `${editingBooking?.startTime ? format12Hour(editingBooking.startTime) : ''} - ${editingBooking?.endTime ? format12Hour(editingBooking.endTime) : ''} (Original)`}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-zinc-150 dark:border-zinc-800/80 pt-4 flex justify-end">
+            <Button type="submit" className="w-full sm:w-auto px-8 py-3 font-bold" disabled={updateBookingMutation.isPending}>
+              {updateBookingMutation.isPending ? 'Saving Changes...' : 'Save Booking Modifications'}
             </Button>
           </div>
         </form>

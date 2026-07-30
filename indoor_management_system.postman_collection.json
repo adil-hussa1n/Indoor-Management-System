@@ -1,35 +1,16 @@
 {
   "info": {
     "_postman_id": "bfd8bb1d-5573-4f9e-be41-01f6874eb78d",
-    "name": "Indoor Management System API (MySQL)",
-    "description": "Comprehensive Postman collection for testing the Indoor Sports Management & Booking System.\n\nDatabase: MySQL 8.0 + Sequelize ORM\nIDs: Auto-increment integers (not MongoDB ObjectIds)\n\nUsage:\n1. Run 'Admin Login' first — the token is automatically saved to {{adminToken}}.\n2. All admin endpoints inherit Bearer auth from the collection.\n3. Replace :id path variables with actual integer IDs from your database.",
+    "name": "Indoor Management System API (Multi-Tenant)",
+    "description": "Comprehensive Postman collection for testing the Indoor Sports Management & Booking Multi-Tenant SaaS platform.\n\nDatabase: Multi-tenant MySQL 8.0 + Sequelize ORM\nTenant Isolation: Handled via the subdomain or the X-Tenant-Slug header in local dev.\n\nUsage:\n1. Super Admin Panel: Authenticate using 'Super Admin Login' -> JWT token automatically saved to {{superAdminToken}}.\n2. Tenant Admin: Authenticate using 'Admin Login' -> JWT token automatically saved to {{adminToken}}.\n3. Customer/User: Authenticate using OTP verification -> JWT token automatically saved to {{userToken}}.\n4. Headers: All tenant-scoped requests automatically include 'X-Tenant-Slug: {{tenantSlug}}'. Customize {{tenantSlug}} to target different client databases.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
-      "name": "Health & Status",
+      "name": "Super Admin Operations",
       "item": [
         {
-          "name": "Health Check",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/health",
-              "host": ["{{baseUrl}}"],
-              "path": ["health"]
-            },
-            "description": "Server health check — verifies MySQL database connectivity, uptime, and API version."
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "Authentication",
-      "item": [
-        {
-          "name": "Admin Login",
+          "name": "Super Admin Login",
           "event": [
             {
               "listen": "test",
@@ -38,8 +19,8 @@
                 "exec": [
                   "var jsonData = pm.response.json();",
                   "if (jsonData.token) {",
-                  "  pm.collectionVariables.set('adminToken', jsonData.token);",
-                  "  console.log('Token saved to {{adminToken}}');",
+                  "  pm.collectionVariables.set('superAdminToken', jsonData.token);",
+                  "  console.log('Super Admin Token saved to {{superAdminToken}}');",
                   "}"
                 ]
               }
@@ -52,6 +33,158 @@
             ],
             "body": {
               "mode": "raw",
+              "raw": "{\n  \"username\": \"superadmin\",\n  \"password\": \"superadminpassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{masterUrl}}/login",
+              "host": ["{{masterUrl}}"],
+              "path": ["login"]
+            },
+            "description": "Authenticate as the master superadmin. The token is saved to {{superAdminToken}} to authorize master operations."
+          },
+          "response": []
+        },
+        {
+          "name": "List Tenants",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{superAdminToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{masterUrl}}/tenants",
+              "host": ["{{masterUrl}}"],
+              "path": ["tenants"]
+            },
+            "description": "Get a list of all client tenant databases, subdomains, and status."
+          },
+          "response": []
+        },
+        {
+          "name": "Provision New Tenant",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{superAdminToken}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"businessName\": \"Apex Arena\",\n  \"slug\": \"apexarena\",\n  \"adminUsername\": \"admin\",\n  \"adminPassword\": \"adminpassword123\",\n  \"adminEmail\": \"admin@apexarena.com\",\n  \"adminPhone\": \"+8801711111111\",\n  \"subscriptionExpiresAt\": \"2026-12-31T23:59:59.000Z\"\n}"
+            },
+            "url": {
+              "raw": "{{masterUrl}}/tenants",
+              "host": ["{{masterUrl}}"],
+              "path": ["tenants"]
+            },
+            "description": "Provision a new client tenant. This creates their database, compiles custom tables, seeds default settings/slots, and returns credentials."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Tenant Info",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{superAdminToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{masterUrl}}/tenants/:id",
+              "host": ["{{masterUrl}}"],
+              "path": ["tenants", ":id"],
+              "variable": [
+                { "key": "id", "value": "1" }
+              ]
+            },
+            "description": "Fetch detailed credentials and SMS configuration for a single tenant client."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Tenant Settings / Extend",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{superAdminToken}}", "type": "string" }]
+            },
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"businessName\": \"Apex Multi-Sports\",\n  \"isActive\": true,\n  \"subscriptionExpiresAt\": \"2027-06-30T00:00:00.000Z\",\n  \"smsCredentials\": {\n    \"provider\": \"SSLWireless\",\n    \"apiKey\": \"PROD_API_KEY\",\n    \"senderId\": \"PROD_SENDER_ID\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{masterUrl}}/tenants/:id",
+              "host": ["{{masterUrl}}"],
+              "path": ["tenants", ":id"],
+              "variable": [
+                { "key": "id", "value": "1" }
+              ]
+            },
+            "description": "Modify tenant properties, toggle status, change expiry date, or configure SMS credentials."
+          },
+          "response": []
+        },
+        {
+          "name": "Deprovision Tenant (Wipe)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{superAdminToken}}", "type": "string" }]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{masterUrl}}/tenants/:id",
+              "host": ["{{masterUrl}}"],
+              "path": ["tenants", ":id"],
+              "variable": [
+                { "key": "id", "value": "1" }
+              ]
+            },
+            "description": "Permanently delete a tenant, drops their database container, and removes all mapping entries."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Authentication (Admin)",
+      "item": [
+        {
+          "name": "Admin Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.token) {",
+                  "  pm.collectionVariables.set('adminToken', jsonData.token);",
+                  "  console.log('Admin Token saved to {{adminToken}}');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
+            "body": {
+              "mode": "raw",
               "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"adminpassword123\"\n}"
             },
             "url": {
@@ -59,7 +192,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["auth", "login"]
             },
-            "description": "Authenticate as admin. The JWT token is automatically extracted and saved to {{adminToken}} for subsequent requests."
+            "description": "Authenticate as a tenant administrator. The JWT token is tenant-scoped and automatically saved to {{adminToken}}."
           },
           "response": []
         },
@@ -71,13 +204,142 @@
               "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
             },
             "method": "GET",
-            "header": [],
+            "header": [
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
             "url": {
               "raw": "{{baseUrl}}/auth/me",
               "host": ["{{baseUrl}}"],
               "path": ["auth", "me"]
             },
-            "description": "Retrieve the currently authenticated admin's profile."
+            "description": "Retrieve the currently authenticated tenant admin profile."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Customer OTP Auth & Portal",
+      "item": [
+        {
+          "name": "Send OTP (SMS)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+8801700000000\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/user/send-otp",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "send-otp"]
+            },
+            "description": "Triggers SMS OTP verification code. In local dev mode, the generated OTP code is returned directly in the response payload for testing convenience."
+          },
+          "response": []
+        },
+        {
+          "name": "Verify OTP & Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.token) {",
+                  "  pm.collectionVariables.set('userToken', jsonData.token);",
+                  "  console.log('Customer User Token saved to {{userToken}}');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+8801700000000\",\n  \"code\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/user/verify-otp",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "verify-otp"]
+            },
+            "description": "Verifies the 6-digit OTP code and logs the user in. Generates a tenant-scoped customer user session JWT token."
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Profile",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{userToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "me"]
+            },
+            "description": "Retrieves the customer user's profile details."
+          },
+          "response": []
+        },
+        {
+          "name": "Update User Profile",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{userToken}}", "type": "string" }]
+            },
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"johndoe@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/user/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "me"]
+            },
+            "description": "Updates customer information such as full name and email."
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Bookings",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{userToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user/my-bookings",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "my-bookings"]
+            },
+            "description": "Fetch a list of all current and historical bookings associated with this customer phone number."
           },
           "response": []
         }
@@ -91,7 +353,8 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" }
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
             ],
             "body": {
               "mode": "raw",
@@ -114,7 +377,9 @@
               "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
             },
             "method": "GET",
-            "header": [],
+            "header": [
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
             "url": {
               "raw": "{{baseUrl}}/dashboard",
               "host": ["{{baseUrl}}"],
@@ -132,7 +397,9 @@
               "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
             },
             "method": "GET",
-            "header": [],
+            "header": [
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
             "url": {
               "raw": "{{baseUrl}}/bookings?status=Pending&sport=Futsal",
               "host": ["{{baseUrl}}"],
@@ -155,7 +422,8 @@
             },
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" }
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
             ],
             "body": {
               "mode": "raw",
@@ -178,13 +446,15 @@
               "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
             },
             "method": "GET",
-            "header": [],
+            "header": [
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
             "url": {
               "raw": "{{baseUrl}}/bookings/:id",
               "host": ["{{baseUrl}}"],
               "path": ["bookings", ":id"],
               "variable": [
-                { "key": "id", "value": "1", "description": "MySQL auto-increment booking ID" }
+                { "key": "id", "value": "1" }
               ]
             },
             "description": "Fetch full details of a specific booking by its integer ID."
@@ -200,7 +470,8 @@
             },
             "method": "PATCH",
             "header": [
-              { "key": "Content-Type", "value": "application/json" }
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
             ],
             "body": {
               "mode": "raw",
@@ -227,7 +498,8 @@
             },
             "method": "PATCH",
             "header": [
-              { "key": "Content-Type", "value": "application/json" }
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
             ],
             "body": {
               "mode": "raw",
@@ -253,7 +525,9 @@
               "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
             },
             "method": "DELETE",
-            "header": [],
+            "header": [
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
             "url": {
               "raw": "{{baseUrl}}/bookings/:id",
               "host": ["{{baseUrl}}"],
@@ -269,13 +543,127 @@
       ]
     },
     {
+      "name": "Booking Change & Cancel Requests",
+      "item": [
+        {
+          "name": "Request Booking Change (Customer)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{userToken}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newDate\": \"2026-09-12\",\n  \"newStartTime\": \"16:00\",\n  \"newEndTime\": \"17:00\",\n  \"reason\": \"Change of plans for players\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking-requests/:bookingId/change",
+              "host": ["{{baseUrl}}"],
+              "path": ["booking-requests", ":bookingId", "change"],
+              "variable": [
+                { "key": "bookingId", "value": "1" }
+              ]
+            },
+            "description": "Submit a rescheduling request. Status transitions to pending and real-time dashboard notifications are pushed to the admin."
+          },
+          "response": []
+        },
+        {
+          "name": "Request Booking Cancel (Customer)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{userToken}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Injuries in our starting line up\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking-requests/:bookingId/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["booking-requests", ":bookingId", "cancel"],
+              "variable": [
+                { "key": "bookingId", "value": "1" }
+              ]
+            },
+            "description": "Submit a cancellation request for approval."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Booking Requests (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking-requests?status=pending",
+              "host": ["{{baseUrl}}"],
+              "path": ["booking-requests"],
+              "query": [
+                { "key": "status", "value": "pending" }
+              ]
+            },
+            "description": "List all booking change or cancellation requests for administration review."
+          },
+          "response": []
+        },
+        {
+          "name": "Process Booking Request (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+            },
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"approved\",\n  \"adminNote\": \"Reschedule request approved. Slot updated.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking-requests/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["booking-requests", ":id"],
+              "variable": [
+                { "key": "id", "value": "1" }
+              ]
+            },
+            "description": "Approve or reject a cancellation or rescheduling request. If approved, the underlying booking database updates are automatically applied."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "Slots & Availability",
       "item": [
         {
           "name": "Get Available Slots (Public)",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
             "url": {
               "raw": "{{baseUrl}}/available-slots?date=2026-07-10",
               "host": ["{{baseUrl}}"],
@@ -296,7 +684,9 @@
               "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
             },
             "method": "GET",
-            "header": [],
+            "header": [
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
             "url": {
               "raw": "{{baseUrl}}/slots",
               "host": ["{{baseUrl}}"],
@@ -315,7 +705,8 @@
             },
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" }
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
             ],
             "body": {
               "mode": "raw",
@@ -339,7 +730,8 @@
             },
             "method": "PATCH",
             "header": [
-              { "key": "Content-Type", "value": "application/json" }
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
             ],
             "body": {
               "mode": "raw",
@@ -365,7 +757,9 @@
               "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
             },
             "method": "DELETE",
-            "header": [],
+            "header": [
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
             "url": {
               "raw": "{{baseUrl}}/slots/:id",
               "host": ["{{baseUrl}}"],
@@ -387,7 +781,9 @@
           "name": "Get Public Info (Public)",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
             "url": {
               "raw": "{{baseUrl}}/info",
               "host": ["{{baseUrl}}"],
@@ -405,7 +801,9 @@
               "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
             },
             "method": "GET",
-            "header": [],
+            "header": [
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
             "url": {
               "raw": "{{baseUrl}}/settings",
               "host": ["{{baseUrl}}"],
@@ -424,7 +822,8 @@
             },
             "method": "PATCH",
             "header": [
-              { "key": "Content-Type", "value": "application/json" }
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
             ],
             "body": {
               "mode": "raw",
@@ -448,7 +847,9 @@
           "name": "Get Gallery (Public)",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
             "url": {
               "raw": "{{baseUrl}}/gallery",
               "host": ["{{baseUrl}}"],
@@ -466,7 +867,9 @@
               "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
             },
             "method": "POST",
-            "header": [],
+            "header": [
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
             "body": {
               "mode": "formdata",
               "formdata": [
@@ -492,7 +895,8 @@
             },
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" }
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
             ],
             "body": {
               "mode": "raw",
@@ -515,7 +919,9 @@
               "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
             },
             "method": "DELETE",
-            "header": [],
+            "header": [
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
             "url": {
               "raw": "{{baseUrl}}/gallery/:id",
               "host": ["{{baseUrl}}"],
@@ -537,7 +943,9 @@
           "name": "Get Approved Reviews (Public)",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
             "url": {
               "raw": "{{baseUrl}}/reviews",
               "host": ["{{baseUrl}}"],
@@ -552,7 +960,8 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" }
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
             ],
             "body": {
               "mode": "raw",
@@ -575,7 +984,9 @@
               "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
             },
             "method": "GET",
-            "header": [],
+            "header": [
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
             "url": {
               "raw": "{{baseUrl}}/reviews/all",
               "host": ["{{baseUrl}}"],
@@ -594,7 +1005,8 @@
             },
             "method": "PATCH",
             "header": [
-              { "key": "Content-Type", "value": "application/json" }
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
             ],
             "body": {
               "mode": "raw",
@@ -620,7 +1032,9 @@
               "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
             },
             "method": "DELETE",
-            "header": [],
+            "header": [
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
             "url": {
               "raw": "{{baseUrl}}/reviews/:id",
               "host": ["{{baseUrl}}"],
@@ -643,7 +1057,8 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" }
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
             ],
             "body": {
               "mode": "raw",
@@ -666,7 +1081,9 @@
               "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
             },
             "method": "GET",
-            "header": [],
+            "header": [
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
             "url": {
               "raw": "{{baseUrl}}/messages",
               "host": ["{{baseUrl}}"],
@@ -685,7 +1102,8 @@
             },
             "method": "PATCH",
             "header": [
-              { "key": "Content-Type", "value": "application/json" }
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
             ],
             "body": {
               "mode": "raw",
@@ -711,7 +1129,9 @@
               "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
             },
             "method": "DELETE",
-            "header": [],
+            "header": [
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
             "url": {
               "raw": "{{baseUrl}}/messages/:id",
               "host": ["{{baseUrl}}"],
@@ -721,6 +1141,27 @@
               ]
             },
             "description": "Permanently delete a contact message."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Health & Status",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Server health check — verifies MySQL database connectivity, uptime, and API version."
           },
           "response": []
         }
@@ -750,8 +1191,28 @@
       "type": "string"
     },
     {
+      "key": "masterUrl",
+      "value": "http://localhost:5000/api/master",
+      "type": "string"
+    },
+    {
+      "key": "tenantSlug",
+      "value": "dbox",
+      "type": "string"
+    },
+    {
       "key": "adminToken",
       "value": "YOUR_ADMIN_JWT_TOKEN",
+      "type": "string"
+    },
+    {
+      "key": "superAdminToken",
+      "value": "YOUR_SUPER_ADMIN_JWT_TOKEN",
+      "type": "string"
+    },
+    {
+      "key": "userToken",
+      "value": "YOUR_USER_JWT_TOKEN",
       "type": "string"
     }
   ]

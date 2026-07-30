@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Sun, Moon, Menu, X, Calendar, Info, Phone, Image as ImageIcon, ShieldAlert } from 'lucide-react';
+import { Sun, Moon, Menu, X, Calendar, Info, Phone, Image as ImageIcon, ShieldAlert, User, WifiOff } from 'lucide-react';
 import { usePublicSettings } from '../hooks/useApi';
 import { useSocket } from '../contexts/SocketContext';
+import { useUserAuth } from '../contexts/UserAuthContext';
 
 export const PublicLayout = () => {
   const [darkMode, setDarkMode] = useState(() => {
@@ -11,7 +12,8 @@ export const PublicLayout = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showPreloader, setShowPreloader] = useState(true);
   const location = useLocation();
-  const { data: settings, isLoading, refetch } = usePublicSettings();
+  const { data: settings, isLoading, refetch, error, isError } = usePublicSettings();
+  const { user, isAuthenticated } = useUserAuth();
 
   const [cachedSettings] = useState(() => {
     try {
@@ -178,6 +180,82 @@ export const PublicLayout = () => {
     );
   }
 
+  if (isError) {
+    const status = error?.response?.status;
+    const errorMessage = error?.response?.data?.message || error?.message || 'An unexpected error occurred.';
+    
+    let errorTitle = 'Arena Offline';
+    let errorDescription = 'We are having trouble connecting to the arena servers. Please check your connection or try again.';
+    let errorIcon = <WifiOff className="w-12 h-12 text-rose-500 animate-pulse" />;
+    let showRetry = true;
+    let showAdminLink = false;
+
+    if (status === 404) {
+      errorTitle = 'Arena Not Found';
+      errorDescription = errorMessage;
+      errorIcon = <ShieldAlert className="w-12 h-12 text-amber-500" />;
+      showRetry = false;
+    } else if (status === 403) {
+      errorTitle = 'Arena Suspended';
+      errorDescription = errorMessage;
+      errorIcon = <ShieldAlert className="w-12 h-12 text-rose-500" />;
+      showRetry = false;
+      showAdminLink = true;
+    }
+
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-zinc-50 dark:bg-zinc-950 px-6 text-center transition-colors duration-500">
+        <div className="relative max-w-md w-full p-8 rounded-[2rem] border border-zinc-200/50 dark:border-zinc-800/80 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl shadow-2xl flex flex-col items-center gap-6">
+          <div className="absolute -inset-1 rounded-[2.1rem] bg-gradient-to-r from-purple-600/10 to-indigo-600/10 blur-xl opacity-75 -z-10" />
+          
+          <div className="p-4 bg-zinc-100 dark:bg-zinc-800/50 rounded-2xl">
+            {errorIcon}
+          </div>
+
+          <div className="space-y-2">
+            <h2 className="text-2xl font-black tracking-tight text-zinc-900 dark:text-white">
+              {errorTitle}
+            </h2>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed font-medium">
+              {errorDescription}
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-3 w-full mt-2">
+            {showRetry && (
+              <button
+                onClick={() => refetch()}
+                className="w-full py-3 rounded-xl bg-purple-600 hover:bg-purple-750 text-white font-bold text-sm shadow-lg shadow-purple-500/25 transition-all cursor-pointer border-0"
+              >
+                Try Again
+              </button>
+            )}
+            
+            {showAdminLink && (
+              <Link
+                to="/admin/login"
+                className="w-full py-3 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-850 dark:hover:bg-zinc-100 font-bold text-sm transition-all shadow-md flex items-center justify-center"
+              >
+                Admin Login
+              </Link>
+            )}
+
+            <button
+              onClick={() => {
+                localStorage.removeItem('current_tenant_slug');
+                sessionStorage.removeItem('current_tenant_slug');
+                window.location.href = '/';
+              }}
+              className="w-full py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 text-zinc-650 dark:text-zinc-350 hover:bg-zinc-100 dark:hover:bg-zinc-900/50 font-bold text-sm transition-all flex items-center justify-center cursor-pointer bg-transparent"
+            >
+              Reset Tenant
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const isAdminLogin = location.pathname === '/admin/login';
   if (isAdminLogin) {
     return (
@@ -236,10 +314,29 @@ export const PublicLayout = () => {
               </button>
             )}
 
+            {/* Customer Session Action (Login or Dashboard) */}
+            {isAuthenticated ? (
+              <Link
+                to="/dashboard"
+                className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-750 text-xs font-bold uppercase tracking-wider text-white transition-all shadow-md shadow-violet-500/20"
+              >
+                <User className="w-3.5 h-3.5" />
+                Account
+              </Link>
+            ) : (
+              <Link
+                to="/login"
+                className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800/80 text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-150 transition-all bg-white dark:bg-zinc-900"
+              >
+                <User className="w-3.5 h-3.5" />
+                Login
+              </Link>
+            )}
+
             {/* Admin Dashboard shortcut */}
             <Link
               to="/admin"
-              className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800/80 text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-150 transition-all bg-white dark:bg-zinc-900"
+              className="hidden lg:flex items-center gap-1.5 px-4 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800/80 text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-150 transition-all bg-white dark:bg-zinc-900"
             >
               <ShieldAlert className="w-3.5 h-3.5" />
               Admin
@@ -272,6 +369,28 @@ export const PublicLayout = () => {
                 {link.name}
               </Link>
             ))}
+
+            {/* Customer mobile login/account toggle */}
+            {isAuthenticated ? (
+              <Link
+                to="/dashboard"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-violet-600 dark:text-violet-400 bg-violet-500/10"
+              >
+                <User className="w-4.5 h-4.5" />
+                My Account ({user?.name || 'Dashboard'})
+              </Link>
+            ) : (
+              <Link
+                to="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-zinc-600 dark:text-zinc-350 hover:bg-zinc-100 dark:hover:bg-zinc-900"
+              >
+                <User className="w-4.5 h-4.5" />
+                Customer Login
+              </Link>
+            )}
+
             <Link
               to="/admin"
               onClick={() => setMobileMenuOpen(false)}

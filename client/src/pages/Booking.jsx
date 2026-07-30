@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Calendar as CalendarIcon, Clock, Users, ArrowRight, ShieldCheck, Sparkles, Receipt, RefreshCw } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Calendar as CalendarIcon, Clock, Users, ArrowRight, ShieldCheck, Sparkles, Receipt, RefreshCw, Ban } from 'lucide-react';
 import { useAvailableSlots, useCreateBooking, usePublicSettings } from '../hooks/useApi';
+import { useUserAuth } from '../contexts/UserAuthContext';
 import { useSocket } from '../contexts/SocketContext';
 import { Button } from '../components/ui/Button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
@@ -41,6 +43,8 @@ const bookingFormSchema = z.object({
 export const Booking = () => {
   const toast = useToast();
   const socket = useSocket();
+  const navigate = useNavigate();
+  const { user, isAuthenticated } = useUserAuth();
   const { data: settings } = usePublicSettings();
 
   const [selectedDate, setSelectedDate] = useState(() => {
@@ -87,6 +91,20 @@ export const Booking = () => {
       notes: '',
     },
   });
+
+  // Auto-fill user profile details if logged in
+  useEffect(() => {
+    if (user) {
+      reset({
+        customerName: user.name || '',
+        phone: user.phone || '',
+        email: user.email || '',
+        sport: 'Football',
+        players: 10,
+        notes: '',
+      });
+    }
+  }, [user, reset]);
 
   // Calculate pricing based on selected slots shifts
   const calculateEstimatedTotal = () => {
@@ -367,55 +385,75 @@ export const Booking = () => {
         {/* Right Column: Booking Form & Summary */}
         <div className="lg:col-span-5 space-y-6">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <div className="glass-card p-6 rounded-2xl shadow-sm space-y-4">
-              <div>
-                <h3 className="text-lg font-bold text-zinc-900 dark:text-white flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-pink-500" />
-                  3. Contact Information
-                </h3>
-                <p className="text-xs text-zinc-400 mt-1">Fill in customer details.</p>
+            {!isAuthenticated ? (
+              <div className="glass-card p-8 rounded-2xl shadow-sm space-y-4 text-center border border-dashed border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/10">
+                <Ban className="w-10 h-10 text-rose-500 mx-auto" />
+                <div className="space-y-1">
+                  <h3 className="text-base font-bold text-zinc-900 dark:text-white">Authentication Required</h3>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-xs mx-auto leading-relaxed">
+                    You need to verify your phone number to reserve court slot bookings.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  onClick={() => navigate('/login', { state: { from: { pathname: '/booking' } } })}
+                  className="w-full font-bold mt-2 cursor-pointer border-none bg-purple-600 hover:bg-purple-750 text-white"
+                >
+                  Verify Phone & Proceed
+                </Button>
               </div>
-              <div className="space-y-4">
-                <Input
-                  label="Full Name"
-                  placeholder="e.g. John Doe"
-                  error={errors.customerName?.message}
-                  {...register('customerName')}
-                />
-                <Input
-                  label="Phone Number"
-                  placeholder="e.g. 555-0199"
-                  error={errors.phone?.message}
-                  {...register('phone')}
-                />
-                <Input
-                  label="Email (Optional)"
-                  placeholder="e.g. john@example.com"
-                  error={errors.email?.message}
-                  {...register('email')}
-                />
-                <div className="grid grid-cols-2 gap-4">
-                  <Select
-                    label="Select Sport"
-                    options={sportOptions}
-                    error={errors.sport?.message}
-                    {...register('sport')}
+            ) : (
+              <div className="glass-card p-6 rounded-2xl shadow-sm space-y-4">
+                <div>
+                  <h3 className="text-lg font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-pink-500" />
+                    3. Contact Information
+                  </h3>
+                  <p className="text-xs text-zinc-400 mt-1">Fill in customer details.</p>
+                </div>
+                <div className="space-y-4">
+                  <Input
+                    label="Full Name"
+                    placeholder="e.g. John Doe"
+                    error={errors.customerName?.message}
+                    {...register('customerName')}
                   />
                   <Input
-                    label="Player Count"
-                    type="number"
-                    error={errors.players?.message}
-                    {...register('players')}
+                    label="Phone Number"
+                    placeholder="e.g. 555-0199"
+                    error={errors.phone?.message}
+                    {...register('phone')}
+                    disabled
+                  />
+                  <Input
+                    label="Email (Optional)"
+                    placeholder="e.g. john@example.com"
+                    error={errors.email?.message}
+                    {...register('email')}
+                  />
+                  <div className="grid grid-cols-2 gap-4">
+                    <Select
+                      label="Select Sport"
+                      options={sportOptions}
+                      error={errors.sport?.message}
+                      {...register('sport')}
+                    />
+                    <Input
+                      label="Player Count"
+                      type="number"
+                      error={errors.players?.message}
+                      {...register('players')}
+                    />
+                  </div>
+                  <Input
+                    label="Booking Notes"
+                    placeholder="e.g. requests for bibs, specific balls..."
+                    error={errors.notes?.message}
+                    {...register('notes')}
                   />
                 </div>
-                <Input
-                  label="Booking Notes"
-                  placeholder="e.g. requests for bibs, specific balls..."
-                  error={errors.notes?.message}
-                  {...register('notes')}
-                />
               </div>
-            </div>
+            )}
 
             {/* Booking Summary */}
             <div className="glass-card p-6 rounded-2xl shadow-sm border-t-4 border-t-purple-650 space-y-4">

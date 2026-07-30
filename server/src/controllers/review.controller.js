@@ -1,9 +1,9 @@
-import reviewRepository from '../repositories/review.repository.js';
 import { reviewSchema } from '../../validators/review.validator.js';
 
 export const getApprovedReviews = async (req, res, next) => {
   try {
-    const reviews = await reviewRepository.findAll({ isApproved: true });
+    const { reviewRepo } = req.repos;
+    const reviews = await reviewRepo.findAll({ isApproved: true });
     const mapped = reviews.map(r => { const p = r.toJSON(); p._id = p.id; return p; });
     res.status(200).json({ success: true, reviews: mapped });
   } catch (error) {
@@ -13,6 +13,7 @@ export const getApprovedReviews = async (req, res, next) => {
 
 export const createReview = async (req, res, next) => {
   try {
+    const { reviewRepo } = req.repos;
     const validation = reviewSchema.safeParse(req.body);
     if (!validation.success) {
       return res.status(400).json({
@@ -21,7 +22,7 @@ export const createReview = async (req, res, next) => {
       });
     }
 
-    const review = await reviewRepository.create(validation.data);
+    const review = await reviewRepo.create(validation.data);
 
     const io = req.app.get('io');
     if (io) {
@@ -40,7 +41,8 @@ export const createReview = async (req, res, next) => {
 
 export const getAllReviews = async (req, res, next) => {
   try {
-    const reviews = await reviewRepository.findAll();
+    const { reviewRepo } = req.repos;
+    const reviews = await reviewRepo.findAll();
     const mapped = reviews.map(r => { const p = r.toJSON(); p._id = p.id; return p; });
     res.status(200).json({ success: true, reviews: mapped });
   } catch (error) {
@@ -50,10 +52,11 @@ export const getAllReviews = async (req, res, next) => {
 
 export const updateReviewStatus = async (req, res, next) => {
   try {
+    const { reviewRepo } = req.repos;
     const { id } = req.params;
     const { isApproved, isFeatured } = req.body;
 
-    const review = await reviewRepository.findById(id);
+    const review = await reviewRepo.findById(id);
     if (!review) {
       return res.status(404).json({ success: false, message: 'Review not found' });
     }
@@ -62,8 +65,9 @@ export const updateReviewStatus = async (req, res, next) => {
     if (isApproved !== undefined) updateData.isApproved = isApproved;
     if (isFeatured !== undefined) updateData.isFeatured = isFeatured;
 
-    await reviewRepository.update(review, updateData);
-    const plain = review.toJSON();
+    await reviewRepo.update(id, updateData);
+    const updated = await reviewRepo.findById(id);
+    const plain = updated.toJSON();
     plain._id = plain.id;
     res.status(200).json({ success: true, review: plain });
   } catch (error) {
@@ -73,8 +77,9 @@ export const updateReviewStatus = async (req, res, next) => {
 
 export const deleteReview = async (req, res, next) => {
   try {
+    const { reviewRepo } = req.repos;
     const { id } = req.params;
-    const review = await reviewRepository.delete(id);
+    const review = await reviewRepo.delete(id);
     if (!review) {
       return res.status(404).json({ success: false, message: 'Review not found' });
     }

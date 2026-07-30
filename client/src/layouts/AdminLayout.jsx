@@ -21,12 +21,14 @@ import {
   Sun,
   Moon,
   ChevronRight,
+  WifiOff,
+  ShieldAlert,
 } from 'lucide-react';
 import { Loader } from '../components/ui/Loader';
 
 export const AdminLayout = () => {
   const { isAdmin, logout, loading } = useAuth();
-  const { data: settings } = useAdminSettings();
+  const { data: settings, isError, error, refetch } = useAdminSettings();
   const location = useLocation();
   const navigate = useNavigate();
   const socket = useSocket();
@@ -60,6 +62,7 @@ export const AdminLayout = () => {
     bookings: false,
     reviews: false,
     messages: false,
+    requests: false,
   });
 
   useEffect(() => {
@@ -138,14 +141,21 @@ export const AdminLayout = () => {
         toast.info(`⭐ New Review Submitted (${rev.rating} stars)`);
       };
 
+      const handleNewRequest = () => {
+        setAlerts((prev) => ({ ...prev, requests: true }));
+        toast.info('🔔 New Customer Booking Request Received!');
+      };
+ 
       socket.on('new-booking', handleNewBooking);
       socket.on('new-message', handleNewMessage);
       socket.on('new-review', handleNewReview);
-
+      socket.on('new-booking-request', handleNewRequest);
+ 
       return () => {
         socket.off('new-booking', handleNewBooking);
         socket.off('new-message', handleNewMessage);
         socket.off('new-review', handleNewReview);
+        socket.off('new-booking-request', handleNewRequest);
       };
     }
   }, [socket, toast]);
@@ -160,12 +170,91 @@ export const AdminLayout = () => {
     if (location.pathname === '/admin/messages') {
       setAlerts((prev) => ({ ...prev, messages: false }));
     }
+    if (location.pathname === '/admin/requests') {
+      setAlerts((prev) => ({ ...prev, requests: false }));
+    }
   }, [location.pathname]);
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
         <Loader size="large" />
+      </div>
+    );
+  }
+
+  if (isError && error?.response?.status !== 401) {
+    const status = error?.response?.status;
+    const errorMessage = error?.response?.data?.message || error?.message || 'An unexpected error occurred.';
+    
+    let errorTitle = 'Arena Offline';
+    let errorDescription = 'We are having trouble connecting to the arena servers. Please check your connection or try again.';
+    let errorIcon = <WifiOff className="w-12 h-12 text-rose-500 animate-pulse" />;
+    let showRetry = true;
+    let showSuperAdminLink = false;
+
+    if (status === 404) {
+      errorTitle = 'Arena Not Found';
+      errorDescription = errorMessage;
+      errorIcon = <ShieldAlert className="w-12 h-12 text-amber-500" />;
+      showRetry = false;
+    } else if (status === 403) {
+      errorTitle = 'Arena Suspended';
+      errorDescription = errorMessage;
+      errorIcon = <ShieldAlert className="w-12 h-12 text-rose-500" />;
+      showRetry = false;
+      showSuperAdminLink = true;
+    }
+
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-zinc-50 dark:bg-zinc-950 px-6 text-center transition-colors duration-500">
+        <div className="relative max-w-md w-full p-8 rounded-[2rem] border border-zinc-200/50 dark:border-zinc-800/80 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl shadow-2xl flex flex-col items-center gap-6">
+          <div className="absolute -inset-1 rounded-[2.1rem] bg-gradient-to-r from-purple-600/10 to-indigo-600/10 blur-xl opacity-75 -z-10" />
+          
+          <div className="p-4 bg-zinc-100 dark:bg-zinc-800/50 rounded-2xl">
+            {errorIcon}
+          </div>
+
+          <div className="space-y-2">
+            <h2 className="text-2xl font-black tracking-tight text-zinc-900 dark:text-white">
+              {errorTitle}
+            </h2>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed font-medium">
+              {errorDescription}
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-3 w-full mt-2">
+            {showRetry && (
+              <button
+                onClick={() => refetch()}
+                className="w-full py-3 rounded-xl bg-purple-600 hover:bg-purple-750 text-white font-bold text-sm shadow-lg shadow-purple-500/25 transition-all cursor-pointer border-0"
+              >
+                Try Again
+              </button>
+            )}
+            
+            {showSuperAdminLink && (
+              <Link
+                to="/superadmin/login"
+                className="w-full py-3 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-850 dark:hover:bg-zinc-100 font-bold text-sm transition-all shadow-md flex items-center justify-center"
+              >
+                Super Admin Login
+              </Link>
+            )}
+
+            <button
+              onClick={() => {
+                localStorage.removeItem('current_tenant_slug');
+                sessionStorage.removeItem('current_tenant_slug');
+                window.location.href = '/';
+              }}
+              className="w-full py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 text-zinc-650 dark:text-zinc-350 hover:bg-zinc-100 dark:hover:bg-zinc-900/50 font-bold text-sm transition-all flex items-center justify-center cursor-pointer bg-transparent"
+            >
+              Reset Tenant
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -177,8 +266,10 @@ export const AdminLayout = () => {
     { name: 'Bookings', path: '/admin/bookings', icon: <UserCheck className="w-5 h-5" />, hasAlert: alerts.bookings },
     { name: 'Calendar', path: '/admin/calendar', icon: <CalendarDays className="w-5 h-5" /> },
     { name: 'Slots', path: '/admin/slots', icon: <Clock className="w-5 h-5" /> },
+    { name: 'Requests', path: '/admin/requests', icon: <Inbox className="w-5 h-5" />, hasAlert: alerts.requests },
+    { name: 'Blacklist', path: '/admin/blacklist', icon: <ShieldAlert className="w-5 h-5" /> },
     { name: 'Reviews', path: '/admin/reviews', icon: <Sparkles className="w-5 h-5" />, hasAlert: alerts.reviews },
-    { name: 'Messages', path: '/admin/messages', icon: <Inbox className="w-5 h-5" />, hasAlert: alerts.messages },
+    { name: 'Messages', path: '/admin/messages', icon: <MessageSquare className="w-5 h-5" />, hasAlert: alerts.messages },
     { name: 'Gallery', path: '/admin/gallery', icon: <Images className="w-5 h-5" /> },
     { name: 'Settings', path: '/admin/settings', icon: <SettingsIcon className="w-5 h-5" /> },
   ];

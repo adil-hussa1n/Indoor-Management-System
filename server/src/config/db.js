@@ -1,16 +1,21 @@
-import { sequelize } from './sequelize.js';
-import { syncDatabase } from '../models/index.js';
+import { syncMasterDatabase } from '../models/master/index.js';
+import { masterSequelize } from '../config/master-db.js';
 
 const connectDB = async () => {
   try {
-    await sequelize.authenticate();
-    console.log('MySQL Database Connected successfully via Sequelize');
-    await syncDatabase();
+    // 1. Connect and sync the master database (tenant registry)
+    await syncMasterDatabase();
+
+    // 2. Create master database if it doesn't exist
+    // (Sequelize needs the DB to exist before connecting)
+    // This is handled by the MySQL init script or docker-compose
+
+    console.log('Database initialization complete');
   } catch (error) {
-    console.error(`MySQL Database Connection Error: ${error.message}`);
+    console.error(`Database Connection Error: ${error.message}`);
     process.exit(1);
   }
 };
 
-export { sequelize };
+export { masterSequelize };
 export default connectDB;

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import API, { registerLogoutCallback } from '../services/api';
+import API, { registerLogoutCallback, getTenantSlug } from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -15,15 +15,17 @@ export const AuthProvider = ({ children }) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const getStorageKey = () => `adminToken_${getTenantSlug()}`;
+
   const logout = () => {
-    localStorage.removeItem('adminToken');
+    localStorage.removeItem(getStorageKey());
     setIsAdmin(false);
   };
 
   useEffect(() => {
     registerLogoutCallback(logout);
     const checkAuth = async () => {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem(getStorageKey());
       if (token) {
         // Inspect JWT payload expiration
         const decoded = parseJwt(token);
@@ -53,7 +55,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await API.post('/auth/login', { username, password });
       if (response.data.success) {
-        localStorage.setItem('adminToken', response.data.token);
+        localStorage.setItem(getStorageKey(), response.data.token);
         setIsAdmin(true);
         return { success: true };
       }
