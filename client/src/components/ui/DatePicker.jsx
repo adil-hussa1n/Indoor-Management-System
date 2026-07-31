@@ -117,32 +117,32 @@ export const DatePicker = ({
       </div>
 
       {isOpen && (
-        <div className={`absolute top-[calc(100%+4px)] ${align === 'right' ? 'right-0' : 'left-0'} z-[100] w-72 p-4 rounded-2xl border border-zinc-150 dark:border-zinc-850 bg-white dark:bg-zinc-950 shadow-xl shadow-zinc-200/50 dark:shadow-none animate-fade-in text-zinc-800 dark:text-zinc-200`}>
+        <div className={`absolute top-[calc(100%+6px)] ${align === 'right' ? 'right-0' : 'left-0'} z-[100] w-[296px] p-4.5 rounded-3xl border border-zinc-100 dark:border-zinc-900 bg-white dark:bg-zinc-950 shadow-2xl shadow-zinc-200/60 dark:shadow-none animate-fade-in text-zinc-800 dark:text-zinc-200`}>
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
-            <span className="font-extrabold text-sm">
+            <span className="font-extrabold text-sm text-zinc-800 dark:text-zinc-100">
               {monthNames[month]} {year}
             </span>
-            <div className="flex gap-1">
+            <div className="flex gap-1.5">
               <button
                 type="button"
                 onClick={handlePrevMonth}
-                className="p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-900 text-zinc-550 dark:text-zinc-400 cursor-pointer"
+                className="p-1.5 rounded-xl border border-zinc-100 dark:border-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-900 text-zinc-500 dark:text-zinc-400 transition-colors cursor-pointer"
               >
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className="w-3.5 h-3.5" />
               </button>
               <button
                 type="button"
                 onClick={handleNextMonth}
-                className="p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-900 text-zinc-550 dark:text-zinc-400 cursor-pointer"
+                className="p-1.5 rounded-xl border border-zinc-100 dark:border-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-900 text-zinc-500 dark:text-zinc-400 transition-colors cursor-pointer"
               >
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
 
           {/* Weekday headers */}
-          <div className="grid grid-cols-7 text-center text-[10px] font-bold text-zinc-400 uppercase mb-2">
+          <div className="grid grid-cols-7 text-center text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2.5">
             <span>Su</span>
             <span>Mo</span>
             <span>Tu</span>
@@ -153,7 +153,7 @@ export const DatePicker = ({
           </div>
 
           {/* Days Grid */}
-          <div className="grid grid-cols-7 text-center gap-1">
+          <div className="grid grid-cols-7 text-center gap-1.5">
             {days.map((d, index) => {
               const isSelected = selectedDate &&
                 selectedDate.getDate() === d.day &&
@@ -172,18 +172,20 @@ export const DatePicker = ({
                   type="button"
                   disabled={isDisabled}
                   onClick={() => handleDateSelect(d.day)}
-                  className={`h-9 flex flex-col items-center justify-center text-xs font-semibold rounded-lg transition-all cursor-pointer relative ${
+                  className={`w-9 h-9 flex flex-col items-center justify-center text-xs font-semibold rounded-full transition-all cursor-pointer relative ${
                     isSelected
-                      ? 'bg-purple-650 text-white shadow-sm shadow-purple-500/25'
+                      ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20'
                       : isDisabled
-                      ? 'text-zinc-300 dark:text-zinc-800 cursor-not-allowed opacity-40'
-                      : 'hover:bg-zinc-100 dark:hover:bg-zinc-900 text-zinc-800 dark:text-zinc-350'
+                      ? 'text-zinc-300 dark:text-zinc-800 cursor-not-allowed opacity-35'
+                      : 'hover:bg-zinc-100 dark:hover:bg-zinc-900 text-zinc-700 dark:text-zinc-300'
                   }`}
                 >
-                  <span className={status && !isDisabled ? 'pb-1' : ''}>{d.day}</span>
+                  <span className={status && !isDisabled ? 'translate-y-[-1px]' : ''}>{d.day}</span>
                   {!isDisabled && status && (
                     <span className={`w-1 h-1 rounded-full absolute bottom-1.5 ${
-                      status === 'green'
+                      isSelected
+                        ? 'bg-white' // High contrast white dot when day is selected
+                        : status === 'green'
                         ? 'bg-emerald-500'
                         : status === 'yellow'
                         ? 'bg-amber-500'
@@ -198,7 +200,7 @@ export const DatePicker = ({
           </div>
 
           {/* Legend */}
-          <div className="flex justify-center items-center gap-3 pt-3.5 mt-3 border-t border-zinc-100 dark:border-zinc-900 text-[9px] font-bold text-zinc-400 uppercase tracking-wider">
+          <div className="flex justify-center items-center gap-4 pt-3.5 mt-3.5 border-t border-zinc-100 dark:border-zinc-900/80 text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">
             <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Available</span>
             <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Booked</span>
             <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-rose-500" /> Full</span>
