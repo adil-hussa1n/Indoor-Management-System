@@ -1,5 +1,34 @@
 import { Op } from 'sequelize';
 
+// Helper to get local date and time in Bangladesh timezone (UTC+6)
+const getBangladeshDateTime = () => {
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Dhaka',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  });
+  
+  const parts = formatter.formatToParts(new Date());
+  const year = parts.find(p => p.type === 'year').value;
+  const month = parts.find(p => p.type === 'month').value;
+  const day = parts.find(p => p.type === 'day').value;
+  let hour = parts.find(p => p.type === 'hour').value;
+  const minute = parts.find(p => p.type === 'minute').value;
+  
+  if (hour === '24') {
+    hour = '00';
+  }
+  
+  return {
+    dateString: `${year}-${month}-${day}`,
+    timeString: `${hour}:${minute}`
+  };
+};
+
 // Get available slots for a given date
 export const getAvailableSlots = async (req, res, next) => {
   try {
@@ -71,6 +100,8 @@ export const getAvailableSlots = async (req, res, next) => {
       status: { [Op.ne]: 'Cancelled' },
     });
 
+    const { dateString: todayString, timeString: currentTime } = getBangladeshDateTime();
+
     const mappedSlots = allSlots.map((slot) => {
       const isBooked = bookings.some((booking) => {
         return (
@@ -80,12 +111,18 @@ export const getAvailableSlots = async (req, res, next) => {
         );
       });
 
+      // A slot is available if it is not booked AND (if the booking is for today) it has not already passed/started
+      let isAvailable = !isBooked;
+      if (isAvailable && dateString === todayString) {
+        isAvailable = slot.startTime >= currentTime;
+      }
+
       return {
         id: slot.id,
         _id: slot.id,
         startTime: slot.startTime,
         endTime: slot.endTime,
-        isAvailable: !isBooked,
+        isAvailable,
         rateType: slot.rateType,
       };
     });

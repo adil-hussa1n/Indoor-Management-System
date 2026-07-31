@@ -4,6 +4,35 @@ import sendSMS from '../utils/sms.js';
 import { normalizePhone } from '../utils/phone.js';
 import { sanitizeFields } from '../utils/sanitize.js';
 
+// Helper to get local date and time in Bangladesh timezone (UTC+6)
+const getBangladeshDateTime = () => {
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Dhaka',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  });
+  
+  const parts = formatter.formatToParts(new Date());
+  const year = parts.find(p => p.type === 'year').value;
+  const month = parts.find(p => p.type === 'month').value;
+  const day = parts.find(p => p.type === 'day').value;
+  let hour = parts.find(p => p.type === 'hour').value;
+  const minute = parts.find(p => p.type === 'minute').value;
+  
+  if (hour === '24') {
+    hour = '00';
+  }
+  
+  return {
+    dateString: `${year}-${month}-${day}`,
+    timeString: `${hour}:${minute}`
+  };
+};
+
 // Helper: format 24h time to 12h
 const fmt12 = (t) => {
   if (!t) return '';
@@ -118,13 +147,21 @@ export const createBooking = async (req, res, next) => {
     }
 
     const dateString = data.bookingDate.split('T')[0];
-    const todayString = new Date().toISOString().split('T')[0];
+    const { dateString: todayString, timeString: currentTime } = getBangladeshDateTime();
 
     if (dateString < todayString) {
       await t.rollback();
       return res.status(400).json({
         success: false,
         message: 'Cannot book slots in the past.',
+      });
+    }
+
+    if (dateString === todayString && data.startTime < currentTime) {
+      await t.rollback();
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot book slots that have already started or passed today.',
       });
     }
 

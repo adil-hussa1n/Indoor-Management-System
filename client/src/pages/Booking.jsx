@@ -40,6 +40,14 @@ const bookingFormSchema = z.object({
   notes: z.string().optional(),
 });
 
+const getLocalDateString = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const date = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${date}`;
+};
+
 export const Booking = () => {
   const toast = useToast();
   const socket = useSocket();
@@ -48,8 +56,7 @@ export const Booking = () => {
   const { data: settings } = usePublicSettings();
 
   const [selectedDate, setSelectedDate] = useState(() => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
+    return getLocalDateString();
   });
 
   const [selectedSlots, setSelectedSlots] = useState([]);
@@ -312,7 +319,7 @@ export const Booking = () => {
               <p className="text-xs text-zinc-400 mt-1">We offer daily scheduling slots.</p>
             </div>
             <DatePicker
-              min={new Date().toISOString().split('T')[0]}
+              min={getLocalDateString()}
               value={selectedDate}
               onChange={handleDateChange}
               className="w-full"
