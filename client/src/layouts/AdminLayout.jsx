@@ -134,73 +134,11 @@ export const AdminLayout = () => {
     if (socket) {
       const playNotificationSound = (type = 'default') => {
         try {
-          const AudioContext = window.AudioContext || window.webkitAudioContext;
-          if (!AudioContext) return;
-          const ctx = new AudioContext();
-          
-          if (type === 'suspicious') {
-            // Attention-grabbing long alarm/siren sound (5 seconds)
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.type = 'sawtooth';
-            
-            gain.gain.setValueAtTime(0, ctx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.08, ctx.currentTime + 0.1);
-            gain.gain.setValueAtTime(0.08, ctx.currentTime + 4.7);
-            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 5.0);
-            
-            // Sweep frequency back and forth between 680 Hz and 920 Hz every 0.25s for 5 seconds
-            const duration = 5.0;
-            const step = 0.25;
-            for (let t = 0; t < duration; t += step) {
-              const freq = (Math.floor(t / step) % 2 === 0) ? 680 : 920;
-              osc.frequency.setValueAtTime(freq, ctx.currentTime + t);
-            }
-            
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.start(ctx.currentTime);
-            osc.stop(ctx.currentTime + 5.0);
-          } else if (type === 'warning' || type === 'error') {
-            // Booking request warning: double rising tone
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(440, ctx.currentTime); // A4
-            osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.08); // E5
-            osc.frequency.setValueAtTime(880, ctx.currentTime + 0.16); // A5
-            
-            gain.gain.setValueAtTime(0.15, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
-            
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.start(ctx.currentTime);
-            osc.stop(ctx.currentTime + 0.4);
-          } else {
-            // New beautiful premium arpeggio chime (E5 -> G5 -> C6)
-            const frequencies = [659.25, 783.99, 1046.50];
-            const delays = [0, 0.08, 0.16];
-            
-            frequencies.forEach((freq, idx) => {
-              const oscNode = ctx.createOscillator();
-              const gainNode = ctx.createGain();
-              oscNode.type = 'sine';
-              oscNode.frequency.setValueAtTime(freq, ctx.currentTime + delays[idx]);
-              
-              oscNode.connect(gainNode);
-              gainNode.connect(ctx.destination);
-              
-              gainNode.gain.setValueAtTime(0, ctx.currentTime + delays[idx]);
-              gainNode.gain.linearRampToValueAtTime(0.08, ctx.currentTime + delays[idx] + 0.02);
-              gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delays[idx] + 0.4);
-              
-              oscNode.start(ctx.currentTime + delays[idx]);
-              oscNode.stop(ctx.currentTime + delays[idx] + 0.45);
-            });
-          }
+          const soundPath = type === 'suspicious' ? '/suspicious.mp3' : '/notification.mp3';
+          const audio = new Audio(soundPath);
+          audio.play().catch((err) => console.warn('Audio play blocked:', err));
         } catch (error) {
-          console.warn('Audio play blocked or failed:', error);
+          console.warn('Audio play failed:', error);
         }
       };
 
