@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useAdminSettings } from '../hooks/useApi';
@@ -64,6 +64,17 @@ export const AdminLayout = () => {
     messages: false,
     requests: false,
   });
+
+  const notificationAudioRef = useRef(null);
+  const suspiciousAudioRef = useRef(null);
+
+  useEffect(() => {
+    notificationAudioRef.current = new Audio('/notification.mp3');
+    notificationAudioRef.current.preload = 'auto';
+
+    suspiciousAudioRef.current = new Audio('/suspicious.mp3');
+    suspiciousAudioRef.current.preload = 'auto';
+  }, []);
 
   useEffect(() => {
     if (darkMode) {
@@ -134,9 +145,11 @@ export const AdminLayout = () => {
     if (socket) {
       const playNotificationSound = (type = 'default') => {
         try {
-          const soundPath = type === 'suspicious' ? '/suspicious.mp3' : '/notification.mp3';
-          const audio = new Audio(soundPath);
-          audio.play().catch((err) => console.warn('Audio play blocked:', err));
+          const audio = type === 'suspicious' ? suspiciousAudioRef.current : notificationAudioRef.current;
+          if (audio) {
+            audio.currentTime = 0; // Reset playhead to bypass decoding/loading latency
+            audio.play().catch((err) => console.warn('Audio play blocked:', err));
+          }
         } catch (error) {
           console.warn('Audio play failed:', error);
         }
