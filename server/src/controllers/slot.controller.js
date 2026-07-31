@@ -278,3 +278,114 @@ export const deleteSlot = async (req, res, next) => {
     next(error);
   }
 };
+
+export const getCalendarAvailability = async (req, res, next) => {
+  try {
+    const { slotRepo, bookingRepo, settingsRepo } = req.repos;
+    const { year, month } = req.query;
+
+    if (!year || !month) {
+      return res.status(400).json({ success: false, message: 'Year and Month are required' });
+    }
+
+    const y = Number(year);
+    const m = Number(month);
+
+    if (isNaN(y) || isNaN(m) || m < 1 || m > 12) {
+      return res.status(400).json({ success: false, message: 'Invalid Year or Month' });
+    }
+
+    const startDate = `${y}-${String(m).padStart(2, '0')}-01`;
+    const lastDay = new Date(y, m, 0).getDate();
+    const endDate = `${y}-${String(m).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
+    const settings = await settingsRepo.getOrCreate();
+    const holidays = settings.holidays || [];
+    const maintenanceDays = settings.maintenanceDays || [];
+
+    const activeSlots = await slotRepo.findAll({ isActive: true });
+
+    const bookings = await bookingRepo.findAll({
+      bookingDate: {
+        [Op.between]: [startDate, endDate],
+      },
+      status: { [Op.ne]: 'Cancelled' },
+    });
+
+    const { dateString: todayString, timeString: currentTime } = getBangladeshDateTime();
+
+    const availability = {};
+
+    for (let day = 1; day <= lastDay; day++) {
+      const dateString = `${y}-${String(m).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const localDate = new Date(y, m - 1, day);
+      const dayOfWeek = localDate.getDay();
+
+      if (holidays.includes(dateString) || maintenanceDays.includes(dateString) || dateString < todayString) {
+        availability[dateString] = 'gray';
+        continue;
+      }
+
+      let dateSlots = activeSlots.filter(s => s.specificDate === dateString);
+      if (dateSlots.length === 0) {
+        const specificExists = activeSlots.some(s => s.specificDate === dateString);
+        if (!specificExists) {
+          dateSlots = activeSlots.filter(s => s.dayOfWeek === dayOfWeek && s.specificDate === null);
+          const weeklyExists = activeSlots.some(s => s.dayOfWeek === dayOfWeek && s.specificDate === null);
+          if (dateSlots.length === 0 && !weeklyExists) {
+            dateSlots = activeSlots.filter(s => s.dayOfWeek === -1 && s.specificDate === null);
+          }
+        }
+      }
+
+      if (dateSlots.length === 0) {
+        availability[dateString] = 'gray';
+        continue;
+      }
+
+      const dayBookings = bookings.filter(b => b.bookingDate === dateString);
+
+      let availableCount = 0;
+      let bookedCount = 0;
+
+      for (const slot of dateSlots) {
+        const isBooked = dayBookings.some((booking) => {
+          return (
+            (slot.startTime >= booking.startTime && slot.startTime < booking.endTime) ||
+            (slot.endTime > booking.startTime && slot.endTime <= booking.endTime) ||
+            (booking.startTime >= slot.startTime && booking.endTime <= slot.endTime)
+          );
+        });
+
+        if (isBooked) {
+          bookedCount++;
+        } else {
+          if (dateString === todayString) {
+            if (slot.startTime >= currentTime) {
+              availableCount++;
+            } else {
+              bookedCount++;
+            }
+          } else {
+            availableCount++;
+          }
+        }
+      }
+
+      if (availableCount === 0) {
+        availability[dateString] = 'red';
+      } else if (bookedCount === 0) {
+        availability[dateString] = 'green';
+      } else {
+        availability[dateString] = 'yellow';
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      availability,
+    });
+  } catch (error) {
+    next(error);
+  }
+};

@@ -52,6 +52,18 @@ export const useAvailableSlots = (date) => {
   });
 };
 
+export const useCalendarAvailability = (year, month) => {
+  return useQuery({
+    queryKey: ['calendarAvailability', year, month],
+    queryFn: async () => {
+      if (!year || !month) return {};
+      const response = await API.get(`/calendar-availability?year=${year}&month=${month}`);
+      return response.data.availability;
+    },
+    enabled: !!year && !!month,
+  });
+};
+
 export const useAdminSlots = () => {
   return useQuery({
     queryKey: ['adminSlots'],

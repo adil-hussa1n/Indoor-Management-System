@@ -5,6 +5,7 @@ import {
   createSlot,
   updateSlot,
   deleteSlot,
+  getCalendarAvailability,
 } from '../src/controllers/slot.controller.js';
 import { protect } from '../src/middlewares/auth.js';
 
@@ -12,6 +13,7 @@ const router = express.Router();
 
 // Public routes
 router.get('/available-slots', getAvailableSlots);
+router.get('/calendar-availability', getCalendarAvailability);
 
 // Admin routes
 router.get('/slots', protect, getSlots);

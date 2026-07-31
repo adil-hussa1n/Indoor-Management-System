@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useCalendarAvailability } from '../../hooks/useApi';
 
 export const DatePicker = ({
   label,
@@ -53,6 +54,8 @@ export const DatePicker = ({
   // Calendar math
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
+
+  const { data: availability } = useCalendarAvailability(isOpen ? year : null, isOpen ? month + 1 : null);
 
   const handlePrevMonth = () => {
     setViewDate(new Date(year, month - 1, 1));
@@ -161,6 +164,7 @@ export const DatePicker = ({
               const cellDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d.day).padStart(2, '0')}`;
               const isPast = min && cellDateStr < min;
               const isDisabled = !d.isCurrentMonth || isPast;
+              const status = availability ? availability[cellDateStr] : null;
 
               return (
                 <button
@@ -168,7 +172,7 @@ export const DatePicker = ({
                   type="button"
                   disabled={isDisabled}
                   onClick={() => handleDateSelect(d.day)}
-                  className={`py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                  className={`h-9 flex flex-col items-center justify-center text-xs font-semibold rounded-lg transition-all cursor-pointer relative ${
                     isSelected
                       ? 'bg-purple-650 text-white shadow-sm shadow-purple-500/25'
                       : isDisabled
@@ -176,10 +180,28 @@ export const DatePicker = ({
                       : 'hover:bg-zinc-100 dark:hover:bg-zinc-900 text-zinc-800 dark:text-zinc-350'
                   }`}
                 >
-                  {d.day}
+                  <span className={status && !isDisabled ? 'pb-1' : ''}>{d.day}</span>
+                  {!isDisabled && status && (
+                    <span className={`w-1 h-1 rounded-full absolute bottom-1.5 ${
+                      status === 'green'
+                        ? 'bg-emerald-500'
+                        : status === 'yellow'
+                        ? 'bg-amber-500'
+                        : status === 'red'
+                        ? 'bg-rose-500'
+                        : 'bg-zinc-400'
+                    }`} />
+                  )}
                 </button>
               );
             })}
+          </div>
+
+          {/* Legend */}
+          <div className="flex justify-center items-center gap-3 pt-3.5 mt-3 border-t border-zinc-100 dark:border-zinc-900 text-[9px] font-bold text-zinc-400 uppercase tracking-wider">
+            <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Available</span>
+            <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Booked</span>
+            <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-rose-500" /> Full</span>
           </div>
         </div>
       )}
