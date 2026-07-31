@@ -1,4 +1,5 @@
 import { Op } from 'sequelize';
+import { normalizePhone } from '../utils/phone.js';
 
 // ── Tenant-aware Repository Factory ──
 // Each repository function receives models from req.models (set by tenant middleware).
@@ -172,7 +173,19 @@ export const createSlotLockRepository = (models) => ({
 
 // ── User Repository ──
 export const createUserRepository = (models) => ({
-  findByPhone: (phone) => models.User.findOne({ where: { phone } }),
+  findByPhone: (phone) => {
+    const normalized = normalizePhone(phone);
+    const local = phone.replace(/^88/, '');
+    return models.User.findOne({
+      where: {
+        [Op.or]: [
+          { phone },
+          { phone: normalized },
+          { phone: local },
+        ]
+      }
+    });
+  },
   findById: (id) => models.User.findByPk(id),
   findByUuid: (uuid) => models.User.findOne({ where: { uuid } }),
   create: (data) => models.User.create(data),
@@ -226,12 +239,34 @@ export const createBookingRequestRepository = (models) => ({
 export const createBlockedCustomerRepository = (models) => ({
   findAll: (where = {}, options = {}) => models.BlockedCustomer.findAll({ where, ...options }),
   findById: (id) => models.BlockedCustomer.findByPk(id),
-  findByPhone: (phone) => models.BlockedCustomer.findOne({ where: { phone } }),
+  findByPhone: (phone) => {
+    const normalized = normalizePhone(phone);
+    const local = phone.replace(/^88/, '');
+    return models.BlockedCustomer.findOne({
+      where: {
+        [Op.or]: [
+          { phone },
+          { phone: normalized },
+          { phone: local },
+        ]
+      }
+    });
+  },
   create: (data) => models.BlockedCustomer.create(data),
-  update: (id, data) => models.BlockedCustomer.update(data, { where: { id } }),
+  update: (id, data, options = {}) => models.BlockedCustomer.update(data, { where: { id }, ...options }),
   delete: (id) => models.BlockedCustomer.destroy({ where: { id } }),
   isBlocked: async (phone) => {
-    const record = await models.BlockedCustomer.findOne({ where: { phone } });
+    const normalized = normalizePhone(phone);
+    const local = phone.replace(/^88/, '');
+    const record = await models.BlockedCustomer.findOne({
+      where: {
+        [Op.or]: [
+          { phone },
+          { phone: normalized },
+          { phone: local },
+        ]
+      }
+    });
     if (!record) return false;
     if (record.isPermanent) return true;
     if (record.expiresAt && new Date(record.expiresAt) > new Date()) return true;

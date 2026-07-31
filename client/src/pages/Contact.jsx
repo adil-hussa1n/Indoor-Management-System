@@ -138,20 +138,20 @@ export const Contact = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Input
                     label="Full Name"
-                    placeholder="e.g. John Doe"
+                    placeholder="ADIL HUSSAIN"
                     error={errors.name?.message}
                     {...register('name')}
                   />
                   <Input
                     label="Email Address"
-                    placeholder="e.g. john@example.com"
+                    placeholder="adil@gmail.com"
                     error={errors.email?.message}
                     {...register('email')}
                   />
                 </div>
                 <Input
                   label="Phone (Optional)"
-                  placeholder="e.g. 555-0199"
+                  placeholder="01711223344"
                   error={errors.phone?.message}
                   {...register('phone')}
                 />

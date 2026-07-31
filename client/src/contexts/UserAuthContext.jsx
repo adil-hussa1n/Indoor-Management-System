@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import API, { getTenantSlug } from '../services/api';
+import API, { registerUserLogoutCallback, getTenantSlug } from '../services/api';
 
 const UserAuthContext = createContext(null);
 
@@ -9,8 +9,14 @@ export const UserAuthProvider = ({ children }) => {
 
   const getStorageKey = () => `userToken_${getTenantSlug()}`;
 
+  const logout = () => {
+    localStorage.removeItem(getStorageKey());
+    setUser(null);
+  };
+
   // Check auth status on mount
   useEffect(() => {
+    registerUserLogoutCallback(logout);
     const checkUserAuth = async () => {
       const token = localStorage.getItem(getStorageKey());
       if (token) {
@@ -74,11 +80,6 @@ export const UserAuthProvider = ({ children }) => {
         message: error.response?.data?.message || 'Profile update failed.',
       };
     }
-  };
-
-  const logout = () => {
-    localStorage.removeItem(getStorageKey());
-    setUser(null);
   };
 
   return (

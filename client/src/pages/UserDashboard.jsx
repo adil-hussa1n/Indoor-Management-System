@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useUserAuth } from '../contexts/UserAuthContext';
 import API from '../services/api';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
@@ -6,8 +7,10 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Loader } from '../components/ui/Loader';
 import { useToast } from '../components/ui/Toast';
-import { User, Calendar, Clock, RefreshCw, XCircle, Info, Edit, Trash2 } from 'lucide-react';
+import { useSocket } from '../contexts/SocketContext';
+import { User, Calendar, Clock, RefreshCw, XCircle, Info, Edit, Trash2, Ban } from 'lucide-react';
 import { Dialog } from '../components/ui/Dialog';
+import { DatePicker } from '../components/ui/DatePicker';
 
 const format12Hour = (time24) => {
   if (!time24) return '';
@@ -20,8 +23,15 @@ const format12Hour = (time24) => {
 };
 
 export const UserDashboard = () => {
-  const { user, updateProfile, logout } = useUserAuth();
+  const navigate = useNavigate();
+  const { user, updateProfile, logout, loading: authLoading } = useUserAuth();
   const toast = useToast();
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/login');
+    }
+  }, [user, authLoading, navigate]);
 
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -43,6 +53,67 @@ export const UserDashboard = () => {
   const [newEndTime, setNewEndTime] = useState('10:00');
   const [submittingRequest, setSubmittingRequest] = useState(false);
 
+  // Live slot states for rescheduling
+  const [rescheduleSlots, setRescheduleSlots] = useState([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [blockedReason, setBlockedReason] = useState('');
+  const [selectedRescheduleSlots, setSelectedRescheduleSlots] = useState([]);
+
+  // Fetch available slots when reschedule date changes
+  useEffect(() => {
+    if (dialogOpen && requestType === 'change' && newDate) {
+      const loadSlots = async () => {
+        setSlotsLoading(true);
+        setSelectedRescheduleSlots([]);
+        try {
+          const res = await API.get(`/available-slots?date=${newDate}`);
+          setRescheduleSlots(res.data.slots || []);
+          setIsBlocked(res.data.isBlocked || false);
+          setBlockedReason(res.data.reason || '');
+        } catch (e) {
+          console.error("Failed to load slots", e);
+          toast.error("Failed to load available slots for the selected date.");
+        } finally {
+          setSlotsLoading(false);
+        }
+      };
+      loadSlots();
+    }
+  }, [newDate, dialogOpen, requestType]);
+
+  const handleRescheduleSlotClick = (slot) => {
+    if (!slot.isAvailable) return;
+
+    const exists = selectedRescheduleSlots.some((s) => s.id === slot.id);
+    let newSelection = [];
+
+    if (exists) {
+      newSelection = selectedRescheduleSlots.filter((s) => s.id !== slot.id);
+    } else {
+      newSelection = [...selectedRescheduleSlots, slot];
+    }
+
+    newSelection.sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+    let isContiguous = true;
+    for (let i = 0; i < newSelection.length - 1; i++) {
+      if (newSelection[i].endTime !== newSelection[i + 1].startTime) {
+        isContiguous = false;
+        break;
+      }
+    }
+
+    if (isContiguous) {
+      setSelectedRescheduleSlots(newSelection);
+    } else {
+      setSelectedRescheduleSlots([slot]);
+      toast.info('Selected slots must be contiguous.');
+    }
+  };
+
+  const socket = useSocket();
+
   const fetchBookings = async () => {
     try {
       const res = await API.get('/user/my-bookings');
@@ -59,6 +130,54 @@ export const UserDashboard = () => {
   useEffect(() => {
     fetchBookings();
   }, []);
+
+  // ── Real-time socket listeners for admin actions ──
+  useEffect(() => {
+    if (!socket || !user) return;
+
+    const handleRequestUpdated = (data) => {
+      // Only show notification to the user who owns this request
+      if (data.userId !== user.id) return;
+
+      const ref = data.bookingId || '';
+      if (data.status === 'approved') {
+        const actionText = data.type === 'cancel' ? 'cancellation' : 'reschedule';
+        toast.success(`Your ${actionText} request for booking ${ref} has been approved! ✅`);
+      } else if (data.status === 'rejected') {
+        const actionText = data.type === 'cancel' ? 'cancellation' : 'reschedule';
+        const noteText = data.adminNote ? ` Reason: ${data.adminNote}` : '';
+        toast.error(`Your ${actionText} request for booking ${ref} was rejected.${noteText}`);
+      }
+      // Refresh bookings to show updated status
+      fetchBookings();
+    };
+
+    const handleBookingUpdated = (bookingData) => {
+      // Check if this booking belongs to the logged-in user
+      if (bookingData.userId !== user.id) return;
+
+      if (bookingData.status === 'Confirmed') {
+        toast.success(`Your booking ${bookingData.bookingId} has been confirmed! 🎉`);
+      } else if (bookingData.status === 'Cancelled') {
+        toast.error(`Your booking ${bookingData.bookingId} has been cancelled. ❌`);
+      } else if (bookingData.status === 'Completed') {
+        toast.success(`Your booking ${bookingData.bookingId} is completed! Hope you had a great game! ⚽`);
+      } else if (bookingData.status === 'Pending') {
+        toast.info(`Your booking ${bookingData.bookingId} is now pending approval.`);
+      } else {
+        toast.info(`Your booking ${bookingData.bookingId} status was updated to ${bookingData.status}.`);
+      }
+      fetchBookings();
+    };
+
+    socket.on('booking-request-updated', handleRequestUpdated);
+    socket.on('booking-updated', handleBookingUpdated);
+
+    return () => {
+      socket.off('booking-request-updated', handleRequestUpdated);
+      socket.off('booking-updated', handleBookingUpdated);
+    };
+  }, [socket, user]);
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
@@ -80,8 +199,7 @@ export const UserDashboard = () => {
     setReason('');
     if (type === 'change') {
       setNewDate(booking.bookingDate);
-      setNewStartTime(booking.startTime);
-      setNewEndTime(booking.endTime);
+      setSelectedRescheduleSlots([]);
     }
   };
 
@@ -92,14 +210,19 @@ export const UserDashboard = () => {
       return;
     }
 
+    if (requestType === 'change' && selectedRescheduleSlots.length === 0) {
+      toast.error('Please select at least one time slot.');
+      return;
+    }
+
     setSubmittingRequest(true);
     try {
       const endpoint = `/booking-requests/${selectedBooking.id}/${requestType}`;
       const payload = { reason };
       if (requestType === 'change') {
         payload.newDate = newDate;
-        payload.newStartTime = newStartTime;
-        payload.newEndTime = newEndTime;
+        payload.newStartTime = selectedRescheduleSlots[0].startTime;
+        payload.newEndTime = selectedRescheduleSlots[selectedRescheduleSlots.length - 1].endTime;
       }
 
       const res = await API.post(endpoint, payload);
@@ -157,14 +280,14 @@ export const UserDashboard = () => {
               <form onSubmit={handleUpdateProfile} className="space-y-4">
                 <Input
                   label="Full Name"
-                  placeholder="Enter full name"
+                  placeholder="ADIL HUSSAIN"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
                 />
                 <Input
                   label="Email Address"
-                  placeholder="Enter email address"
+                  placeholder="adil@gmail.com"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -180,20 +303,40 @@ export const UserDashboard = () => {
 
         {/* Dashboard Main Stats/History */}
         <Card className="glass-card hover-glow md:col-span-2 border border-zinc-200/50 dark:border-zinc-800">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-xl font-bold">
-              <Calendar className="w-5 h-5 text-violet-500" />
-              My Booking History
-            </CardTitle>
-            <CardDescription>View, modify, or cancel your upcoming and past court bookings.</CardDescription>
+          <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-4 pb-4 border-b border-zinc-100 dark:border-zinc-900/50">
+            <div>
+              <CardTitle className="flex items-center gap-2 text-xl font-bold">
+                <Calendar className="w-5 h-5 text-violet-500" />
+                My Booking History
+              </CardTitle>
+              <CardDescription className="mt-1">View, modify, or cancel your upcoming and past court bookings.</CardDescription>
+            </div>
+            <Button
+              onClick={() => navigate('/booking')}
+              className="font-bold flex items-center gap-2 bg-gradient-to-r from-violet-600 to-indigo-650 hover:from-violet-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg py-2.5 px-4 rounded-xl text-xs uppercase tracking-wider transition-all duration-300"
+            >
+              <Calendar className="w-3.5 h-3.5" />
+              Book Court
+            </Button>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             {loading ? (
               <div className="flex justify-center py-12"><Loader size="lg" /></div>
             ) : bookings.length === 0 ? (
-              <div className="text-center py-12 space-y-2">
-                <Info className="w-8 h-8 text-zinc-400 mx-auto" />
-                <p className="text-sm font-medium text-zinc-500">You haven't made any bookings yet.</p>
+              <div className="text-center py-12 space-y-4">
+                <div className="p-3 bg-zinc-100 dark:bg-zinc-800/40 rounded-full w-fit mx-auto">
+                  <Calendar className="w-8 h-8 text-zinc-450 dark:text-zinc-550" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-bold text-zinc-800 dark:text-zinc-200">You haven't made any bookings yet.</p>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-405 font-semibold">Start playing by reserving your court today!</p>
+                </div>
+                <Button
+                  onClick={() => navigate('/booking')}
+                  className="font-bold bg-gradient-to-r from-violet-600 to-indigo-650 hover:from-violet-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg transition-all duration-300 px-6 py-2.5 rounded-xl text-xs uppercase tracking-wider"
+                >
+                  Book Your First Court
+                </Button>
               </div>
             ) : (
               <div className="space-y-4 overflow-x-auto">
@@ -272,34 +415,78 @@ export const UserDashboard = () => {
           isOpen={dialogOpen}
           onClose={() => setDialogOpen(false)}
           title={requestType === 'change' ? 'Request Booking Reschedule' : 'Request Booking Cancellation'}
-          className="max-w-md"
+          className={requestType === 'change' ? "max-w-2xl" : "max-w-md"}
         >
           <form onSubmit={handleRequestSubmit} className="space-y-4 pt-2 text-left">
             {requestType === 'change' && (
-              <div className="space-y-3">
-                <Input
-                  label="New Date"
-                  type="date"
-                  value={newDate}
-                  onChange={(e) => setNewDate(e.target.value)}
-                  required
-                />
-                <div className="grid grid-cols-2 gap-4">
-                  <Input
-                    label="Start Time"
-                    type="time"
-                    value={newStartTime}
-                    onChange={(e) => setNewStartTime(e.target.value)}
-                    required
-                  />
-                  <Input
-                    label="End Time"
-                    type="time"
-                    value={newEndTime}
-                    onChange={(e) => setNewEndTime(e.target.value)}
+              <div className="space-y-4">
+                <div>
+                  <DatePicker
+                    label="Select New Date"
+                    min={new Date().toISOString().split('T')[0]}
+                    value={newDate}
+                    onChange={(dateStr) => setNewDate(dateStr)}
                     required
                   />
                 </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-zinc-655 dark:text-zinc-400 uppercase tracking-wider block">
+                    Choose Available Time Slots
+                  </label>
+
+                  {slotsLoading ? (
+                    <div className="flex justify-center py-8"><Loader size="medium" /></div>
+                  ) : isBlocked ? (
+                    <div className="p-4 text-center text-rose-500 border border-rose-200/50 bg-rose-50/50 dark:bg-rose-950/20 dark:border-rose-900/40 rounded-xl font-bold text-xs">
+                      ⚠️ Venue is Closed on this day ({blockedReason || 'Maintenance/Holiday'})
+                    </div>
+                  ) : rescheduleSlots.length === 0 ? (
+                    <div className="p-4 text-center text-zinc-400 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl text-xs">
+                      No active slots configured for this day.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-60 overflow-y-auto custom-scrollbar p-1">
+                      {rescheduleSlots.map((slot) => {
+                        const isSelected = selectedRescheduleSlots.some((s) => s.id === slot.id);
+                        return (
+                          <div
+                            key={slot.id}
+                            onClick={() => handleRescheduleSlotClick(slot)}
+                            className={`p-3 rounded-xl border font-bold text-xs transition-all duration-200 flex flex-col items-center justify-center gap-1 select-none ${
+                              !slot.isAvailable
+                                ? 'bg-rose-50/20 dark:bg-rose-950/5 border-rose-200/50 dark:border-rose-900/30 text-rose-850 dark:text-rose-455 cursor-not-allowed opacity-80'
+                                : isSelected
+                                ? 'bg-purple-650 border-purple-650 text-white shadow-md shadow-purple-500/25 cursor-pointer'
+                                : 'bg-white hover:bg-zinc-50 dark:bg-zinc-900 dark:hover:bg-zinc-850 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-350 cursor-pointer'
+                            }`}
+                          >
+                            <span className="text-sm font-extrabold">{format12Hour(slot.startTime)}</span>
+                            <span className={`text-[9px] px-1.5 py-0.5 rounded-full uppercase tracking-wider font-bold ${
+                              !slot.isAvailable
+                                ? 'bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400'
+                                : isSelected
+                                ? 'bg-purple-500/30 text-white'
+                                : 'bg-emerald-100 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-400'
+                            }`}>
+                              {slot.isAvailable ? `${slot.rateType === 'night' ? 'Night Shift' : 'Day Shift'}` : 'Booked'}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {selectedRescheduleSlots.length > 0 && (
+                  <div className="bg-purple-50 dark:bg-purple-950/10 border border-purple-100 dark:border-purple-900/40 p-3.5 rounded-xl text-xs space-y-1">
+                    <span className="font-bold text-purple-700 dark:text-purple-400">Selected Reschedule Target:</span>
+                    <div className="text-zinc-650 dark:text-zinc-300 font-semibold flex items-center gap-1.5 mt-0.5">
+                      <Clock className="w-3.5 h-3.5 text-purple-650" />
+                      {format12Hour(selectedRescheduleSlots[0].startTime)} - {format12Hour(selectedRescheduleSlots[selectedRescheduleSlots.length - 1].endTime)} ({selectedRescheduleSlots.length} hr)
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

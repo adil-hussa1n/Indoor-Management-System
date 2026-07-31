@@ -324,7 +324,17 @@ export const AdminBookings = () => {
                       <tr key={b._id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30">
                         <td className="py-3.5 px-4 font-bold text-purple-650">{b.bookingId}</td>
                         <td className="py-3.5 px-4">
-                          <div className="font-bold text-zinc-800 dark:text-zinc-200">{b.customerName}</div>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-bold text-zinc-800 dark:text-zinc-200">{b.customerName}</span>
+                            {b.hasSuspiciousHistory && (
+                              <span 
+                                className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500 text-white animate-pulse cursor-help"
+                                title={`Warning: Suspicious History! ${b.suspiciousReason}`}
+                              >
+                                ⚠️ Suspicious
+                              </span>
+                            )}
+                          </div>
                           <div className="text-xs text-zinc-450">{b.phone} | {b.email || 'No email'}</div>
                         </td>
                         <td className="py-3.5 px-4 font-bold text-zinc-655 dark:text-zinc-355">{b.sport}</td>
@@ -432,19 +442,19 @@ export const AdminBookings = () => {
               </h4>
               <Input
                 label="Customer Name"
-                placeholder="John Doe"
+                placeholder="ADIL HUSSAIN"
                 error={errors.customerName?.message}
                 {...register('customerName')}
               />
               <Input
                 label="Phone Number"
-                placeholder="e.g. +88017..."
+                placeholder="01711223344"
                 error={errors.phone?.message}
                 {...register('phone')}
               />
               <Input
                 label="Email (Optional)"
-                placeholder="john@example.com"
+                placeholder="adil@gmail.com"
                 error={errors.email?.message}
                 {...register('email')}
               />
@@ -587,19 +597,19 @@ export const AdminBookings = () => {
               </h4>
               <Input
                 label="Customer Name"
-                placeholder="John Doe"
+                placeholder="ADIL HUSSAIN"
                 error={errors.customerName?.message}
                 {...register('customerName')}
               />
               <Input
                 label="Phone Number"
-                placeholder="e.g. 017..."
+                placeholder="01711223344"
                 error={errors.phone?.message}
                 {...register('phone')}
               />
               <Input
-                label="Email Address"
-                placeholder="john@example.com"
+                label="Email Address (Optional)"
+                placeholder="adil@gmail.com"
                 error={errors.email?.message}
                 {...register('email')}
               />

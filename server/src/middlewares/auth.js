@@ -9,7 +9,7 @@ export const protect = async (req, res, next) => {
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     try {
       token = req.headers.authorization.split(' ')[1];
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'super_secret_jwt_key_change_me_in_production');
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
       // Validate tenant scope to prevent cross-tenant session hijack / tab overlap
       if (decoded.tenant !== req.tenant.slug) {
@@ -41,7 +41,7 @@ export const protectUser = async (req, res, next) => {
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     try {
       token = req.headers.authorization.split(' ')[1];
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'super_secret_jwt_key_change_me_in_production');
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
       if (decoded.type !== 'user') {
         return res.status(401).json({ success: false, message: 'Not authorized, invalid token type' });
@@ -56,6 +56,13 @@ export const protectUser = async (req, res, next) => {
       if (!user) {
         return res.status(401).json({ success: false, message: 'Not authorized, user not found' });
       }
+
+      // Check if user's phone number is blocked
+      const isBlocked = await req.repos.blockedCustomerRepo.isBlocked(user.phone);
+      if (isBlocked) {
+        return res.status(401).json({ success: false, message: 'Not authorized, this phone number has been suspended.' });
+      }
+
       req.user = { id: user.id, uuid: user.uuid, name: user.name, phone: user.phone, email: user.email };
       next();
     } catch (error) {
@@ -75,7 +82,7 @@ export const protectSuperAdmin = async (req, res, next) => {
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     try {
       token = req.headers.authorization.split(' ')[1];
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'super_secret_jwt_key_change_me_in_production');
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
       if (decoded.type !== 'superadmin') {
         return res.status(401).json({ success: false, message: 'Not authorized, requires super admin access' });

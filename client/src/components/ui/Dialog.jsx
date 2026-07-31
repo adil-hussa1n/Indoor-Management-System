@@ -1,9 +1,12 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 
 export const Dialog = ({ isOpen, onClose, children, title, className = '' }) => {
-  return (
+  if (typeof window === 'undefined') return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -45,6 +48,7 @@ export const Dialog = ({ isOpen, onClose, children, title, className = '' }) => 
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };

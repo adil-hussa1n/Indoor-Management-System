@@ -79,7 +79,11 @@ export const AdminLayout = () => {
     const activeSettings = settings || cachedSettings;
     if (activeSettings) {
       const currentSeoTitle = activeSettings.seo?.title;
-      const defaultSeoTitles = ['Apex Indoor Sports Booking', 'Apex Arena'];
+      const defaultSeoTitles = [
+        'Apex Indoor Sports Booking',
+        'Apex Arena',
+        'Indoor Sports Arena — Book Your Court'
+      ];
       let baseTitle = 'Apex Arena';
       
       if (currentSeoTitle && !defaultSeoTitles.includes(currentSeoTitle)) {
@@ -128,34 +132,87 @@ export const AdminLayout = () => {
 
   useEffect(() => {
     if (socket) {
+      const playNotificationSound = (type = 'default') => {
+        try {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (!AudioContext) return;
+          const ctx = new AudioContext();
+          
+          // Create oscillator and gain node
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          
+          if (type === 'warning' || type === 'error') {
+            // Critical alert: rising double tone
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(440, ctx.currentTime); // A4
+            osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.08); // E5
+            osc.frequency.setValueAtTime(880, ctx.currentTime + 0.16); // A5
+            
+            gain.gain.setValueAtTime(0.15, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+            
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.4);
+          } else {
+            // Pleasant chime: dual-tone chime
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+            osc.frequency.setValueAtTime(880, ctx.currentTime + 0.08); // A5
+            
+            gain.gain.setValueAtTime(0.1, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+            
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.25);
+          }
+        } catch (error) {
+          console.warn('Audio play blocked or failed:', error);
+        }
+      };
+
       const handleNewBooking = (booking) => {
         setAlerts((prev) => ({ ...prev, bookings: true }));
         toast.info(`🔔 New Booking! ID: ${booking.bookingId} by ${booking.customerName}`);
+        playNotificationSound('default');
       };
       const handleNewMessage = (msg) => {
         setAlerts((prev) => ({ ...prev, messages: true }));
         toast.info(`✉️ New Message from ${msg.name}`);
+        playNotificationSound('default');
       };
       const handleNewReview = (rev) => {
         setAlerts((prev) => ({ ...prev, reviews: true }));
         toast.info(`⭐ New Review Submitted (${rev.rating} stars)`);
+        playNotificationSound('default');
       };
 
       const handleNewRequest = () => {
         setAlerts((prev) => ({ ...prev, requests: true }));
         toast.info('🔔 New Customer Booking Request Received!');
+        playNotificationSound('warning');
+      };
+
+      const handleSuspiciousActivity = (data) => {
+        toast.error(`⚠️ Suspicious Activity! User ${data.userName} (${data.phone}) flagged: ${data.reason}`);
+        playNotificationSound('warning');
       };
  
       socket.on('new-booking', handleNewBooking);
       socket.on('new-message', handleNewMessage);
       socket.on('new-review', handleNewReview);
       socket.on('new-booking-request', handleNewRequest);
+      socket.on('suspicious-user-activity', handleSuspiciousActivity);
  
       return () => {
         socket.off('new-booking', handleNewBooking);
         socket.off('new-message', handleNewMessage);
         socket.off('new-review', handleNewReview);
         socket.off('new-booking-request', handleNewRequest);
+        socket.off('suspicious-user-activity', handleSuspiciousActivity);
       };
     }
   }, [socket, toast]);

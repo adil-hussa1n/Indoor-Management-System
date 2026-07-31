@@ -6,6 +6,13 @@ import connectDB from './src/config/db.js';
 
 const PORT = process.env.PORT || 5000;
 
+// ── Startup Security Guard ──
+if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+  console.error('\n❌  FATAL: JWT_SECRET is missing or too short (min 32 chars).');
+  console.error('   Set a strong JWT_SECRET in your .env file before starting the server.\n');
+  process.exit(1);
+}
+
 // Connect Database
 connectDB();
 

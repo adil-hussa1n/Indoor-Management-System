@@ -16,6 +16,8 @@ export const getBlockedCustomers = async (req, res, next) => {
   }
 };
 
+import { normalizePhone } from '../utils/phone.js';
+
 export const blockCustomer = async (req, res, next) => {
   try {
     const { blockedCustomerRepo } = req.repos;
@@ -25,14 +27,16 @@ export const blockCustomer = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Phone number is required.' });
     }
 
+    const normalizedPhone = normalizePhone(phone);
+
     // Check if already blocked
-    const existing = await blockedCustomerRepo.findByPhone(phone);
+    const existing = await blockedCustomerRepo.findByPhone(normalizedPhone);
     if (existing) {
       return res.status(400).json({ success: false, message: 'This phone number is already blocked.' });
     }
 
     const blocked = await blockedCustomerRepo.create({
-      phone,
+      phone: normalizedPhone,
       reason: reason || null,
       isPermanent: isPermanent !== undefined ? !!isPermanent : true,
       expiresAt: expiresAt ? new Date(expiresAt) : null,

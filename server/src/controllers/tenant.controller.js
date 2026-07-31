@@ -74,6 +74,14 @@ export const createTenant = async (req, res, next) => {
 
     dbName = `db_${slug.replace(/-/g, '_')}`;
 
+    // Defense-in-depth: validate dbName contains only safe characters before raw SQL
+    if (!/^[a-z0-9_]+$/.test(dbName)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Generated database name contains invalid characters.',
+      });
+    }
+
     // 1. Create the tenant database
     await masterSequelize.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\`;`);
     dbCreated = true;

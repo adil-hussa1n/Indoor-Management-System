@@ -576,7 +576,7 @@ export const Home = () => {
                       <input
                         type="text"
                         required
-                        placeholder="John Doe"
+                        placeholder="ADIL HUSSAIN"
                         value={reviewName}
                         onChange={(e) => setReviewName(e.target.value)}
                         className="w-full px-4 py-3 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm text-zinc-800 dark:text-white"

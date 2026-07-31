@@ -79,7 +79,9 @@ export const tenantMiddleware = async (req, res, next) => {
       slug = req.headers['x-tenant-slug'] || req.query.tenant;
     }
 
-    console.log(`[DEBUG TENANT RESOLUTION] URL: ${req.originalUrl} | Method: ${req.method} | Resolved Slug: ${slug} | X-Tenant-Slug Header: ${req.headers['x-tenant-slug']} | Query Tenant: ${req.query.tenant}`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[DEBUG TENANT RESOLUTION] URL: ${req.originalUrl} | Method: ${req.method} | Resolved Slug: ${slug} | X-Tenant-Slug Header: ${req.headers['x-tenant-slug']} | Query Tenant: ${req.query.tenant}`);
+    }
 
     if (!slug) {
       return res.status(400).json({
@@ -116,6 +118,19 @@ export const tenantMiddleware = async (req, res, next) => {
     // In production, this should be done during tenant provisioning, not per-request
     if (!tenantDb._synced) {
       await models.syncDatabase();
+      
+      // Raw SQL fallback column migration to bypass Sequelize MySQL alter bugs
+      try {
+        await tenantDb.query("ALTER TABLE `booking_requests` ADD `isSuspicious` TINYINT(1) NOT NULL DEFAULT 0");
+      } catch (err) {
+        // Safe to ignore if column already exists
+      }
+      try {
+        await tenantDb.query("ALTER TABLE `booking_requests` ADD `suspiciousReason` VARCHAR(255) NULL");
+      } catch (err) {
+        // Safe to ignore if column already exists
+      }
+
       tenantDb._synced = true;
     }
 

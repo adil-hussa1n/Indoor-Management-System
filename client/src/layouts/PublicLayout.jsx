@@ -72,12 +72,16 @@ export const PublicLayout = () => {
     const activeSettings = settings || cachedSettings;
     if (activeSettings) {
       const currentSeoTitle = activeSettings.seo?.title;
-      const defaultSeoTitles = ['Apex Indoor Sports Booking', 'Apex Arena'];
+      const defaultSeoTitles = [
+        'Apex Indoor Sports Booking',
+        'Apex Arena',
+        'Indoor Sports Arena — Book Your Court'
+      ];
       
       if (currentSeoTitle && !defaultSeoTitles.includes(currentSeoTitle)) {
         document.title = currentSeoTitle;
       } else {
-        document.title = activeSettings.businessName || 'Apex Arena';
+        document.title = activeSettings.businessName ? `${activeSettings.businessName} — Book Your Court` : 'Apex Arena';
       }
       
       if (activeSettings.theme === 'green') {
@@ -118,6 +122,7 @@ export const PublicLayout = () => {
   ];
 
   const isActive = (path) => location.pathname === path;
+  const isLoginPage = location.pathname === '/login';
 
   if (isLoading || showPreloader) {
     return (
@@ -333,14 +338,7 @@ export const PublicLayout = () => {
               </Link>
             )}
 
-            {/* Admin Dashboard shortcut */}
-            <Link
-              to="/admin"
-              className="hidden lg:flex items-center gap-1.5 px-4 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800/80 text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-150 transition-all bg-white dark:bg-zinc-900"
-            >
-              <ShieldAlert className="w-3.5 h-3.5" />
-              Admin
-            </Link>
+
 
             {/* Mobile Menu Button */}
             <button
@@ -391,14 +389,7 @@ export const PublicLayout = () => {
               </Link>
             )}
 
-            <Link
-              to="/admin"
-              onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-150 border-t border-zinc-100 dark:border-zinc-900 mt-2"
-            >
-              <ShieldAlert className="w-4.5 h-4.5" />
-              Admin Dashboard
-            </Link>
+
           </div>
         )}
       </header>
@@ -409,79 +400,81 @@ export const PublicLayout = () => {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-zinc-200/50 dark:border-zinc-900 bg-white dark:bg-zinc-950 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              {settings?.logo ? (
-                <img src={settings.logo} alt="Logo" className="w-8 h-8 object-contain rounded-lg" />
-              ) : (
-                <div className="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center text-white font-bold">
-                  A
-                </div>
-              )}
-              <span className="font-extrabold text-lg text-zinc-900 dark:text-white">
-                {settings?.businessName || 'Apex Arena'}
-              </span>
+      {!isLoginPage && (
+        <footer className="border-t border-zinc-200/50 dark:border-zinc-900 bg-white dark:bg-zinc-950 py-12 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                {settings?.logo ? (
+                  <img src={settings.logo} alt="Logo" className="w-8 h-8 object-contain rounded-lg" />
+                ) : (
+                  <div className="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center text-white font-bold">
+                    A
+                  </div>
+                )}
+                <span className="font-extrabold text-lg text-zinc-900 dark:text-white">
+                  {settings?.businessName || 'Apex Arena'}
+                </span>
+              </div>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                {settings?.seo?.description || 'Your premium single-playground arena. Book and play effortlessly.'}
+              </p>
             </div>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">
-              {settings?.seo?.description || 'Your premium single-playground arena. Book and play effortlessly.'}
-            </p>
+
+            <div>
+              <h4 className="font-bold text-zinc-900 dark:text-white text-sm mb-4 uppercase tracking-wider">
+                Quick Links
+              </h4>
+              <ul className="space-y-2 text-sm">
+                {navLinks.map((link) => (
+                  <li key={link.name}>
+                    <Link to={link.path} className="text-zinc-500 hover:text-purple-600 dark:text-zinc-400 dark:hover:text-purple-400 transition-colors">
+                      {link.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-bold text-zinc-900 dark:text-white text-sm mb-4 uppercase tracking-wider">
+                Contact & Hours
+              </h4>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-2">
+                Email: {settings?.contactEmail}
+              </p>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
+                Phone: {settings?.contactPhone}
+              </p>
+              <p className="text-xs text-zinc-400 dark:text-zinc-500">
+                Weekdays: {settings?.businessHours?.weekday || '08:00 - 22:00'}
+              </p>
+              <p className="text-xs text-zinc-400 dark:text-zinc-500">
+                Weekends: {settings?.businessHours?.weekend || '09:00 - 23:00'}
+              </p>
+            </div>
           </div>
 
-          <div>
-            <h4 className="font-bold text-zinc-900 dark:text-white text-sm mb-4 uppercase tracking-wider">
-              Quick Links
-            </h4>
-            <ul className="space-y-2 text-sm">
-              {navLinks.map((link) => (
-                <li key={link.name}>
-                  <Link to={link.path} className="text-zinc-500 hover:text-purple-600 dark:text-zinc-400 dark:hover:text-purple-400 transition-colors">
-                    {link.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+          <div className="max-w-7xl mx-auto border-t border-zinc-150 dark:border-zinc-900 mt-8 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="text-center sm:text-left space-y-1">
+              <p className="text-xs text-zinc-400 dark:text-zinc-500">
+                &copy; {new Date().getFullYear()} {settings?.businessName || 'Apex Arena'}. All rights reserved.
+              </p>
+              <p className="text-[10px] text-zinc-400 dark:text-zinc-500/80 flex items-center justify-center sm:justify-start gap-1">
+                <span>Designed & Developed by</span>
+                <a href="https://daruntech.com" target="_blank" rel="noopener noreferrer" className="font-bold text-purple-650 hover:text-purple-750 dark:text-purple-400 dark:hover:text-purple-300 transition-colors">
+                  Darun Tech Private Limited
+                </a>
+              </p>
+            </div>
+            <div className="flex gap-4 text-xs text-zinc-400 dark:text-zinc-500">
+              <Link to="/about" className="hover:underline">Rules & Regulations</Link>
+              <span>&bull;</span>
+              <Link to="/contact" className="hover:underline">Support</Link>
+            </div>
           </div>
-
-          <div>
-            <h4 className="font-bold text-zinc-900 dark:text-white text-sm mb-4 uppercase tracking-wider">
-              Contact & Hours
-            </h4>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-2">
-              Email: {settings?.contactEmail}
-            </p>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
-              Phone: {settings?.contactPhone}
-            </p>
-            <p className="text-xs text-zinc-400 dark:text-zinc-500">
-              Weekdays: {settings?.businessHours?.weekday || '08:00 - 22:00'}
-            </p>
-            <p className="text-xs text-zinc-400 dark:text-zinc-500">
-              Weekends: {settings?.businessHours?.weekend || '09:00 - 23:00'}
-            </p>
-          </div>
-        </div>
-
-        <div className="max-w-7xl mx-auto border-t border-zinc-150 dark:border-zinc-900 mt-8 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="text-center sm:text-left space-y-1">
-            <p className="text-xs text-zinc-400 dark:text-zinc-500">
-              &copy; {new Date().getFullYear()} {settings?.businessName || 'Apex Arena'}. All rights reserved.
-            </p>
-            <p className="text-[10px] text-zinc-400 dark:text-zinc-500/80 flex items-center justify-center sm:justify-start gap-1">
-              <span>Designed & Developed by</span>
-              <a href="https://daruntech.com" target="_blank" rel="noopener noreferrer" className="font-bold text-purple-650 hover:text-purple-750 dark:text-purple-400 dark:hover:text-purple-300 transition-colors">
-                Darun Tech Private Limited
-              </a>
-            </p>
-          </div>
-          <div className="flex gap-4 text-xs text-zinc-400 dark:text-zinc-500">
-            <Link to="/about" className="hover:underline">Rules & Regulations</Link>
-            <span>&bull;</span>
-            <Link to="/contact" className="hover:underline">Support</Link>
-          </div>
-        </div>
-      </footer>
+        </footer>
+      )}
     </div>
   );
 };

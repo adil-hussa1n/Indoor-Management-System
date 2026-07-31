@@ -414,20 +414,20 @@ export const Booking = () => {
                 <div className="space-y-4">
                   <Input
                     label="Full Name"
-                    placeholder="e.g. John Doe"
+                    placeholder="ADIL HUSSAIN"
                     error={errors.customerName?.message}
                     {...register('customerName')}
                   />
                   <Input
                     label="Phone Number"
-                    placeholder="e.g. 555-0199"
+                    placeholder="01711223344"
                     error={errors.phone?.message}
                     {...register('phone')}
                     disabled
                   />
                   <Input
                     label="Email (Optional)"
-                    placeholder="e.g. john@example.com"
+                    placeholder="adil@gmail.com"
                     error={errors.email?.message}
                     {...register('email')}
                   />

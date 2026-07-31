@@ -1,4 +1,5 @@
 import { contactSchema } from '../../validators/contact.validator.js';
+import { sanitizeFields } from '../utils/sanitize.js';
 
 export const submitContact = async (req, res, next) => {
   try {
@@ -11,7 +12,8 @@ export const submitContact = async (req, res, next) => {
       });
     }
 
-    const contact = await contactRepo.create(validation.data);
+    const sanitizedData = sanitizeFields(validation.data, ['name', 'email', 'phone', 'message']);
+    const contact = await contactRepo.create(sanitizedData);
 
     const io = req.app.get('io');
     if (io) {

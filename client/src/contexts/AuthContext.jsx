@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import API, { registerLogoutCallback, getTenantSlug } from '../services/api';
+import API, { registerAdminLogoutCallback, getTenantSlug } from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -23,7 +23,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    registerLogoutCallback(logout);
+    registerAdminLogoutCallback(logout);
     const checkAuth = async () => {
       const token = localStorage.getItem(getStorageKey());
       if (token) {

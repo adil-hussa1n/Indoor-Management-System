@@ -40,10 +40,27 @@ export const AdminBlacklist = () => {
     fetchBlockedCustomers();
   }, []);
 
+  const normalizePhone = (p) => {
+    if (!p) return '';
+    let cleaned = p.replace(/\D/g, ''); // remove non-digits
+    if (cleaned.startsWith('0')) {
+      cleaned = '88' + cleaned;
+    } else if (cleaned.length === 10 && cleaned.startsWith('1')) {
+      cleaned = '880' + cleaned;
+    }
+    return cleaned;
+  };
+
   const handleBlock = async (e) => {
     e.preventDefault();
     if (!phone) {
       toast.error('Phone number is required.');
+      return;
+    }
+
+    const normalizedPhone = normalizePhone(phone);
+    if (normalizedPhone.length < 10) {
+      toast.error('Please enter a valid phone number.');
       return;
     }
 
@@ -55,7 +72,7 @@ export const AdminBlacklist = () => {
     setSubmitting(true);
     try {
       const payload = {
-        phone: phone.trim(),
+        phone: normalizedPhone,
         reason: reason.trim() || null,
         isPermanent: blockDuration === 'permanent',
         expiresAt: blockDuration === 'temporary' ? new Date(expiresAt).toISOString() : null,
@@ -63,7 +80,7 @@ export const AdminBlacklist = () => {
 
       const res = await API.post('/blocked-customers', payload);
       if (res.data.success) {
-        toast.success(`Phone number ${phone} successfully blocked!`);
+        toast.success(`Phone number ${normalizedPhone} successfully blocked!`);
         setPhone('');
         setReason('');
         setExpiresAt('');

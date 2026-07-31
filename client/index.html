@@ -14,7 +14,11 @@
           var settings = JSON.parse(cached);
           if (settings) {
             // Set title
-            var title = settings.seo?.title || settings.businessName || 'Apex Arena';
+            var seoTitle = settings.seo?.title;
+            var defaultTitles = ['Apex Indoor Sports Booking', 'Apex Arena', 'Indoor Sports Arena — Book Your Court'];
+            var title = (seoTitle && defaultTitles.indexOf(seoTitle) === -1) 
+              ? seoTitle 
+              : (settings.businessName || 'Apex Arena');
             document.title = title;
             
             // Set favicon

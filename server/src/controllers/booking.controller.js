@@ -1,5 +1,18 @@
 import { bookingSchema } from '../../validators/booking.validator.js';
 import { Op } from 'sequelize';
+import sendSMS from '../utils/sms.js';
+import { normalizePhone } from '../utils/phone.js';
+import { sanitizeFields } from '../utils/sanitize.js';
+
+// Helper: format 24h time to 12h
+const fmt12 = (t) => {
+  if (!t) return '';
+  const [h, m] = t.split(':');
+  let hour = parseInt(h, 10);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  hour = hour % 12 || 12;
+  return `${String(hour).padStart(2, '0')}:${m} ${ampm}`;
+};
 
 // Helper to generate unique booking reference: IND-YYYY-XXXX
 const generateBookingId = async (bookingRepo) => {
@@ -91,10 +104,11 @@ export const createBooking = async (req, res, next) => {
       });
     }
 
-    const data = validation.data;
+    const data = sanitizeFields(validation.data, ['customerName', 'notes', 'email']);
+    const normalizedPhone = normalizePhone(data.phone);
 
     // Check if customer phone number is blacklisted/blocked
-    const isBlocked = await blockedCustomerRepo.isBlocked(data.phone);
+    const isBlocked = await blockedCustomerRepo.isBlocked(normalizedPhone);
     if (isBlocked) {
       await t.rollback();
       return res.status(403).json({
@@ -131,6 +145,7 @@ export const createBooking = async (req, res, next) => {
 
     const booking = await bookingRepo.create({
       ...data,
+      phone: normalizedPhone,
       bookingDate: dateString,
       bookingId,
       price: calculatedPrice,
@@ -194,12 +209,45 @@ export const getBookings = async (req, res, next) => {
       limit: parseInt(limit),
     });
 
-    // Map to match old response format (add _id alias)
-    const mapped = bookings.map(b => {
+    // Map to match old response format (add _id alias) and inject suspicious history
+    const mapped = [];
+    for (const b of bookings) {
       const plain = b.toJSON();
       plain._id = plain.id;
-      return plain;
-    });
+      
+      let hasSuspiciousHistory = false;
+      let suspiciousReason = '';
+      
+      if (plain.userId) {
+        const suspiciousRequest = await req.tenantDb.models.BookingRequest.findOne({
+          where: { userId: plain.userId, isSuspicious: true }
+        });
+        if (suspiciousRequest) {
+          hasSuspiciousHistory = true;
+          suspiciousReason = suspiciousRequest.suspiciousReason || 'Flagged for rapid booking actions';
+        }
+      } else if (plain.phone) {
+        const local = plain.phone.replace(/^88/, '');
+        const suspiciousRequest = await req.tenantDb.models.BookingRequest.findOne({
+          where: { isSuspicious: true },
+          include: [{
+            model: req.tenantDb.models.Booking,
+            as: 'booking',
+            where: {
+              phone: [plain.phone, local]
+            }
+          }]
+        });
+        if (suspiciousRequest) {
+          hasSuspiciousHistory = true;
+          suspiciousReason = suspiciousRequest.suspiciousReason || 'Flagged for rapid booking actions';
+        }
+      }
+      
+      plain.hasSuspiciousHistory = hasSuspiciousHistory;
+      plain.suspiciousReason = suspiciousReason;
+      mapped.push(plain);
+    }
 
     res.status(200).json({
       success: true,
@@ -390,6 +438,18 @@ export const updateBookingStatus = async (req, res, next) => {
     if (io) {
       io.emit('slot-status-changed', { date: booking.bookingDate });
       io.emit('booking-updated', booking);
+    }
+
+    // ── SMS notification when booking is Confirmed ──
+    if (status === 'Confirmed' && booking.phone) {
+      try {
+        const settings = await req.repos.settingsRepo.get();
+        const venueName = settings?.businessName || 'Indoor Arena';
+        const smsMessage = `[${venueName}] Your booking ${booking.bookingId} is CONFIRMED!\nDate: ${booking.bookingDate}\nTime: ${fmt12(booking.startTime)} - ${fmt12(booking.endTime)}\nSport: ${booking.sport}\nPrice: ৳${booking.price}\nThank you for choosing ${venueName}!`;
+        sendSMS(booking.phone, smsMessage).catch(err => console.error('[SMS] Booking confirmation failed:', err.message));
+      } catch (smsErr) {
+        console.error('[SMS] Error sending confirmation:', smsErr.message);
+      }
     }
 
     const plain = booking.toJSON();

@@ -80,6 +80,9 @@ export function createModels(sequelize) {
     email: {
       type: DataTypes.STRING,
       allowNull: true,
+      set(val) {
+        this.setDataValue('email', val === '' ? null : val);
+      },
       validate: { isEmail: true },
     },
     sport: {
@@ -208,6 +211,15 @@ export function createModels(sequelize) {
       type: DataTypes.TEXT,
       allowNull: true,
     },
+    isSuspicious: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      allowNull: false,
+    },
+    suspiciousReason: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
   }, {
     tableName: 'booking_requests',
     timestamps: true,
@@ -324,6 +336,9 @@ export function createModels(sequelize) {
     email: {
       type: DataTypes.STRING,
       allowNull: true,
+      set(val) {
+        this.setDataValue('email', val === '' ? null : val);
+      },
       validate: { isEmail: true },
     },
     isVerified: {

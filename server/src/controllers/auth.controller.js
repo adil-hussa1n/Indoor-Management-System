@@ -21,7 +21,7 @@ export const login = async (req, res, next) => {
 
     const token = jwt.sign(
       { id: admin.id, tenant: req.tenant.slug, type: 'admin' },
-      process.env.JWT_SECRET || 'super_secret_jwt_key_change_me_in_production',
+      process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
 

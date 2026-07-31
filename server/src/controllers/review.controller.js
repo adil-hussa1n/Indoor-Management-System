@@ -1,4 +1,5 @@
 import { reviewSchema } from '../../validators/review.validator.js';
+import { sanitizeFields } from '../utils/sanitize.js';
 
 export const getApprovedReviews = async (req, res, next) => {
   try {
@@ -22,7 +23,8 @@ export const createReview = async (req, res, next) => {
       });
     }
 
-    const review = await reviewRepo.create(validation.data);
+    const sanitizedData = sanitizeFields(validation.data, ['customerName', 'comment']);
+    const review = await reviewRepo.create(sanitizedData);
 
     const io = req.app.get('io');
     if (io) {

@@ -35,6 +35,9 @@ const Booking = sequelize.define('Booking', {
   email: {
     type: DataTypes.STRING,
     allowNull: true,
+    set(val) {
+      this.setDataValue('email', val === '' ? null : val);
+    },
     validate: {
       isEmail: true,
     },

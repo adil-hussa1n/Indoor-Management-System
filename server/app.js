@@ -19,7 +19,7 @@ import userAuthRoutes from './src/routes/user-auth.routes.js';
 import bookingRequestRoutes from './src/routes/booking-request.routes.js';
 
 import { errorHandler } from './src/middlewares/errorHandler.js';
-import { apiLimiter, bookingLimiter, loginLimiter, contactLimiter } from './src/middlewares/rateLimiter.js';
+import { apiLimiter, bookingLimiter, loginLimiter, contactLimiter, otpLimiter, otpVerifyLimiter } from './src/middlewares/rateLimiter.js';
 import { tenantMiddleware } from './src/middlewares/tenant.js';
 import { injectRepositories } from './src/middlewares/injectRepositories.js';
 
@@ -83,6 +83,8 @@ app.use(`${apiPrefix}/booking`, bookingLimiter);
 app.use(`${apiPrefix}/auth/login`, loginLimiter);
 app.use(`${apiPrefix}/contact`, contactLimiter);
 app.use(`${apiPrefix}/reviews`, apiLimiter);
+app.use(`${apiPrefix}/user/send-otp`, otpLimiter);
+app.use(`${apiPrefix}/user/verify-otp`, otpVerifyLimiter);
 
 // Register tenant-scoped routes
 app.use(`${apiPrefix}/auth`, authRoutes);
