@@ -100,7 +100,10 @@ API.interceptors.request.use(
 
     // User-facing endpoints must use the user token
     const url = config.url || '';
-    const isUserEndpoint = url.startsWith('/user/') || url.startsWith('/booking-requests/') || url === '/booking';
+    const isUserEndpoint =
+      url.startsWith('/user/') ||
+      (url.startsWith('/booking-requests/') && (url.endsWith('/change') || url.endsWith('/cancel'))) ||
+      url === '/booking';
 
     if (isUserEndpoint && userToken) {
       config.headers.Authorization = `Bearer ${userToken}`;
@@ -134,7 +137,10 @@ API.interceptors.response.use(
       console.warn('Unauthorized request - Token expired or invalid');
       const tenantSlug = getTenantSlug();
       const url = error.config?.url || '';
-      const isUserEndpoint = url.startsWith('/user/') || url.startsWith('/booking-requests/') || url === '/booking';
+      const isUserEndpoint =
+        url.startsWith('/user/') ||
+        (url.startsWith('/booking-requests/') && (url.endsWith('/change') || url.endsWith('/cancel'))) ||
+        url === '/booking';
 
       if (isUserEndpoint) {
         // Only remove user token on user endpoint 401
