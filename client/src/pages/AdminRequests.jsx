@@ -8,10 +8,12 @@ import { useToast } from '../components/ui/Toast';
 import { useConfirm } from '../contexts/ConfirmContext';
 import { Inbox, CheckCircle, XCircle, Clock, Calendar, RefreshCw, ShieldAlert, AlertTriangle, History, Ban } from 'lucide-react';
 import { Dialog } from '../components/ui/Dialog';
+import { useSocket } from '../contexts/SocketContext';
 
 export const AdminRequests = () => {
   const toast = useToast();
   const confirm = useConfirm();
+  const socket = useSocket();
 
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -102,7 +104,20 @@ export const AdminRequests = () => {
 
   useEffect(() => {
     fetchRequests();
-  }, []);
+
+    if (socket) {
+      const handleNewRequest = () => {
+        console.log('Real-time socket update: reloading requests...');
+        fetchRequests();
+      };
+      
+      socket.on('new-booking-request', handleNewRequest);
+      
+      return () => {
+        socket.off('new-booking-request', handleNewRequest);
+      };
+    }
+  }, [socket]);
 
   const handleApprove = async (request) => {
     const isConfirmed = await confirm({
