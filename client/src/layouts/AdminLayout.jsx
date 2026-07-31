@@ -145,10 +145,19 @@ export const AdminLayout = () => {
     if (socket) {
       const playNotificationSound = (type = 'default') => {
         try {
-          const audio = type === 'suspicious' ? suspiciousAudioRef.current : notificationAudioRef.current;
-          if (audio) {
-            audio.currentTime = 0; // Reset playhead to bypass decoding/loading latency
-            audio.play().catch((err) => console.warn('Audio play blocked:', err));
+          // Tab coordination: check if another tab played an alert in the last 800ms to avoid echo
+          const lastPlayed = localStorage.getItem('last_played_alert_time');
+          const now = Date.now();
+          if (lastPlayed && now - parseInt(lastPlayed, 10) < 800) {
+            console.log('Skipping audio playback on this tab to prevent echo');
+            return;
+          }
+          localStorage.setItem('last_played_alert_time', now.toString());
+
+          const baseAudio = type === 'suspicious' ? suspiciousAudioRef.current : notificationAudioRef.current;
+          if (baseAudio) {
+            const clonedAudio = baseAudio.cloneNode(true);
+            clonedAudio.play().catch((err) => console.warn('Audio play blocked:', err));
           }
         } catch (error) {
           console.warn('Audio play failed:', error);
