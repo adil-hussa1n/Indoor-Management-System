@@ -266,20 +266,29 @@ export const SuperAdminDashboard = () => {
     navigate('/superadmin/login', { replace: true });
   };
 
+  const totalDeployments = tenants.length;
+  const activeDeployments = tenants.filter(t => t.isActive && (!t.subscriptionExpiresAt || new Date(t.subscriptionExpiresAt) >= new Date())).length;
+  const expiredDeployments = tenants.filter(t => !t.isActive || (t.subscriptionExpiresAt && new Date(t.subscriptionExpiresAt) < new Date())).length;
+  const lifetimeDeployments = tenants.filter(t => !t.subscriptionExpiresAt).length;
+
   return (
-    <div className="container mx-auto px-4 py-8 min-h-[85vh] flex flex-col gap-6 text-left">
+    <div className="container mx-auto px-4 py-8 min-h-[85vh] flex flex-col gap-6 text-left relative">
+      {/* Dynamic Background Glows */}
+      <div className="absolute top-[10%] left-[20%] w-[300px] h-[300px] bg-purple-500/5 dark:bg-purple-650/5 rounded-full blur-[100px] pointer-events-none -z-10 animate-pulse" />
+      <div className="absolute bottom-[20%] right-[10%] w-[350px] h-[350px] bg-indigo-500/5 dark:bg-indigo-650/5 rounded-full blur-[120px] pointer-events-none -z-10" />
+
       {/* Top Banner bar */}
-      <div className="relative overflow-hidden flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gradient-to-r from-zinc-900 via-zinc-900 to-purple-950/40 text-white p-6 rounded-3xl shadow-xl border border-zinc-800">
-        <div className="absolute inset-0 bg-grid-white/[0.02] -z-10" />
+      <div className="relative overflow-hidden flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 bg-gradient-to-r from-zinc-900 via-zinc-900 to-purple-950/45 text-white p-6 md:p-8 rounded-[2rem] shadow-2xl border border-zinc-800/80">
+        <div className="absolute inset-0 bg-grid-white/[0.015] -z-10" />
         <div className="flex items-center gap-4">
-          <div className="p-2.5 bg-zinc-800 rounded-2xl border border-zinc-700/50">
-            <img src="/daruntech-logo.png" alt="Darun Tech Logo" className="w-10 h-10 object-contain animate-none" />
+          <div className="p-3 bg-zinc-800/80 rounded-2.5xl border border-zinc-700/40 shadow-inner">
+            <img src="/daruntech-logo.png" alt="Darun Tech Logo" className="w-10 h-10 object-contain" />
           </div>
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-black tracking-tight text-white">Super Admin Operations</h1>
-              <span className="px-2.5 py-0.5 text-[9px] font-extrabold uppercase bg-purple-500/10 text-purple-450 border border-purple-500/20 rounded-full">
-                Darun Tech
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-xl md:text-2xl font-black tracking-tight text-white">Super Admin Operations</h1>
+              <span className="px-2.5 py-0.5 text-[9px] font-extrabold uppercase bg-purple-500/20 text-purple-400 border border-purple-500/30 rounded-full tracking-wider">
+                System Registry
               </span>
             </div>
             <p className="text-xs text-zinc-400 font-medium">
@@ -287,107 +296,182 @@ export const SuperAdminDashboard = () => {
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Button onClick={() => setIsModalOpen(true)} className="flex items-center gap-1.5 font-bold shadow-lg shadow-purple-500/10 cursor-pointer">
-            <Plus className="w-4 h-4" /> Provision New Client
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Button onClick={() => setIsModalOpen(true)} className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 font-bold shadow-lg shadow-purple-500/10 cursor-pointer">
+            <Plus className="w-4 h-4" /> Provision Client
           </Button>
-          <Button variant="secondary" onClick={logout} className="flex items-center gap-1.5 font-bold cursor-pointer">
+          <Button variant="secondary" onClick={logout} className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 font-bold cursor-pointer border border-zinc-800 dark:border-zinc-800">
             <LogOut className="w-4 h-4" /> Exit
           </Button>
         </div>
       </div>
 
+      {/* Operations Stat Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Total Deployments Card */}
+        <div className="relative overflow-hidden p-5 rounded-3xl bg-white/70 dark:bg-zinc-900/60 border border-zinc-250/30 dark:border-zinc-850 backdrop-blur-md shadow-sm transition-all hover:border-purple-500/30">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/5 dark:bg-purple-500/5 rounded-full blur-2xl -z-10" />
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-2xl bg-purple-50 dark:bg-purple-950/40 text-purple-650 dark:text-purple-400">
+              <Globe className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Total Clients</p>
+              <h3 className="text-2xl font-black text-zinc-900 dark:text-white mt-0.5">{totalDeployments}</h3>
+            </div>
+          </div>
+        </div>
+
+        {/* Active Deployments Card */}
+        <div className="relative overflow-hidden p-5 rounded-3xl bg-white/70 dark:bg-zinc-900/60 border border-zinc-250/30 dark:border-zinc-850 backdrop-blur-md shadow-sm transition-all hover:border-emerald-500/30">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 dark:bg-emerald-500/5 rounded-full blur-2xl -z-10" />
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
+              <CheckCircle className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Active Sites</p>
+              <h3 className="text-2xl font-black text-zinc-900 dark:text-white mt-0.5">{activeDeployments}</h3>
+            </div>
+          </div>
+        </div>
+
+        {/* Expired Deployments Card */}
+        <div className="relative overflow-hidden p-5 rounded-3xl bg-white/70 dark:bg-zinc-900/60 border border-zinc-250/30 dark:border-zinc-850 backdrop-blur-md shadow-sm transition-all hover:border-rose-500/30">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-rose-500/5 dark:bg-rose-500/5 rounded-full blur-2xl -z-10" />
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-455">
+              <XCircle className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Suspended / Expired</p>
+              <h3 className="text-2xl font-black text-zinc-900 dark:text-white mt-0.5">{expiredDeployments}</h3>
+            </div>
+          </div>
+        </div>
+
+        {/* Lifetime Deployments Card */}
+        <div className="relative overflow-hidden p-5 rounded-3xl bg-white/70 dark:bg-zinc-900/60 border border-zinc-250/30 dark:border-zinc-850 backdrop-blur-md shadow-sm transition-all hover:border-amber-500/30">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 dark:bg-amber-500/5 rounded-full blur-2xl -z-10" />
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-650 dark:text-amber-400">
+              <Shield className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Lifetime Plans</p>
+              <h3 className="text-2xl font-black text-zinc-900 dark:text-white mt-0.5">{lifetimeDeployments}</h3>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Tenants list table */}
-      <Card className="glass-card hover-glow border border-zinc-200/50 dark:border-zinc-800">
-        <CardHeader>
-          <CardTitle>Client Subdomain Deployments</CardTitle>
-          <CardDescription>View status, subdomains, and database contexts.</CardDescription>
+      <Card className="glass-card hover-glow border border-zinc-200/50 dark:border-zinc-900 shadow-xl rounded-[2rem] overflow-hidden">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg md:text-xl font-extrabold tracking-tight">Client Subdomain Deployments</CardTitle>
+          <CardDescription className="text-xs font-semibold text-zinc-400 dark:text-zinc-500">View status, subdomains, and database contexts.</CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
             <div className="flex justify-center py-12"><Loader size="lg" /></div>
           ) : tenants.length === 0 ? (
-            <div className="text-center py-12 text-zinc-500 font-medium">
-              No clients provisioned yet. Click "Provision New Client" above to get started.
+            <div className="text-center py-12 text-zinc-500 font-semibold text-sm">
+              No clients provisioned yet. Click "Provision Client" above to get started.
             </div>
           ) : (
             <div className="overflow-x-auto custom-scrollbar">
-              <table className="w-full text-left border-collapse min-w-[750px]">
+              <table className="w-full text-left border-collapse min-w-[850px]">
                 <thead>
-                  <tr className="border-b border-zinc-200 dark:border-zinc-800 text-zinc-400 text-xs font-bold uppercase tracking-wider">
-                    <th className="pb-3">Client Name</th>
+                  <tr className="border-b border-zinc-150 dark:border-zinc-900 text-zinc-400 dark:text-zinc-500 text-[10px] font-bold uppercase tracking-widest">
+                    <th className="pb-3 px-3">Client Name</th>
                     <th className="pb-3">Subdomain Slug</th>
                     <th className="pb-3">Database Context</th>
-                    <th className="pb-3">Subscription Status</th>
+                    <th className="pb-3">Subscription Expiry</th>
                     <th className="pb-3">Status</th>
-                    <th className="pb-3 text-right">Actions</th>
+                    <th className="pb-3 text-right pr-3">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="text-sm">
-                  {tenants.map((t) => (
-                    <tr key={t.id} className="border-b border-zinc-100 dark:border-zinc-900 hover:bg-zinc-550/5 transition-colors">
-                      <td className="py-4 font-bold text-zinc-900 dark:text-white">{t.businessName}</td>
-                      <td className="py-4 font-mono text-purple-650 dark:text-purple-400 font-semibold">
-                        {t.slug}.daruntech.com
-                      </td>
-                      <td className="py-4 font-mono text-zinc-500 dark:text-zinc-400 text-xs">{t.dbName || `db_${t.slug}`}</td>
-                      <td className="py-4">
-                        {t.subscriptionExpiresAt ? (
-                          <div className="flex flex-col gap-0.5">
-                            <span className={`text-xs font-semibold ${
-                              new Date(t.subscriptionExpiresAt) < new Date() ? 'text-rose-500' : 'text-zinc-900 dark:text-zinc-200'
-                            }`}>
-                              {new Date(t.subscriptionExpiresAt).toLocaleDateString(undefined, {
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric',
-                              })}
+                  {tenants.map((t) => {
+                    const isExpired = t.subscriptionExpiresAt && new Date(t.subscriptionExpiresAt) < new Date();
+                    return (
+                      <tr key={t.id} className="border-b border-zinc-100 dark:border-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-900/30 transition-colors">
+                        <td className="py-4 px-3 font-bold text-zinc-900 dark:text-white">
+                          <span className="block">{t.businessName}</span>
+                          {t.customDomain && (
+                            <span className="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 text-[9px] font-bold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 rounded-lg border border-indigo-100 dark:border-indigo-900/40 font-mono">
+                              {t.customDomain}
                             </span>
-                            <span className={`text-[10px] font-bold uppercase tracking-wide ${
-                              new Date(t.subscriptionExpiresAt) < new Date() ? 'text-rose-500' : 'text-emerald-500'
-                            }`}>
-                              {new Date(t.subscriptionExpiresAt) < new Date() ? 'Expired' : 'Active'}
+                          )}
+                        </td>
+                        <td className="py-4 font-mono text-purple-650 dark:text-purple-400 font-semibold text-xs">
+                          {t.slug}.daruntech.com
+                        </td>
+                        <td className="py-4 font-mono text-zinc-500 dark:text-zinc-500 text-xs">
+                          {t.dbName || `db_${t.slug}`}
+                        </td>
+                        <td className="py-4">
+                          {t.subscriptionExpiresAt ? (
+                            <div className="flex flex-col gap-0.5">
+                              <span className={`text-xs font-semibold ${
+                                isExpired ? 'text-rose-500' : 'text-zinc-700 dark:text-zinc-300'
+                              }`}>
+                                {new Date(t.subscriptionExpiresAt).toLocaleDateString(undefined, {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric',
+                                })}
+                              </span>
+                              <span className={`text-[9px] font-bold uppercase tracking-wider ${
+                                isExpired ? 'text-rose-500' : 'text-emerald-500'
+                              }`}>
+                                {isExpired ? 'Expired' : 'Active'}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="px-2.5 py-0.5 text-[10px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-full">
+                              Lifetime / Pro
                             </span>
+                          )}
+                        </td>
+                        <td className="py-4">
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                            t.isActive && !isExpired
+                              ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' 
+                              : 'bg-rose-500/10 text-rose-500 border-rose-500/20'
+                          }`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${t.isActive && !isExpired ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                            {t.isActive && !isExpired ? 'Active' : t.isActive ? 'Expired' : 'Suspended'}
+                          </span>
+                        </td>
+                        <td className="py-4 text-right pr-3">
+                          <div className="flex justify-end gap-2">
+                            <button
+                              onClick={() => handleToggleStatus(t)}
+                              className="p-1.5 text-zinc-450 hover:text-indigo-650 transition-colors"
+                              title={t.isActive ? 'Suspend client access' : 'Activate client access'}
+                            >
+                              {t.isActive ? <ToggleRight className="w-6 h-6 text-indigo-500" /> : <ToggleLeft className="w-6 h-6 text-zinc-400" />}
+                            </button>
+                            <button
+                              onClick={() => openEditModal(t)}
+                              className="p-1.5 text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                              title="Edit Client Settings"
+                            >
+                              <Edit className="w-4.5 h-4.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteTenant(t)}
+                              className="p-1.5 text-zinc-400 hover:text-rose-600 transition-colors"
+                              title="Wipe & Deprovision Client"
+                            >
+                              <Trash2 className="w-4.5 h-4.5" />
+                            </button>
                           </div>
-                        ) : (
-                          <span className="text-zinc-400 text-xs italic">Unlimited / Lifetime</span>
-                        )}
-                      </td>
-                      <td className="py-4">
-                        <span className={`inline-flex items-center gap-1 text-xs font-bold ${
-                          t.isActive ? 'text-emerald-500' : 'text-rose-500'
-                        }`}>
-                          {t.isActive ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
-                          {t.isActive ? 'Active' : 'Suspended'}
-                        </span>
-                      </td>
-                      <td className="py-4 text-right">
-                        <div className="flex justify-end gap-2">
-                          <button
-                            onClick={() => handleToggleStatus(t)}
-                            className="p-1.5 text-zinc-450 hover:text-indigo-650 transition-colors"
-                            title={t.isActive ? 'Suspend client access' : 'Activate client access'}
-                          >
-                            {t.isActive ? <ToggleRight className="w-6 h-6 text-indigo-500" /> : <ToggleLeft className="w-6 h-6 text-zinc-400" />}
-                          </button>
-                          <button
-                            onClick={() => openEditModal(t)}
-                            className="p-1.5 text-zinc-400 hover:text-indigo-650 transition-colors"
-                            title="Edit Client Settings"
-                          >
-                            <Edit className="w-5 h-5" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteTenant(t)}
-                            className="p-1.5 text-zinc-400 hover:text-rose-600 transition-colors"
-                            title="Wipe & Deprovision Client"
-                          >
-                            <Trash2 className="w-5 h-5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
