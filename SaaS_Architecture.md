@@ -90,7 +90,7 @@ The React Single Page Application (SPA) is dynamically customized based on the a
 ## 🔌 4. The Backend Layer (Database Isolation)
 The backend routes database queries to isolated containers per business using a Master/Tenant pattern.
 
-### The Master Schema (`indoor_sports_master_db`)
+### The Master Schema (`indoor_master_db`)
 Maintains a registry of all active tenants, subscription timelines, and SMS credentials.
 ```sql
 CREATE TABLE Tenants (

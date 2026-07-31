@@ -182,9 +182,22 @@ An interactive Postman Collection is included in the project root:
 
 ---
 
+## 🛡️ Security Hardening
+
+The platform features production-grade security architecture protecting against common API and database vulnerabilities:
+- **Strict JWT Secret Guard**: The server enforces validation on the `JWT_SECRET` variable during startup and terminates immediately if it is missing or weak, preventing token forgeability.
+- **Short-Lived User Sessions**: Customer authentication tokens expire in `30d` instead of remaining valid indefinitely.
+- **SMS Rate Limiting**: The system prevents SMS dispatch abuse using an `otpLimiter` (max 5 requests per 15 mins) and guess attempts using `otpVerifyLimiter` (max 10 attempts per 15 mins).
+- **SQL Injection Prevention**: Double database name checks validation (`/^[a-z0-9_]+$/`) on client registration paths prevents arbitrary SQL injection in dynamic database creation commands.
+- **Stored XSS Sanitization**: User inputs on bookings, reviews, and contact messages are stripped of HTML tags before database persistence using a lightweight sanitizer.
+
+---
+
 ## 🚀 Deployment (Wildcard Nginx VPS Setup)
 
 Deploying a multi-tenant platform requires wildcard subdomain mapping. Configure your DNS provider with a wildcard record `*.daruntech.com` pointing to your VPS IP address, then build the stack using Docker Compose.
+
+The database service uses the `mysql-init/init.sql` initialization script to automatically bootstrap both the `indoor_sports_db` and the `indoor_master_db` databases on startup.
 
 ```bash
 # 1. Clone on VPS

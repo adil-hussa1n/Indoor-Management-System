@@ -13,6 +13,7 @@ services:
       - DB_HOST=mysql
       - DB_PORT=3306
       - DB_NAME=indoor_sports_db
+      - MASTER_DB_NAME=indoor_master_db
       - DB_USER=root
       - DB_PASSWORD=rootpassword
     depends_on:
@@ -37,6 +38,7 @@ services:
       MYSQL_DATABASE: indoor_sports_db
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
