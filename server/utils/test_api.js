@@ -5,6 +5,7 @@
 
 const BASE = 'http://127.0.0.1:5000/api/v1';
 let TOKEN = '';
+let USER_TOKEN = '';
 let createdBookingId = null;
 let createdSlotId = null;
 let createdReviewId = null;
@@ -32,7 +33,13 @@ async function api(method, path, body = null, auth = false, isFormData = false) 
   const headers = {
     'X-Tenant-Slug': 'apexarena'
   };
-  if (auth) headers['Authorization'] = `Bearer ${TOKEN}`;
+  if (auth) {
+    if (auth === 'user') {
+      headers['Authorization'] = `Bearer ${USER_TOKEN}`;
+    } else {
+      headers['Authorization'] = `Bearer ${TOKEN}`;
+    }
+  }
   if (!isFormData && body) headers['Content-Type'] = 'application/json';
 
   const opts = { method, headers };
@@ -91,6 +98,23 @@ async function run() {
     };
     const res = await fetch(`${BASE}/auth/me`, { headers });
     assert(res.status === 401, `Expected 401, got ${res.status}`);
+  });
+
+  // User OTP Auth
+  await test('User OTP registration and verification', async () => {
+    const phone = '+8801555000111';
+    
+    // 1. Send OTP
+    const r1 = await api('POST', '/user/send-otp', { phone });
+    assert(r1.status === 200, `Send OTP status ${r1.status}`);
+    assert(r1.data.devOtp, 'No devOtp returned in response');
+    const devOtp = r1.data.devOtp;
+
+    // 2. Verify OTP
+    const r2 = await api('POST', '/user/verify-otp', { phone, code: devOtp });
+    assert(r2.status === 200, `Verify OTP status ${r2.status}`);
+    assert(r2.data.token, 'No user token returned');
+    USER_TOKEN = r2.data.token;
   });
 
   // Info / Settings
@@ -172,10 +196,10 @@ async function run() {
   });
 
   // Bookings
-  // Generate collision-free future dates based on current timestamp
-  const nowMs = Date.now();
-  const bookingDateStr = new Date(nowMs + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // 30 days out
-  const adminBookingDateStr = new Date(nowMs + 31 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // 31 days out
+  // Generate collision-free future dates based on current timestamp with random offsets to prevent run conflicts
+  const randomOffset = Math.floor(Math.random() * 1000) + 35;
+  const bookingDateStr = new Date(Date.now() + randomOffset * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const adminBookingDateStr = new Date(Date.now() + (randomOffset + 1) * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
   await test('POST /booking creates a public booking', async () => {
     const r = await api('POST', '/booking', {
@@ -189,14 +213,14 @@ async function run() {
       duration: 1,
       players: 8,
       notes: 'Deep test booking'
-    });
+    }, 'user');
     assert(r.status === 201 || r.ok, `Status ${r.status}: ${JSON.stringify(r.data)}`);
     createdBookingId = r.data.booking?.id;
     assert(createdBookingId, 'No booking ID returned');
   });
 
   await test('POST /booking with missing fields returns validation error', async () => {
-    const r = await api('POST', '/booking', { customerName: 'No Phone' });
+    const r = await api('POST', '/booking', { customerName: 'No Phone' }, 'user');
     assert(!r.ok, `Expected error, got ${r.status}`);
   });
 
@@ -387,7 +411,7 @@ async function run() {
       endTime: '11:00',
       duration: 1,
       players: 5
-    });
+    }, 'user');
     assert(!r.ok || r.status >= 400, `Expected rejection for past date, got ${r.status}`);
   });
 
