@@ -158,9 +158,12 @@ export const AdminLayout = () => {
         playNotificationSound('default');
       };
 
-      const handleNewRequest = () => {
+      const handleNewRequest = (data) => {
         setAlerts((prev) => ({ ...prev, requests: true }));
         toast.info('🔔 New Customer Booking Request Received!');
+        if (data && data.isSuspicious) {
+          return; // Skip playing the standard sound to avoid playing both at once
+        }
         playNotificationSound('warning');
       };
 
