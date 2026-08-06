@@ -117,12 +117,40 @@ export function createModels(sequelize) {
       allowNull: false,
     },
     status: {
-      type: DataTypes.ENUM('Pending', 'Confirmed', 'Completed', 'Cancelled'),
+      type: DataTypes.STRING,
       defaultValue: 'Pending',
       allowNull: false,
     },
     notes: {
       type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    groundId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    paymentStatus: {
+      type: DataTypes.STRING,
+      defaultValue: 'unpaid',
+    },
+    paidAmount: {
+      type: DataTypes.DECIMAL(10, 2),
+      defaultValue: 0.00,
+    },
+    dueAmount: {
+      type: DataTypes.DECIMAL(10, 2),
+      defaultValue: 0.00,
+    },
+    paymentGateway: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    transactionId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    paymentDetails: {
+      type: DataTypes.JSON,
       allowNull: true,
     },
   }, {
@@ -136,6 +164,7 @@ export function createModels(sequelize) {
       { fields: ['status'] },
       { fields: ['phone'] },
       { fields: ['userId'] },
+      { fields: ['groundId'] },
     ],
   });
 
@@ -230,6 +259,39 @@ export function createModels(sequelize) {
     ],
   });
 
+  // ── Ground Model ──
+  const Ground = sequelize.define('Ground', {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+    },
+    name: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    sport: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    isActive: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true,
+    },
+    description: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    order: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      allowNull: false,
+    },
+  }, {
+    tableName: 'grounds',
+    timestamps: true,
+  });
+
   // ── Slot Model ──
   const Slot = sequelize.define('Slot', {
     id: {
@@ -264,6 +326,10 @@ export function createModels(sequelize) {
       type: DataTypes.ENUM('day', 'night'),
       defaultValue: 'day',
     },
+    groundId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
   }, {
     tableName: 'slots',
     timestamps: true,
@@ -271,6 +337,12 @@ export function createModels(sequelize) {
       { fields: ['dayOfWeek'] },
       { fields: ['specificDate'] },
       { fields: ['isActive'] },
+      { fields: ['groundId'] },
+      {
+        unique: true,
+        fields: ['startTime', 'endTime', 'dayOfWeek', 'specificDate', 'groundId'],
+        name: 'idx_slots_unique_time_ground'
+      }
     ],
   });
 
@@ -301,11 +373,15 @@ export function createModels(sequelize) {
       type: DataTypes.DATE,
       allowNull: false,
     },
+    groundId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
   }, {
     tableName: 'slot_locks',
     timestamps: true,
     indexes: [
-      { fields: ['bookingDate', 'startTime', 'endTime'] },
+      { fields: ['bookingDate', 'startTime', 'endTime', 'groundId'] },
       { fields: ['expiresAt'] },
     ],
   });
@@ -613,6 +689,38 @@ export function createModels(sequelize) {
       type: DataTypes.JSON,
       defaultValue: [],
     },
+    discounts: {
+      type: DataTypes.JSON,
+      defaultValue: [],
+    },
+    paymentConfig: {
+      type: DataTypes.JSON,
+      defaultValue: {
+        enabled: false,
+        type: 'full',
+        partialType: 'percentage',
+        partialPercentage: 50,
+        partialFixedAmount: 500,
+        gateways: {
+          bkash: {
+            enabled: true,
+            accountType: 'Personal',
+            merchantNumber: '',
+            appKey: '',
+            appSecret: '',
+            username: '',
+            password: '',
+            isLive: false,
+          },
+          sslcommerz: {
+            enabled: true,
+            storeId: '',
+            storePassword: '',
+            isLive: false,
+          }
+        }
+      },
+    },
   }, {
     tableName: 'settings',
     timestamps: true,
@@ -663,16 +771,28 @@ export function createModels(sequelize) {
       type: DataTypes.INTEGER,
       allowNull: true,
     },
+    adminUsername: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     action: {
       type: DataTypes.STRING,
       allowNull: false,
     },
+    category: {
+      type: DataTypes.STRING,
+      defaultValue: 'general',
+    },
     entity: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
     },
     entityId: {
       type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    description: {
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     oldValue: {
@@ -706,6 +826,15 @@ export function createModels(sequelize) {
   Booking.hasMany(BookingRequest, { foreignKey: 'bookingId', as: 'requests' });
   BookingRequest.belongsTo(Booking, { foreignKey: 'bookingId', as: 'booking' });
 
+  Ground.hasMany(Slot, { foreignKey: 'groundId', as: 'slots' });
+  Slot.belongsTo(Ground, { foreignKey: 'groundId', as: 'ground' });
+
+  Ground.hasMany(Booking, { foreignKey: 'groundId', as: 'bookings' });
+  Booking.belongsTo(Ground, { foreignKey: 'groundId', as: 'ground' });
+
+  Ground.hasMany(SlotLock, { foreignKey: 'groundId', as: 'slotLocks' });
+  SlotLock.belongsTo(Ground, { foreignKey: 'groundId', as: 'ground' });
+
   // ── Sync function ──
   const syncDatabase = async () => {
     try {
@@ -720,6 +849,7 @@ export function createModels(sequelize) {
   const models = {
     sequelize,
     Admin,
+    Ground,
     Booking,
     BookingStatusHistory,
     BookingRequest,

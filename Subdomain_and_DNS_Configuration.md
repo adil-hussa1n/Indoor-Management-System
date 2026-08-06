@@ -85,7 +85,7 @@ Once steps 1-3 are completed, follow this workflow to spawn new client venues:
 
 1.  **Access Super Admin Panel**: Go to `http://indoormanagement.daruntech.com/superadmin/login` and log in.
 2.  **Add Business**: Click **"Provision New Client"**. Enter your details (e.g. business name `D-Box Indoor`, subdomain slug `dboxindoor`, set credentials).
-3.  **Deploy**: The platform instantly initializes their isolated database, seeds slots, and sets up settings.
+3.  **Deploy**: The platform instantly initializes their isolated database, seeds playing arenas, shift slots, automatic date-range discount engines, and brand settings.
 4.  **Live Access**:
     *   **Customer Booking Site**: `http://dboxindoor.daruntech.com`
     *   **Venue Admin Site**: `http://dboxindoor.daruntech.com/admin/login`

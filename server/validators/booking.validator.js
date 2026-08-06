@@ -13,4 +13,5 @@ export const bookingSchema = z.object({
   duration: z.number().min(1, 'Duration must be at least 1 hour'),
   players: z.number().min(1, 'Number of players must be at least 1'),
   notes: z.string().optional(),
+  groundId: z.number().int().positive().optional(),
 });

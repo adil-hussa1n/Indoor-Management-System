@@ -23,7 +23,8 @@ export const AdminLogin = () => {
 
   useEffect(() => {
     if (!loading && isAdmin) {
-      navigate('/admin/dashboard');
+      const search = window.location.search;
+      navigate(`/admin/dashboard${search}`);
     }
   }, [isAdmin, loading, navigate]);
 
@@ -46,7 +47,8 @@ export const AdminLogin = () => {
 
     if (result.success) {
       toast.success('Admin login successful!');
-      navigate('/admin/dashboard');
+      const search = window.location.search;
+      navigate(`/admin/dashboard${search}`);
     } else {
       toast.error(result.message);
     }

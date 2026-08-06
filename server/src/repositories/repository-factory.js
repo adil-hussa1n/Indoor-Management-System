@@ -18,21 +18,36 @@ export const createBookingRepository = (models) => ({
   findAndCountAll: (where = {}, options = {}) => models.Booking.findAndCountAll({ where, ...options }),
   countAll: (where = {}) => models.Booking.count({ where }),
   sumPrice: async (where = {}) => (await models.Booking.sum('price', { where })) || 0,
-  findById: (id) => models.Booking.findByPk(id, { include: [{ model: models.BookingStatusHistory, as: 'statusHistory' }] }),
-  findByUuid: (uuid) => models.Booking.findOne({ where: { uuid }, include: [{ model: models.BookingStatusHistory, as: 'statusHistory' }] }),
+  findById: (id) => models.Booking.findByPk(id, { 
+    include: [
+      { model: models.BookingStatusHistory, as: 'statusHistory' },
+      { model: models.Ground, as: 'ground' }
+    ] 
+  }),
+  findByUuid: (uuid) => models.Booking.findOne({ 
+    where: { uuid }, 
+    include: [
+      { model: models.BookingStatusHistory, as: 'statusHistory' },
+      { model: models.Ground, as: 'ground' }
+    ] 
+  }),
   create: (data, options = {}) => models.Booking.create(data, options),
   update: (id, data, options = {}) => models.Booking.update(data, { where: { id }, ...options }),
   softDelete: (id) => models.Booking.destroy({ where: { id } }),
   countWithPrefix: (prefix) => models.Booking.count({ where: { bookingId: { [Op.like]: `${prefix}%` } }, paranoid: false }),
-  findOverlapping: (dateStr, startTime, endTime, options = {}) => {
+  findOverlapping: (dateStr, startTime, endTime, groundId, options = {}) => {
+    const whereClause = {
+      bookingDate: dateStr,
+      status: { [Op.in]: ['Confirmed', 'Pending'] },
+      [Op.or]: [
+        { startTime: { [Op.lt]: endTime }, endTime: { [Op.gt]: startTime } },
+      ],
+    };
+    if (groundId) {
+      whereClause.groundId = groundId;
+    }
     return models.Booking.findAll({
-      where: {
-        bookingDate: dateStr,
-        status: { [Op.ne]: 'Cancelled' },
-        [Op.or]: [
-          { startTime: { [Op.lt]: endTime }, endTime: { [Op.gt]: startTime } },
-        ],
-      },
+      where: whereClause,
       ...options,
     });
   },
@@ -148,27 +163,73 @@ export const createBookingStatusHistoryRepository = (models) => ({
 
 // ── AuditLog Repository ──
 export const createAuditLogRepository = (models) => ({
-  create: (data) => models.AuditLog.create(data),
   findAll: (where = {}, options = {}) => models.AuditLog.findAll({ where, ...options }),
+  findAndCountAll: (where = {}, options = {}) => models.AuditLog.findAndCountAll({ where, ...options }),
+  create: async (data) => {
+    try {
+      const fullPayload = {
+        userId: data.userId || null,
+        adminUsername: data.adminUsername || null,
+        action: data.action || 'GENERAL_ACTION',
+        category: data.category || 'general',
+        entity: data.entity || 'Booking',
+        entityId: data.entityId || null,
+        description: data.description || null,
+        oldValue: data.oldValue || null,
+        newValue: data.newValue || null,
+        ipAddress: data.ipAddress || '',
+      };
+      return await models.AuditLog.create(fullPayload);
+    } catch (e) {
+      try {
+        return await models.AuditLog.create({
+          userId: data.userId || null,
+          action: data.action || 'GENERAL_ACTION',
+          entity: data.entity || 'Booking',
+          entityId: data.entityId || null,
+          oldValue: data.oldValue || null,
+          newValue: data.newValue || null,
+          ipAddress: data.ipAddress || '',
+        });
+      } catch (err2) {
+        console.error('auditLogRepo.create notice:', err2.message);
+        return null;
+      }
+    }
+  },
 });
 
 // ── SlotLock Repository ──
 export const createSlotLockRepository = (models) => ({
   create: (data, options = {}) => models.SlotLock.create(data, options),
-  findActive: (bookingDate, startTime, endTime) => {
+  findActive: (bookingDate, startTime, endTime, groundId) => {
+    const whereClause = {
+      bookingDate,
+      startTime: { [Op.lt]: endTime },
+      endTime: { [Op.gt]: startTime },
+      expiresAt: { [Op.gt]: new Date() },
+    };
+    if (groundId) {
+      whereClause.groundId = groundId;
+    }
     return models.SlotLock.findAll({
-      where: {
-        bookingDate,
-        startTime: { [Op.lt]: endTime },
-        endTime: { [Op.gt]: startTime },
-        expiresAt: { [Op.gt]: new Date() },
-      },
+      where: whereClause,
     });
   },
   deleteExpired: () => {
     return models.SlotLock.destroy({ where: { expiresAt: { [Op.lt]: new Date() } } });
   },
   deleteBySessionId: (sessionId) => models.SlotLock.destroy({ where: { sessionId } }),
+});
+
+// ── Ground Repository ──
+export const createGroundRepository = (models) => ({
+  findAll: (where = {}, options = {}) => models.Ground.findAll({ where, ...options }),
+  findById: (id) => models.Ground.findByPk(id),
+  create: (data) => models.Ground.create(data),
+  update: (id, data) => models.Ground.update(data, { where: { id } }),
+  delete: (id) => models.Ground.destroy({ where: { id } }),
+  count: (where = {}) => models.Ground.count({ where }),
 });
 
 // ── User Repository ──
@@ -281,6 +342,7 @@ export const createBlockedCustomerRepository = (models) => ({
  */
 export function createRepositories(models) {
   return {
+    groundRepo: createGroundRepository(models),
     adminRepo: createAdminRepository(models),
     bookingRepo: createBookingRepository(models),
     slotRepo: createSlotRepository(models),

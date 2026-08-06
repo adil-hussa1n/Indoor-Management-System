@@ -122,6 +122,10 @@ const Settings = sequelize.define('Settings', {
       'Damaging facilities or equipment will result in replacement fines.'
     ],
   },
+  discounts: {
+    type: DataTypes.JSON,
+    defaultValue: [],
+  },
 }, {
   tableName: 'settings',
   timestamps: true,

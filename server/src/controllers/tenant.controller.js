@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { Tenant, SuperAdmin } from '../models/master/index.js';
+import { Tenant, SuperAdmin, SubscriptionHistory } from '../models/master/index.js';
 import { masterSequelize } from '../config/master-db.js';
 import { getTenantConnection, removeTenantConnection } from '../config/sequelize.js';
 import { createModels } from '../models/model-factory.js';
@@ -48,7 +48,19 @@ export const createTenant = async (req, res, next) => {
   let dbCreated = false;
   let dbName = null;
   try {
-    const { slug, businessName, adminUsername, adminPassword, adminEmail, adminPhone, plan, subscriptionExpiresAt } = req.body;
+    const {
+      slug,
+      businessName,
+      adminUsername,
+      adminPassword,
+      adminEmail,
+      adminPhone,
+      plan,
+      subscriptionExpiresAt,
+      subscriptionPrice,
+      subscriptionPlan,
+      paymentStatus,
+    } = req.body;
 
     // Validate required fields
     if (!slug || !businessName || !adminUsername || !adminPassword) {
@@ -87,6 +99,10 @@ export const createTenant = async (req, res, next) => {
     dbCreated = true;
     console.log(`Created database: ${dbName}`);
 
+    const initialPrice = subscriptionPrice !== undefined ? Number(subscriptionPrice) : 0;
+    const initialStatus = paymentStatus || 'paid';
+    const totalRev = initialStatus === 'paid' ? initialPrice : 0;
+
     // 2. Register tenant in master DB
     createdTenant = await Tenant.create({
       slug,
@@ -94,8 +110,13 @@ export const createTenant = async (req, res, next) => {
       dbName,
       adminEmail: adminEmail || null,
       adminPhone: adminPhone || null,
-      plan: plan || 'free',
+      plan: plan || 'pro',
       subscriptionExpiresAt: subscriptionExpiresAt || null,
+      subscriptionPrice: initialPrice,
+      subscriptionPlan: subscriptionPlan || '1_month',
+      totalRevenueCollected: totalRev,
+      paymentStatus: initialStatus,
+      lastPaymentDate: initialStatus === 'paid' ? new Date() : null,
     });
 
     // 3. Initialize tenant database (create all tables)
@@ -117,6 +138,32 @@ export const createTenant = async (req, res, next) => {
       contactEmail: adminEmail || 'info@example.com',
       contactPhone: adminPhone || '+880-1234-567890',
     });
+
+    // 6. Record Initial Subscription History
+    try {
+      const sp = createdTenant.subscriptionPlan || '1_month';
+      let planName = '1 Month Subscription Plan';
+      if (sp === 'free_trial' || sp === '7_days_trial' || sp === 'trial' || createdTenant.plan === 'free') planName = '7 Days Free Trial';
+      else if (sp === '1_month') planName = '1 Month Subscription Plan';
+      else if (sp === '3_months') planName = '3 Month Subscription Plan';
+      else if (sp === '6_months') planName = '6 Month Subscription Plan';
+      else if (sp === '1_year') planName = '1 Year Subscription Plan';
+      else if (sp === 'custom' || sp === 'custom_date') planName = 'Custom Date Range Plan';
+
+      await SubscriptionHistory.create({
+        tenantId: createdTenant.id,
+        tenantSlug: createdTenant.slug,
+        plan: sp,
+        planName,
+        amount: initialPrice,
+        paymentStatus: initialStatus,
+        startDate: new Date(),
+        expiryDate: subscriptionExpiresAt || null,
+        notes: 'Initial tenant provisioned & plan activated',
+      });
+    } catch (hErr) {
+      console.error('Subscription history record error:', hErr.message);
+    }
 
     res.status(201).json({
       success: true,
@@ -203,7 +250,21 @@ export const updateTenant = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Tenant not found' });
     }
 
-    const allowedFields = ['businessName', 'adminEmail', 'adminPhone', 'isActive', 'plan', 'customDomain', 'smsCredentials', 'subscriptionExpiresAt'];
+    const allowedFields = [
+      'businessName',
+      'adminEmail',
+      'adminPhone',
+      'isActive',
+      'plan',
+      'customDomain',
+      'smsCredentials',
+      'subscriptionExpiresAt',
+      'subscriptionPrice',
+      'subscriptionPlan',
+      'totalRevenueCollected',
+      'paymentStatus',
+      'lastPaymentDate'
+    ];
     const updateData = {};
     for (const field of allowedFields) {
       if (req.body[field] !== undefined) {
@@ -211,7 +272,44 @@ export const updateTenant = async (req, res, next) => {
       }
     }
 
+    // Auto-accumulate revenue when new payment is recorded
+    if (req.body.recordPayment === true && req.body.subscriptionPrice) {
+      const addedRev = Number(req.body.subscriptionPrice) || 0;
+      const currentTotal = Number(tenant.totalRevenueCollected) || 0;
+      updateData.totalRevenueCollected = currentTotal + addedRev;
+      updateData.paymentStatus = 'paid';
+      updateData.lastPaymentDate = new Date();
+    }
+
     await Tenant.update(updateData, { where: { id: req.params.id } });
+
+    // Record Subscription Renewal History if plan, price, or expiry changed
+    if (req.body.subscriptionPlan || req.body.subscriptionExpiresAt || req.body.recordPayment) {
+      try {
+        const sp = updateData.subscriptionPlan || tenant.subscriptionPlan || '1_month';
+        let planName = '1 Month Subscription Plan';
+        if (sp === 'free_trial' || sp === '7_days_trial' || sp === 'trial' || tenant.plan === 'free') planName = '7 Days Free Trial';
+        else if (sp === '1_month') planName = '1 Month Subscription Plan';
+        else if (sp === '3_months') planName = '3 Month Subscription Plan';
+        else if (sp === '6_months') planName = '6 Month Subscription Plan';
+        else if (sp === '1_year') planName = '1 Year Subscription Plan';
+        else if (sp === 'custom' || sp === 'custom_date') planName = 'Custom Date Range Plan';
+
+        await SubscriptionHistory.create({
+          tenantId: tenant.id,
+          tenantSlug: tenant.slug,
+          plan: sp,
+          planName,
+          amount: Number(updateData.subscriptionPrice || tenant.subscriptionPrice || 0),
+          paymentStatus: updateData.paymentStatus || tenant.paymentStatus || 'paid',
+          startDate: new Date(),
+          expiryDate: updateData.subscriptionExpiresAt || tenant.subscriptionExpiresAt || null,
+          notes: req.body.recordPayment ? 'Subscription renewed & payment recorded by Super Admin' : 'Subscription plan details updated',
+        });
+      } catch (hErr) {
+        console.error('Subscription history update error:', hErr.message);
+      }
+    }
 
     // Handle updating tenant admin credentials inside the tenant's isolated DB
     const { adminUsername, adminPassword } = req.body;

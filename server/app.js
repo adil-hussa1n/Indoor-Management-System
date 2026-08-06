@@ -13,10 +13,13 @@ import reviewRoutes from './routes/review.routes.js';
 import contactRoutes from './routes/contact.routes.js';
 import settingsRoutes from './routes/settings.routes.js';
 import blockedCustomerRoutes from './routes/blocked-customer.routes.js';
+import groundRoutes from './routes/ground.routes.js';
 import healthRoutes from './src/routes/health.route.js';
 import tenantRoutes from './src/routes/tenant.routes.js';
 import userAuthRoutes from './src/routes/user-auth.routes.js';
 import bookingRequestRoutes from './src/routes/booking-request.routes.js';
+import auditLogRoutes from './src/routes/auditLog.routes.js';
+import paymentRoutes from './src/routes/payment.routes.js';
 
 import { errorHandler } from './src/middlewares/errorHandler.js';
 import { apiLimiter, bookingLimiter, loginLimiter, contactLimiter, otpLimiter, otpVerifyLimiter } from './src/middlewares/rateLimiter.js';
@@ -90,6 +93,7 @@ app.use(`${apiPrefix}/user/verify-otp`, otpVerifyLimiter);
 app.use(`${apiPrefix}/auth`, authRoutes);
 app.use(`${apiPrefix}`, bookingRoutes);
 app.use(`${apiPrefix}`, slotRoutes);
+app.use(`${apiPrefix}`, groundRoutes);
 app.use(`${apiPrefix}`, galleryRoutes);
 app.use(`${apiPrefix}`, reviewRoutes);
 app.use(`${apiPrefix}`, contactRoutes);
@@ -97,6 +101,8 @@ app.use(`${apiPrefix}`, settingsRoutes);
 app.use(`${apiPrefix}`, blockedCustomerRoutes);
 app.use(`${apiPrefix}/user`, userAuthRoutes);
 app.use(`${apiPrefix}`, bookingRequestRoutes);
+app.use(`${apiPrefix}/audit-logs`, auditLogRoutes);
+app.use(`${apiPrefix}`, paymentRoutes);
 
 // Health check
 app.use(`${apiPrefix}`, healthRoutes);
@@ -105,6 +111,8 @@ app.use(`${apiPrefix}`, healthRoutes);
 app.get('/', (req, res) => {
   res.status(200).json({ success: true, message: 'Indoor Management System API (Multi-Tenant)' });
 });
+// Reload trigger 2
+
 
 // Error handling middleware
 app.use(errorHandler);

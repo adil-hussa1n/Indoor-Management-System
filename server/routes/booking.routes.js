@@ -8,6 +8,7 @@ import {
   updateBookingStatus,
   deleteBooking,
   getDashboardData,
+  processBookingRefund,
 } from '../src/controllers/booking.controller.js';
 import { protect, protectUser } from '../src/middlewares/auth.js';
 
@@ -15,6 +16,7 @@ const router = express.Router();
 
 // Public route (requires logged in user context)
 router.post('/booking', protectUser, createBooking);
+router.get('/public/booking/:id', getBookingById);
 
 // Admin protected routes
 router.get('/dashboard', protect, getDashboardData);
@@ -24,5 +26,6 @@ router.get('/bookings/:id', protect, getBookingById);
 router.patch('/bookings/:id', protect, updateBooking);
 router.delete('/bookings/:id', protect, deleteBooking);
 router.patch('/booking-status/:id', protect, updateBookingStatus);
+router.post('/bookings/:id/refund', protect, processBookingRefund);
 
 export default router;

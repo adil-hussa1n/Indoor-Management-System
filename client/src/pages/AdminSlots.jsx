@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useAdminSlots, useCreateSlot, useUpdateSlot, useDeleteSlot } from '../hooks/useApi';
+import React, { useState, useEffect } from 'react';
+import { useAdminSlots, useCreateSlot, useUpdateSlot, useDeleteSlot, useGrounds } from '../hooks/useApi';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input, Select } from '../components/ui/Input';
@@ -64,15 +64,35 @@ export const AdminSlots = () => {
   const [rateType, setRateType] = useState('day');
   const [activeTab, setActiveTab] = useState('general'); // "general" | "weekly" | "special"
 
-  const { data: slots, isLoading, refetch } = useAdminSlots();
+  const { data: grounds } = useGrounds();
+  const [selectedGroundId, setSelectedGroundId] = useState('');
+
+  useEffect(() => {
+    if (grounds && grounds.length > 0 && !selectedGroundId) {
+      setSelectedGroundId(grounds[0].id.toString());
+    }
+  }, [grounds, selectedGroundId]);
+
+  const { data: slots, isLoading, refetch } = useAdminSlots(selectedGroundId);
   const createSlotMutation = useCreateSlot();
   const updateSlotMutation = useUpdateSlot();
   const deleteSlotMutation = useDeleteSlot();
+
+  useEffect(() => {
+    if (selectedGroundId) {
+      refetch();
+    }
+  }, [selectedGroundId, refetch]);
 
   const handleCreate = (e) => {
     e.preventDefault();
     if (!startTime || !endTime) {
       toast.error('Both start and end times are required');
+      return;
+    }
+
+    if (!selectedGroundId) {
+      toast.error('No arena/ground selected.');
       return;
     }
 
@@ -87,6 +107,7 @@ export const AdminSlots = () => {
       dayOfWeek: slotType === 'weekly' ? Number(dayOfWeek) : -1,
       specificDate: slotType === 'special' ? specificDate : null,
       rateType,
+      groundId: Number(selectedGroundId),
     };
 
     createSlotMutation.mutate(payload, {
@@ -195,6 +216,7 @@ export const AdminSlots = () => {
                 label="Target Special Date"
                 value={specificDate}
                 onChange={setSpecificDate}
+                groundId={selectedGroundId}
               />
             )}
 
@@ -241,9 +263,24 @@ export const AdminSlots = () => {
       <div className="lg:col-span-8 glass-card rounded-3xl shadow-sm border border-zinc-200 dark:border-zinc-800 overflow-hidden">
         <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h3 className="text-xl font-bold text-zinc-850 dark:text-zinc-200">Daily Scheduling Slots</h3>
+            <h3 className="text-xl font-bold text-zinc-855 dark:text-zinc-200">Daily Scheduling Slots</h3>
             <p className="text-xs text-zinc-450 mt-1">Manage active slots shown on the public calendar.</p>
           </div>
+          
+          {grounds && grounds.length > 0 && (
+            <div className="w-full sm:w-48 text-left">
+              <label className="text-[10px] font-black text-zinc-450 dark:text-zinc-500 uppercase tracking-widest block mb-1">Select Arena</label>
+              <select
+                className="w-full px-3 py-2 text-xs font-bold rounded-xl border border-zinc-250 dark:border-zinc-800 bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-purple-650"
+                value={selectedGroundId}
+                onChange={(e) => setSelectedGroundId(e.target.value)}
+              >
+                {grounds.map(g => (
+                  <option key={g.id} value={g.id}>{g.name} ({g.sport})</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
         
         {/* Navigation Tabs */}

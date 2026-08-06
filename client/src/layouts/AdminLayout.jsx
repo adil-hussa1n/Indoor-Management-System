@@ -23,8 +23,17 @@ import {
   ChevronRight,
   WifiOff,
   ShieldAlert,
+  Layers,
+  AlertTriangle,
+  BellRing,
 } from 'lucide-react';
 import { Loader } from '../components/ui/Loader';
+
+const formatDateDMY = (dateStr) => {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+};
 
 export const AdminLayout = () => {
   const { isAdmin, logout, loading } = useAuth();
@@ -137,9 +146,9 @@ export const AdminLayout = () => {
   // Protect route
   useEffect(() => {
     if (!loading && !isAdmin) {
-      navigate('/admin/login');
+      navigate(`/admin/login${location.search}`);
     }
-  }, [isAdmin, loading, navigate]);
+  }, [isAdmin, loading, navigate, location.search]);
 
   useEffect(() => {
     if (socket) {
@@ -316,6 +325,7 @@ export const AdminLayout = () => {
     { name: 'Bookings', path: '/admin/bookings', icon: <UserCheck className="w-5 h-5" />, hasAlert: alerts.bookings },
     { name: 'Calendar', path: '/admin/calendar', icon: <CalendarDays className="w-5 h-5" /> },
     { name: 'Slots', path: '/admin/slots', icon: <Clock className="w-5 h-5" /> },
+    { name: 'Arenas', path: '/admin/grounds', icon: <Layers className="w-5 h-5" /> },
     { name: 'Requests', path: '/admin/requests', icon: <Inbox className="w-5 h-5" />, hasAlert: alerts.requests },
     { name: 'Blacklist', path: '/admin/blacklist', icon: <ShieldAlert className="w-5 h-5" /> },
     { name: 'Reviews', path: '/admin/reviews', icon: <Sparkles className="w-5 h-5" />, hasAlert: alerts.reviews },
@@ -427,6 +437,96 @@ export const AdminLayout = () => {
 
         {/* Inner Content */}
         <main className="flex-1 p-6 md:p-8 overflow-y-auto custom-scrollbar">
+          {/* Subscription Grace Period / Expiration Warning Banner */}
+          {(() => {
+            const sub = settings?.subscriptionStatus || cachedSettings?.subscriptionStatus;
+            if (!sub) return null;
+
+            if (sub.isGracePeriod) {
+              return (
+                <div className="mb-6 relative overflow-hidden rounded-2xl bg-gradient-to-r from-red-650 via-rose-700 to-amber-600 p-[1px] shadow-2xl shadow-rose-500/20 animate-pulse [animation-duration:4s]">
+                  <div className="rounded-[15px] bg-zinc-950/90 backdrop-blur-xl p-5 text-white flex flex-col sm:flex-row items-center justify-between gap-4 relative z-10">
+                    <div className="flex items-center gap-4">
+                      <div className="relative p-3 rounded-2xl bg-gradient-to-br from-rose-500/20 to-red-500/20 border border-rose-500/30 text-rose-400 shrink-0">
+                        <AlertTriangle className="w-8 h-8 text-rose-500 animate-bounce" />
+                        <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-rose-500 animate-ping" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500 text-white shadow-sm flex items-center gap-1">
+                            <BellRing className="w-3 h-3 animate-pulse" /> Critical Alarm
+                          </span>
+                          <span className="text-xs font-bold text-amber-400 font-mono">
+                            {sub.graceDaysRemaining} DAY(S) GRACE LEFT
+                          </span>
+                        </div>
+                        <h4 className="text-sm font-black text-white mt-1.5 tracking-wide">
+                          SUBSCRIPTION DEADLINE FINISHED
+                        </h4>
+                        <p className="text-xs font-medium text-zinc-300 mt-1 leading-relaxed max-w-2xl">
+                          Your subscription deadline ended on <strong className="text-white underline decoration-rose-500">{formatDateDMY(sub.expiresAt)}</strong>.
+                          The system is currently operating in a <strong className="text-amber-400">7-Day Grace Period</strong> and will automatically <strong className="text-rose-400 font-extrabold uppercase">SUSPEND ALL OPERATIONS</strong> in <span className="text-rose-400 font-black">{sub.graceDaysRemaining} day(s)</span>.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="shrink-0 text-center sm:text-right w-full sm:w-auto">
+                      <a
+                        href="https://daruntech.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-black text-xs bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white shadow-lg shadow-rose-600/30 transition-all duration-300 hover:scale-105 active:scale-95"
+                      >
+                        Contact Darun Tech Private Limited
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
+            if (!sub.isExpired && sub.daysUntilExpiry !== null && sub.daysUntilExpiry <= 7) {
+              return (
+                <div className="mb-6 relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-500/30 via-orange-500/20 to-amber-500/30 p-[1px] shadow-lg shadow-amber-500/10">
+                  <div className="rounded-[15px] bg-gradient-to-r from-amber-50/90 via-orange-50/80 to-amber-50/90 dark:from-zinc-950/90 dark:via-zinc-900/90 dark:to-zinc-950/90 backdrop-blur-xl p-4 md:p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="flex items-center gap-3.5">
+                      <div className="p-2.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 shrink-0">
+                        <AlertTriangle className="w-6 h-6 animate-pulse" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/30">
+                            Upcoming Expiration
+                          </span>
+                          <span className="text-xs font-black text-amber-600 dark:text-amber-400 font-mono">
+                            {sub.daysUntilExpiry} DAY(S) REMAINING
+                          </span>
+                        </div>
+                        <h4 className="text-xs font-extrabold text-zinc-900 dark:text-white mt-1">
+                          Subscription Deadline Expiration Notice
+                        </h4>
+                        <p className="text-xs text-zinc-600 dark:text-zinc-350 mt-0.5 font-medium">
+                          Your subscription expires on <strong className="text-zinc-900 dark:text-white font-bold">{formatDateDMY(sub.expiresAt)}</strong>. Please contact <strong className="text-amber-600 dark:text-amber-400">Darun Tech Private Limited</strong> to extend your plan and avoid service interruption.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="shrink-0 text-center sm:text-right w-full sm:w-auto">
+                      <a
+                        href="https://daruntech.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white shadow-md transition-all duration-300 hover:scale-105"
+                      >
+                        Contact Darun Tech Private Limited
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
+            return null;
+          })()}
+
           <Outlet />
         </main>
       </div>

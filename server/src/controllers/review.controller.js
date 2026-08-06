@@ -1,5 +1,6 @@
 import { reviewSchema } from '../../validators/review.validator.js';
 import { sanitizeFields } from '../utils/sanitize.js';
+import { createAuditLog } from '../utils/auditLogger.js';
 
 export const getApprovedReviews = async (req, res, next) => {
   try {
@@ -63,12 +64,25 @@ export const updateReviewStatus = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Review not found' });
     }
 
+    const oldValues = review.toJSON ? review.toJSON() : review;
+
     const updateData = {};
     if (isApproved !== undefined) updateData.isApproved = isApproved;
     if (isFeatured !== undefined) updateData.isFeatured = isFeatured;
 
     await reviewRepo.update(id, updateData);
     const updated = await reviewRepo.findById(id);
+
+    createAuditLog(req, {
+      action: 'UPDATE_REVIEW_STATUS',
+      category: 'reviews',
+      entity: 'Review',
+      entityId: updated.id,
+      description: `Updated customer review status for '${updated.customerName}'`,
+      oldValue: oldValues,
+      newValue: updated.toJSON ? updated.toJSON() : updated,
+    }).catch(err => console.error(err));
+
     const plain = updated.toJSON();
     plain._id = plain.id;
     res.status(200).json({ success: true, review: plain });
@@ -81,10 +95,24 @@ export const deleteReview = async (req, res, next) => {
   try {
     const { reviewRepo } = req.repos;
     const { id } = req.params;
+
+    const existing = await reviewRepo.findById(id);
+    const oldValues = existing ? (existing.toJSON ? existing.toJSON() : existing) : null;
+
     const review = await reviewRepo.delete(id);
     if (!review) {
       return res.status(404).json({ success: false, message: 'Review not found' });
     }
+
+    createAuditLog(req, {
+      action: 'DELETE_REVIEW',
+      category: 'reviews',
+      entity: 'Review',
+      entityId: Number(id),
+      description: `Deleted customer review #${id}`,
+      oldValue: oldValues,
+    }).catch(err => console.error(err));
+
     res.status(200).json({ success: true, message: 'Review deleted successfully' });
   } catch (error) {
     next(error);

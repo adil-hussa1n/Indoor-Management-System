@@ -75,7 +75,7 @@ const checkSuspiciousActivity = async (req, userId) => {
 router.post('/booking-requests/:bookingId/change', protectUser, async (req, res, next) => {
   try {
     const { bookingId } = req.params;
-    const { newDate, newStartTime, newEndTime, reason } = req.body;
+    const { newDate, newStartTime, newEndTime, newGroundId, reason } = req.body;
 
     const booking = await req.repos.bookingRepo.findById(parseInt(bookingId));
     if (!booking) {
@@ -94,7 +94,7 @@ router.post('/booking-requests/:bookingId/change', protectUser, async (req, res,
       bookingId: booking.id,
       userId: req.user.id,
       type: 'change',
-      requestData: { newDate, newStartTime, newEndTime, reason },
+      requestData: { newDate, newStartTime, newEndTime, newGroundId, reason },
       isSuspicious,
       suspiciousReason,
     });

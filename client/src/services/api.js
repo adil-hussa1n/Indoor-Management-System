@@ -50,8 +50,13 @@ export const getTenantSlug = () => {
       extractedSubdomain = parts[0];
     }
 
+    const cleanSlug = (s) => {
+      if (!s) return null;
+      return s.split('/')[0].split('?')[0].trim();
+    };
+
     const urlParams = new URLSearchParams(window.location.search);
-    const queryTenant = urlParams.get('tenant');
+    const queryTenant = cleanSlug(urlParams.get('tenant'));
     
     if (queryTenant) {
       tenantSlug = queryTenant;
@@ -59,17 +64,18 @@ export const getTenantSlug = () => {
       sessionStorage.setItem('current_tenant_slug', queryTenant);
       localStorage.setItem('current_tenant_slug', queryTenant);
     } else if (extractedSubdomain) {
-      tenantSlug = extractedSubdomain;
-      sessionStorage.setItem('current_tenant_slug', extractedSubdomain);
-      localStorage.setItem('current_tenant_slug', extractedSubdomain);
+      const cleanSub = cleanSlug(extractedSubdomain);
+      tenantSlug = cleanSub;
+      sessionStorage.setItem('current_tenant_slug', cleanSub);
+      localStorage.setItem('current_tenant_slug', cleanSub);
     } else {
       // Try tab-isolated session storage first
-      const sessionTenant = sessionStorage.getItem('current_tenant_slug');
+      const sessionTenant = cleanSlug(sessionStorage.getItem('current_tenant_slug'));
       if (sessionTenant) {
         tenantSlug = sessionTenant;
       } else {
         // Fall back to local storage
-        const savedTenant = localStorage.getItem('current_tenant_slug');
+        const savedTenant = cleanSlug(localStorage.getItem('current_tenant_slug'));
         if (savedTenant) {
           tenantSlug = savedTenant;
           sessionStorage.setItem('current_tenant_slug', savedTenant); // elevate to session
@@ -81,7 +87,7 @@ export const getTenantSlug = () => {
   if (!tenantSlug) {
     tenantSlug = 'apexarena';
   }
-  return tenantSlug;
+  return tenantSlug.split('/')[0].split('?')[0].trim();
 };
 
 // Inject token and tenant slug into headers
@@ -160,4 +166,5 @@ API.interceptors.response.use(
   }
 );
 
+export { API };
 export default API;

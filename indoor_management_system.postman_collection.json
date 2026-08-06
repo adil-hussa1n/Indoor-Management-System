@@ -543,6 +543,128 @@
       ]
     },
     {
+      "name": "Grounds & Arenas Management",
+      "item": [
+        {
+          "name": "Get All Grounds / Arenas",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/grounds",
+              "host": ["{{baseUrl}}"],
+              "path": ["grounds"]
+            },
+            "description": "Fetch all configured grounds/arenas sorted by display order priority."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Ground / Arena",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Arena 2\",\n  \"sport\": \"Football\",\n  \"description\": \"Secondary 7v7 artificial turf field with LED lighting.\",\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/grounds",
+              "host": ["{{baseUrl}}"],
+              "path": ["grounds"]
+            },
+            "description": "Provision a new ground/arena for slot assignment."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Ground / Arena",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+            },
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Turf Alpha\",\n  \"description\": \"Upgraded high-grade turf with spectator seats.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/grounds/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["grounds", ":id"],
+              "variable": [
+                { "key": "id", "value": "1" }
+              ]
+            },
+            "description": "Update ground properties such as name, sport, description or status."
+          },
+          "response": []
+        },
+        {
+          "name": "Reorder Grounds / Arenas",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+            },
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"groundIds\": [2, 1]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/grounds/reorder",
+              "host": ["{{baseUrl}}"],
+              "path": ["grounds", "reorder"]
+            },
+            "description": "Reorder grounds display sequence."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Ground / Arena",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+            },
+            "method": "DELETE",
+            "header": [
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/grounds/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["grounds", ":id"],
+              "variable": [
+                { "key": "id", "value": "1" }
+              ]
+            },
+            "description": "Deprovision an arena if no active bookings exist."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "Booking Change & Cancel Requests",
       "item": [
         {
@@ -1141,6 +1263,115 @@
               ]
             },
             "description": "Permanently delete a contact message."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Booking Change & Reschedule Requests",
+      "item": [
+        {
+          "name": "Request Reschedule (Customer)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{userToken}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newDate\": \"2026-08-10\",\n  \"newStartTime\": \"18:00\",\n  \"newEndTime\": \"19:00\",\n  \"newGroundId\": 1,\n  \"reason\": \"Schedule conflict with work\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking-requests/:bookingId/change",
+              "host": ["{{baseUrl}}"],
+              "path": ["booking-requests", ":bookingId", "change"],
+              "variable": [
+                { "key": "bookingId", "value": "1" }
+              ]
+            },
+            "description": "Submit a rescheduling change request for an active booking. Supports target ground selection and exact slot count validation."
+          },
+          "response": []
+        },
+        {
+          "name": "Request Cancellation (Customer)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{userToken}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Unable to make it today\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking-requests/:bookingId/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["booking-requests", ":bookingId", "cancel"],
+              "variable": [
+                { "key": "bookingId", "value": "1" }
+              ]
+            },
+            "description": "Submit a cancellation request for an active booking."
+          },
+          "response": []
+        },
+        {
+          "name": "List Booking Requests (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/booking-requests",
+              "host": ["{{baseUrl}}"],
+              "path": ["booking-requests"]
+            },
+            "description": "List all pending and processed customer reschedule/cancel requests."
+          },
+          "response": []
+        },
+        {
+          "name": "Approve / Reject Request (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+            },
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"approved\",\n  \"adminNote\": \"Approved by management\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/booking-requests/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["booking-requests", ":id"],
+              "variable": [
+                { "key": "id", "value": "1" }
+              ]
+            },
+            "description": "Approve or reject a customer change/cancel request. Approved requests perform transaction-safe booking updates."
           },
           "response": []
         }

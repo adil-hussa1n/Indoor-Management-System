@@ -1,3 +1,6 @@
+import { normalizePhone } from '../utils/phone.js';
+import { createAuditLog } from '../utils/auditLogger.js';
+
 export const getBlockedCustomers = async (req, res, next) => {
   try {
     const { blockedCustomerRepo } = req.repos;
@@ -15,8 +18,6 @@ export const getBlockedCustomers = async (req, res, next) => {
     next(error);
   }
 };
-
-import { normalizePhone } from '../utils/phone.js';
 
 export const blockCustomer = async (req, res, next) => {
   try {
@@ -42,6 +43,15 @@ export const blockCustomer = async (req, res, next) => {
       expiresAt: expiresAt ? new Date(expiresAt) : null,
     });
 
+    createAuditLog(req, {
+      action: 'BLOCK_CUSTOMER',
+      category: 'blacklist',
+      entity: 'BlockedCustomer',
+      entityId: blocked.id,
+      description: `Added phone '${normalizedPhone}' to blacklist (${reason || 'No reason specified'})`,
+      newValue: blocked.toJSON ? blocked.toJSON() : blocked,
+    }).catch(err => console.error(err));
+
     const plain = blocked.toJSON();
     plain._id = plain.id;
 
@@ -62,6 +72,8 @@ export const updateBlock = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Block record not found.' });
     }
 
+    const oldValues = record.toJSON ? record.toJSON() : record;
+
     const updateData = {};
     if (reason !== undefined) updateData.reason = reason;
     if (isPermanent !== undefined) updateData.isPermanent = !!isPermanent;
@@ -69,6 +81,16 @@ export const updateBlock = async (req, res, next) => {
 
     await blockedCustomerRepo.update(id, updateData);
     const updated = await blockedCustomerRepo.findById(id);
+
+    createAuditLog(req, {
+      action: 'UPDATE_BLOCK_RECORD',
+      category: 'blacklist',
+      entity: 'BlockedCustomer',
+      entityId: updated.id,
+      description: `Updated blacklist entry for '${updated.phone}'`,
+      oldValue: oldValues,
+      newValue: updated.toJSON ? updated.toJSON() : updated,
+    }).catch(err => console.error(err));
 
     const plain = updated.toJSON();
     plain._id = plain.id;
@@ -89,8 +111,19 @@ export const unblockCustomer = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Block record not found.' });
     }
 
+    const oldValues = record.toJSON ? record.toJSON() : record;
     await blockedCustomerRepo.delete(id);
-    res.status(200).json({ success: true, message: 'Customer successfully unblocked.' });
+
+    createAuditLog(req, {
+      action: 'UNBLOCK_CUSTOMER',
+      category: 'blacklist',
+      entity: 'BlockedCustomer',
+      entityId: Number(id),
+      description: `Removed phone '${record.phone}' from blacklist`,
+      oldValue: oldValues,
+    }).catch(err => console.error(err));
+
+    res.status(200).json({ success: true, message: 'Phone number unblocked successfully.' });
   } catch (error) {
     next(error);
   }

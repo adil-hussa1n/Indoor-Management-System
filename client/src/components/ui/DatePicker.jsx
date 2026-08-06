@@ -9,6 +9,7 @@ export const DatePicker = ({
   error,
   min, // Expects 'YYYY-MM-DD'
   align = 'left',
+  groundId,
   className = '',
   ...props
 }) => {
@@ -55,7 +56,7 @@ export const DatePicker = ({
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
 
-  const { data: availability } = useCalendarAvailability(isOpen ? year : null, isOpen ? month + 1 : null);
+  const { data: availability } = useCalendarAvailability(isOpen ? year : null, isOpen ? month + 1 : null, groundId);
 
   const handlePrevMonth = () => {
     setViewDate(new Date(year, month - 1, 1));

@@ -137,6 +137,7 @@ When a new business owner signs up and gets provisioned in the Super Admin dashb
    ```sql
    CREATE DATABASE db_apexarena;
    ```
-4. **Table Migrations & Compilation**: The connection pool initializes `db_apexarena` and runs the schema compiler (`models.syncDatabase()`), creating all relational tables (`Bookings`, `Users`, `Slots`, `Settings`, `StatusHistories`, `AuditLogs`).
-5. **Initial Seeding**: The system automatically inserts standard shifts pricing, provisions their custom tenant admin credentials (`admin` / `adminpassword123`), and uploads default placeholders.
+4. **Table Migrations & Compilation**: The connection pool initializes `db_apexarena` and runs the schema compiler (`models.syncDatabase()`), creating all relational tables (`Bookings`, `Users`, `Slots`, `Settings`, `StatusHistories`, `AuditLogs`, `Grounds`). Auto-migrations ensure schema column additions (such as `discounts` JSON on `Settings` or `groundId` on `Bookings`) apply seamlessly without manual DB interventions.
+5. **Initial Seeding**: The system automatically inserts standard shifts pricing, provisions active playing courts, initializes discount rule lists, provisions their custom tenant admin credentials (`admin` / `adminpassword123`), and uploads default placeholders.
 6. **Website Ready**: The business site is immediately active. Visiting `apexarena.daruntech.com` connects dynamically to the fresh database.
+

@@ -1,3 +1,5 @@
+process.env.NODE_ENV = 'test';
+
 /**
  * Deep API Verification Script
  * Tests every endpoint, edge cases, error handling, and data integrity.
@@ -31,7 +33,8 @@ function assert(condition, msg) {
 
 async function api(method, path, body = null, auth = false, isFormData = false) {
   const headers = {
-    'X-Tenant-Slug': 'apexarena'
+    'X-Tenant-Slug': 'apexarena',
+    'X-Bypass-Rate-Limit': 'test',
   };
   if (auth) {
     if (auth === 'user') {
@@ -102,7 +105,7 @@ async function run() {
 
   // User OTP Auth
   await test('User OTP registration and verification', async () => {
-    const phone = '+8801555000111';
+    const phone = '+88015' + Math.floor(10000000 + Math.random() * 90000000);
     
     // 1. Send OTP
     const r1 = await api('POST', '/user/send-otp', { phone });
@@ -147,6 +150,59 @@ async function run() {
     assert(verify.data.settings.businessName === 'Apex Arena Test', 'Name not updated');
     // Revert
     await api('PATCH', '/settings', { businessName: 'Apex Arena' }, true);
+  });
+
+  await test('PATCH /settings updates discounts and GET /info returns them', async () => {
+    const discounts = [
+      { id: 'disc-1', name: 'Summer 10% Off', type: 'percentage', value: 10, startDate: '2026-08-01', endDate: '2026-08-31', isActive: true }
+    ];
+    const r = await api('PATCH', '/settings', { discounts }, true);
+    assert(r.ok, `Status ${r.status}: ${JSON.stringify(r.data)}`);
+    const verify = await api('GET', '/info');
+    assert(Array.isArray(verify.data.settings.discounts), 'discounts is not array');
+    assert(verify.data.settings.discounts.length === 1, 'discount rule count mismatch');
+    assert(verify.data.settings.discounts[0].name === 'Summer 10% Off', 'discount name mismatch');
+  });
+
+  await test('GET /audit-logs returns system audit logs after actions', async () => {
+    const r = await api('GET', '/audit-logs', null, true);
+    assert(r.status === 200, `Status ${r.status}: ${JSON.stringify(r.data)}`);
+    assert(Array.isArray(r.data.logs), 'logs is not an array');
+    assert(r.data.logs.length > 0, `Audit logs empty: ${JSON.stringify(r.data)}`);
+  });
+
+  // Grounds / Arenas Management
+  let createdGroundId = null;
+
+  await test('GET /grounds returns list of playing arenas', async () => {
+    const r = await api('GET', '/grounds');
+    assert(r.status === 200, `Status ${r.status}`);
+    assert(Array.isArray(r.data.grounds), 'grounds is not an array');
+  });
+
+  await test('POST /grounds creates a new ground/arena', async () => {
+    const r = await api('POST', '/grounds', {
+      name: 'Test Ground 99',
+      sport: 'Basketball',
+      description: 'Indoor hardwood court'
+    }, true);
+    assert(r.status === 201, `Status ${r.status}: ${JSON.stringify(r.data)}`);
+    assert(r.data.ground?.id, 'No ground ID returned');
+    createdGroundId = r.data.ground.id;
+  });
+
+  await test('PATCH /grounds/:id updates ground info', async () => {
+    if (!createdGroundId) throw new Error('No created ground ID');
+    const r = await api('PATCH', `/grounds/${createdGroundId}`, {
+      name: 'Updated Test Ground 99'
+    }, true);
+    assert(r.ok, `Status ${r.status}: ${JSON.stringify(r.data)}`);
+  });
+
+  await test('DELETE /grounds/:id removes created test ground', async () => {
+    if (!createdGroundId) throw new Error('No created ground ID');
+    const r = await api('DELETE', `/grounds/${createdGroundId}`, null, true);
+    assert(r.ok, `Status ${r.status}: ${JSON.stringify(r.data)}`);
   });
 
   // Slots
@@ -343,7 +399,7 @@ async function run() {
   await test('POST /contact submits a contact message', async () => {
     const r = await api('POST', '/contact', {
       name: 'Deep Checker',
-      email: 'deepcheck@example.com',
+      email: `deepcheck_${Math.floor(Math.random() * 100000)}@example.com`,
       subject: 'API Verification',
       message: 'This is an automated deep check test message.'
     });

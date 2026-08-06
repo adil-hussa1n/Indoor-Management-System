@@ -61,6 +61,30 @@ const Tenant = masterSequelize.define('Tenant', {
     allowNull: true,
     comment: 'Per-tenant SMS API credentials (encrypted in production)',
   },
+  subscriptionPrice: {
+    type: DataTypes.DECIMAL(10, 2),
+    defaultValue: 0.00,
+    comment: 'Price charged for current subscription plan',
+  },
+  subscriptionPlan: {
+    type: DataTypes.STRING,
+    defaultValue: '1_month',
+    comment: 'Plan duration: 1_month, 3_months, 6_months, 1_year, lifetime',
+  },
+  totalRevenueCollected: {
+    type: DataTypes.DECIMAL(10, 2),
+    defaultValue: 0.00,
+    comment: 'Cumulative revenue collected from this tenant instance',
+  },
+  paymentStatus: {
+    type: DataTypes.STRING,
+    defaultValue: 'paid',
+    comment: 'Payment status: paid, pending, overdue',
+  },
+  lastPaymentDate: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
 }, {
   tableName: 'tenants',
   timestamps: true,

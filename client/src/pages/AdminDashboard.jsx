@@ -1,5 +1,5 @@
 import React from 'react';
-import { useDashboardData, useUpdateBookingStatus, useDeleteBooking } from '../hooks/useApi';
+import { useDashboardData, useUpdateBookingStatus, useDeleteBooking, useGrounds } from '../hooks/useApi';
 import { Loader } from '../components/ui/Loader';
 import { DatePicker } from '../components/ui/DatePicker';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
@@ -17,6 +17,7 @@ import {
   Trash2,
   DollarSign,
   UserCheck,
+  Layers,
 } from 'lucide-react';
 
 const format12Hour = (time24) => {
@@ -38,26 +39,45 @@ export const AdminDashboard = () => {
     startDate: new Date().toISOString().split('T')[0],
     endDate: new Date().toISOString().split('T')[0],
   });
+  const { data: grounds } = useGrounds();
+  const [selectedGroundIds, setSelectedGroundIds] = React.useState([]);
+
+  const handleToggleGround = (id) => {
+    const idStr = id.toString();
+    if (selectedGroundIds.includes(idStr)) {
+      setSelectedGroundIds(selectedGroundIds.filter(gId => gId !== idStr));
+    } else {
+      setSelectedGroundIds([...selectedGroundIds, idStr]);
+    }
+  };
+
+  const handleSelectAllGrounds = () => {
+    setSelectedGroundIds([]);
+  };
 
   const queryParams = React.useMemo(() => {
     const todayStr = new Date().toISOString().split('T')[0];
+    let base = {};
     if (filterType === 'today') {
-      return { startDate: todayStr, endDate: todayStr };
-    }
-    if (filterType === 'yesterday') {
+      base = { startDate: todayStr, endDate: todayStr };
+    } else if (filterType === 'yesterday') {
       const yest = new Date();
       yest.setDate(yest.getDate() - 1);
       const yestStr = yest.toISOString().split('T')[0];
-      return { startDate: yestStr, endDate: yestStr };
-    }
-    if (filterType === 'last7') {
+      base = { startDate: yestStr, endDate: yestStr };
+    } else if (filterType === 'last7') {
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
       const startStr = sevenDaysAgo.toISOString().split('T')[0];
-      return { startDate: startStr, endDate: todayStr };
+      base = { startDate: startStr, endDate: todayStr };
+    } else {
+      base = { startDate: customRange.startDate, endDate: customRange.endDate };
     }
-    return { startDate: customRange.startDate, endDate: customRange.endDate };
-  }, [filterType, customRange]);
+    if (selectedGroundIds.length > 0) {
+      base.groundId = selectedGroundIds.join(',');
+    }
+    return base;
+  }, [filterType, customRange, selectedGroundIds]);
 
   const { data: dashboard, isLoading, refetch } = useDashboardData(queryParams);
 
@@ -188,6 +208,57 @@ export const AdminDashboard = () => {
             </div>
           )}
         </div>
+
+        {/* Arena / Ground Filter Chips */}
+        {grounds && grounds.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 xl:border-l xl:border-zinc-200 dark:xl:border-zinc-800 xl:pl-4">
+            <span className="text-[10px] font-black text-zinc-450 dark:text-zinc-500 uppercase tracking-widest flex items-center gap-1 mr-1">
+              <Layers className="w-3.5 h-3.5 text-purple-650" /> Arena
+            </span>
+            <button
+              type="button"
+              onClick={handleSelectAllGrounds}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                selectedGroundIds.length === 0
+                  ? 'bg-purple-650 border-purple-650 text-white shadow-sm'
+                  : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-650 dark:text-zinc-400 hover:border-purple-300'
+              }`}
+            >
+              All
+            </button>
+            {grounds.map((g) => {
+              const isSelected = selectedGroundIds.includes(g.id.toString());
+              return (
+                <button
+                  key={g.id}
+                  type="button"
+                  onClick={() => handleToggleGround(g.id)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border flex items-center gap-1.5 ${
+                    isSelected
+                      ? 'bg-purple-650 border-purple-650 text-white shadow-sm ring-1 ring-purple-500/30'
+                      : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-650 dark:text-zinc-400 hover:border-purple-300'
+                  }`}
+                >
+                  <span>{g.name}</span>
+                  <span className={`text-[9px] px-1.5 rounded-md uppercase font-mono ${
+                    isSelected ? 'bg-purple-500/30 text-white' : 'bg-purple-500/10 text-purple-650 dark:text-purple-400'
+                  }`}>
+                    {g.sport}
+                  </span>
+                </button>
+              );
+            })}
+            {selectedGroundIds.length > 0 && (
+              <button
+                type="button"
+                onClick={handleSelectAllGrounds}
+                className="text-[10px] font-bold text-rose-500 hover:underline cursor-pointer ml-1"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Selected Day metrics */}

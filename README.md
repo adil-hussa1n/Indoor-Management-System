@@ -35,15 +35,26 @@ A premium, production-grade **Multi-Tenant SaaS Indoor Sports Booking System** b
 * **Bangladesh SMS Gateways**: Integrated with local SMS gateways (SSLWireless) with an automated mock fallback for developer testing.
 * **Customer Dashboard**: Users can check booking schedules, modify profiles, and track booking statuses.
 
-### 📅 Booking Modification & Cancellation Requests
-* **Rescheduling (Change) Requests**: Users can request a time/date change directly from their dashboard, specifying a reason.
-* **Cancellation Requests**: Users can request to cancel their slot.
-* **Admin Review Queue**: Admins receive real-time Socket.IO alerts and can approve or reject requests in a dedicated tab. Approved requests automatically perform transaction-safe database updates and log status transitions.
+### 🏷️ Automatic Online & Admin Manual Discounts Engine
+* **Automatic Date-Range Discounts**: Admins can set promotional discounts (`Percentage %` or `Fixed Amount ৳`) for specific dates or date ranges in `AdminSettings`. The system automatically detects and applies discounts on the online booking page (`Booking.jsx`) with live promo badges (`🎉 Promo Offer`).
+* **Admin Manual Booking Discounts**: Admins can apply custom discounts (`Percentage %` or `Fixed Amount ৳`) at any time when creating manual reservations in `AdminBookings`, automatically recalculating net totals and settlement amounts.
 
-### ⏰ Shift-Based Rates & Contiguous Booking Grid
-* **6-Tier Pricing Grid**: Day/Night shift rates for Weekdays, Weekends, and Holidays.
-* **Manual Booking Selector**: Admins can book slots through an interactive visual grid, clicking contiguous blocks to auto-calculate slot totals.
-* **Audit Trail**: Every booking edit, cancellation, or settings change is recorded in an `AuditLog` table.
+### 📅 Reschedule Engine & Strict Duration Matching
+* **Interactive Rescheduling**: Customers can request slot rescheduling directly from their dashboard with target date and target arena selection.
+* **Strict Duration Matching**: Enforces strict slot count equality based on the original booking (e.g. 1 slot -> 1 slot, 2 slots -> 2 contiguous slots).
+* **Live Slot Pricing Badges**: Real-time display of shift-based rates (`৳1,500`, `৳2,000`) and automatic price adjustment calculation (`+৳500 Additional Due` / `-৳500 Credit` / `No Change`).
+
+### 💵 Due Amount Settlement & Partial Payments
+* **Admin Due Settlement (`💵 Pay Due`)**: Allows venue admins to record partial and full due payments on confirmed reservations directly from `AdminBookings`.
+* **Custom Payment Methods**: Supports Cash, bKash, POS/Card, Bank Transfer, and Pay After Match.
+
+### 🏟️ Multi-Ground / Multi-Arena Architecture & Filtering
+* **Multiple Arenas per Business**: Businesses can set up multiple playing arenas (e.g. Futsal Pitch, Cricket Arena, Badminton Court) with individual sport badges and active/inactive toggles.
+* **Multi-Ground Filters**: Interactive filter chips and dropdowns across **Admin Bookings**, **Admin Calendar**, and **Admin Dashboard** allowing admins to view aggregate stats per playing court.
+* **Custom Display Ordering**: Admins can reorder grounds priority via `PATCH /api/v1/grounds/reorder` with Move Up (`↑`) and Move Down (`↓`) controls.
+* **Smart Client Selection**:
+  * **Single Arena**: Automatically skips the arena selection step on the client side for a seamless user checkout.
+  * **Multiple Arenas**: Renders sleek, glassmorphic arena selector cards with dynamic step renumbering.
 
 ---
 
@@ -62,7 +73,7 @@ Indoor-Management-System/
 │   │   ├── components/             # Reusable UI (Card, Button, Input, Loader, Toast, Dialog)
 │   │   ├── contexts/               # Global Contexts (AuthContext, UserAuthContext, SocketContext)
 │   │   ├── layouts/                # App layouts (PublicLayout, AdminLayout)
-│   │   ├── pages/                  # Route pages (Home, Booking, UserDashboard, SuperAdminDashboard, etc.)
+│   │   ├── pages/                  # Route pages (Home, Booking, UserDashboard, AdminBookings, AdminCalendar, AdminDashboard, SuperAdminDashboard, AdminGrounds, AdminSettings, etc.)
 │   │   ├── services/               # Axios setup & namespaced token storage (api.js)
 │   │   ├── index.css               # Global styles & dark mode config
 │   │   └── main.jsx                # React entry point
@@ -70,18 +81,19 @@ Indoor-Management-System/
 │
 ├── server/                         # Backend — Node.js + Express + MySQL
 │   ├── Dockerfile                  # Node.js production image
+│   ├── utils/                      # test_api.js (Automated 57 API integration test suite)
 │   ├── src/
 │   │   ├── config/                 # master-db.js (master schema), sequelize.js (pool manager)
-│   │   ├── models/                 # master/ (Tenant, SuperAdmin) & tenant models factory
+│   │   ├── models/                 # master/ (Tenant, SuperAdmin) & tenant models factory (Ground, Slot, Booking, etc.)
 │   │   ├── repositories/           # Data access layers (Sequelize queries)
-│   │   ├── controllers/            # Request handlers (auth, bookings, reviews, tenants)
+│   │   ├── controllers/            # Request handlers (auth, bookings, grounds, reviews, tenants)
 │   │   ├── middlewares/            # tenant.js, auth.js, errorHandler.js, rateLimiter.js
 │   │   └── routes/                 # Express routes (v1 endpoints & /api/master)
 │   ├── server.js                   # Socket.IO & entry point
 │   ├── app.js                      # Express configuration & middleware pipeline
 │   └── .env.example                # Server environment template
 │
-└── indoor_management_system.postman_collection.json  # Multi-tenant API collection
+└── indoor_management_system.postman_collection.json  # Multi-tenant API Postman collection
 ```
 
 ---
@@ -108,10 +120,19 @@ Indoor-Management-System/
 | PATCH | `/api/v1/user/me` | Customer | Update profile name and email |
 | GET | `/api/v1/user/my-bookings` | Customer | Retrieve all booking records for the customer |
 
-### 📅 Booking requests (`/api/v1`)
+### 🏟️ Grounds & Arenas Management (`/api/v1/grounds`)
 | Method | Endpoint | Access | Description |
 |--------|----------|--------|-------------|
-| POST | `/api/v1/booking-requests/:bookingId/change` | Customer | Request rescheduling |
+| GET | `/api/v1/grounds` | Public | Fetch all active grounds/arenas sorted by display order |
+| POST | `/api/v1/grounds` | Admin | Create a new ground/arena |
+| PATCH | `/api/v1/grounds/:id` | Admin | Update ground properties (name, sport, description, status) |
+| PATCH | `/api/v1/grounds/reorder` | Admin | Update display sequence order of grounds |
+| DELETE | `/api/v1/grounds/:id` | Admin | Delete a ground (prevented if active bookings exist) |
+
+### 📅 Booking Requests & Status (`/api/v1`)
+| Method | Endpoint | Access | Description |
+|--------|----------|--------|-------------|
+| POST | `/api/v1/booking-requests/:bookingId/change` | Customer | Request rescheduling with target arena & slots |
 | POST | `/api/v1/booking-requests/:bookingId/cancel` | Customer | Request cancellation |
 | GET | `/api/v1/booking-requests` | Admin | List all requests |
 | PATCH | `/api/v1/booking-requests/:id` | Admin | Approve or reject a request |
@@ -132,7 +153,7 @@ cd server && npm install
 cd ../client && npm install
 ```
 
-### 2. Configure Environment variables
+### 2. Configure Environment Variables
 Set up your server configuration file in `server/.env` using the template:
 ```env
 DB_HOST=127.0.0.1
@@ -165,7 +186,7 @@ cd client && npm run dev
 ```
 
 ### 🧪 Automated Integration Tests
-You can verify the backend multi-tenant route configurations, tenant isolation logic, and customer OTP cycles using the automated test suite:
+You can verify backend multi-tenant route configurations, tenant isolation logic, Grounds CRUD, discounts, and customer OTP cycles using the automated test suite (57 tests):
 ```bash
 cd server
 npm run test:api
@@ -174,11 +195,20 @@ npm run test:api
 ### 📬 Manual Testing (Postman)
 An interactive Postman Collection is included in the project root:
 - File: [indoor_management_system.postman_collection.json](file:///f:/GITHUB/indoor%20ms/Indoor-Management-System/indoor_management_system.postman_collection.json)
+- **Included Request Folders**:
+  1. **Super Admin Operations**: Master tenant login, list tenants, provision tenant, update settings, wipe tenant.
+  2. **Authentication (Admin)**: Admin login, token storage in `{{adminToken}}`.
+  3. **Customer OTP Authentication**: Send OTP, verify OTP, token storage in `{{userToken}}`.
+  4. **Grounds & Arenas Management**: Get grounds, create ground, update ground, reorder grounds, delete ground.
+  5. **Slots Management**: View available slots, create slot, update slot, delete slot.
+  6. **Bookings & Reservations**: Public booking creation, admin bookings, change status, soft delete.
+  7. **Booking Change & Cancel Requests**: Submit change/cancel request, list requests, approve/reject request.
+  8. **Reviews, Contact Messages & Public Info**: Public settings, submit review, approve review, send message.
 - **How to Use**:
-  1. Open Postman and import the collection.
+  1. Open Postman and import [indoor_management_system.postman_collection.json](file:///f:/GITHUB/indoor%20ms/Indoor-Management-System/indoor_management_system.postman_collection.json).
   2. Configure `{{baseUrl}}` to `http://localhost:5000/api/v1` and `{{masterUrl}}` to `http://localhost:5000/api/master`.
   3. Ensure `{{tenantSlug}}` is set (e.g. `dbox` or `apexarena`).
-  4. Perform **Super Admin Login** first to verify operations, then **Admin Login** to retrieve admin permissions. All tokens are captured automatically and saved as collection variables.
+  4. Execute **Super Admin Login** or **Admin Login** to automatically populate `{{superAdminToken}}` and `{{adminToken}}`.
 
 ---
 

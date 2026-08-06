@@ -1,4 +1,5 @@
 import { v2 as cloudinary } from 'cloudinary';
+import { createAuditLog } from '../utils/auditLogger.js';
 
 export const getGallery = async (req, res, next) => {
   try {
@@ -58,6 +59,15 @@ export const uploadImage = async (req, res, next) => {
       order: count,
     });
 
+    createAuditLog(req, {
+      action: 'ADD_GALLERY_ITEM',
+      category: 'gallery',
+      entity: 'Gallery',
+      entityId: newImage.id,
+      description: `Uploaded new ${mediaType || 'gallery image'}`,
+      newValue: newImage.toJSON ? newImage.toJSON() : newImage,
+    }).catch(err => console.error(err));
+
     const io = req.app.get('io');
     if (io) {
       io.emit('gallery-updated');
@@ -80,6 +90,8 @@ export const deleteImage = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Image not found' });
     }
 
+    const oldValues = image.toJSON ? image.toJSON() : image;
+
     if (
       image.publicId &&
       !image.publicId.startsWith('local_mock_') &&
@@ -99,6 +111,15 @@ export const deleteImage = async (req, res, next) => {
     }
 
     await galleryRepo.delete(id);
+
+    createAuditLog(req, {
+      action: 'DELETE_GALLERY_ITEM',
+      category: 'gallery',
+      entity: 'Gallery',
+      entityId: Number(id),
+      description: `Deleted gallery item #${id}`,
+      oldValue: oldValues,
+    }).catch(err => console.error(err));
 
     const io = req.app.get('io');
     if (io) {

@@ -66,12 +66,20 @@ export const UserAuthProvider = ({ children }) => {
     }
   };
 
-  const updateProfile = async (name, email) => {
+  const updateProfile = async (nameOrObj, emailParam) => {
     try {
+      let name, email;
+      if (typeof nameOrObj === 'object' && nameOrObj !== null) {
+        name = nameOrObj.name;
+        email = nameOrObj.email;
+      } else {
+        name = nameOrObj;
+        email = emailParam;
+      }
       const res = await API.patch('/user/me', { name, email });
       if (res.data.success) {
         setUser(res.data.user);
-        return { success: true };
+        return { success: true, user: res.data.user };
       }
       return { success: false, message: 'Failed to update profile.' };
     } catch (error) {

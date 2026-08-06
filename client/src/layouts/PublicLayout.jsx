@@ -275,7 +275,7 @@ export const PublicLayout = () => {
   return (
     <div className="min-h-screen flex flex-col bg-zinc-50 dark:bg-zinc-950 transition-colors duration-300">
       {/* Header */}
-      <header className="sticky top-0 z-40 w-full border-b border-zinc-200/50 dark:border-zinc-800/80 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md">
+      <header className="sticky top-0 z-40 w-full border-b border-zinc-200/50 dark:border-zinc-800/80 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md print:hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
             {(settings?.logo || cachedSettings?.logo) ? (
@@ -401,7 +401,7 @@ export const PublicLayout = () => {
 
       {/* Footer */}
       {!isLoginPage && (
-        <footer className="border-t border-zinc-200/50 dark:border-zinc-900 bg-white dark:bg-zinc-950 py-12 px-4 sm:px-6 lg:px-8">
+        <footer className="border-t border-zinc-200/50 dark:border-zinc-900 bg-white dark:bg-zinc-950 py-12 px-4 sm:px-6 lg:px-8 print:hidden">
           <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
             <div>
               <div className="flex items-center gap-2 mb-4">

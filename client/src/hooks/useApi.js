@@ -40,35 +40,42 @@ export const useUpdateSettings = () => {
 };
 
 // --- SLOTS HOOKS ---
-export const useAvailableSlots = (date) => {
+export const useAvailableSlots = (date, groundId) => {
   return useQuery({
-    queryKey: ['availableSlots', date],
+    queryKey: ['availableSlots', date, groundId],
     queryFn: async () => {
       if (!date) return { slots: [], isBlocked: false };
-      const response = await API.get(`/available-slots?date=${date}`);
+      const url = groundId 
+        ? `/available-slots?date=${date}&groundId=${groundId}`
+        : `/available-slots?date=${date}`;
+      const response = await API.get(url);
       return response.data;
     },
     enabled: !!date,
   });
 };
 
-export const useCalendarAvailability = (year, month) => {
+export const useCalendarAvailability = (year, month, groundId) => {
   return useQuery({
-    queryKey: ['calendarAvailability', year, month],
+    queryKey: ['calendarAvailability', year, month, groundId],
     queryFn: async () => {
       if (!year || !month) return {};
-      const response = await API.get(`/calendar-availability?year=${year}&month=${month}`);
+      const url = groundId 
+        ? `/calendar-availability?year=${year}&month=${month}&groundId=${groundId}`
+        : `/calendar-availability?year=${year}&month=${month}`;
+      const response = await API.get(url);
       return response.data.availability;
     },
     enabled: !!year && !!month,
   });
 };
 
-export const useAdminSlots = () => {
+export const useAdminSlots = (groundId) => {
   return useQuery({
-    queryKey: ['adminSlots'],
+    queryKey: ['adminSlots', groundId],
     queryFn: async () => {
-      const response = await API.get('/slots');
+      const url = groundId ? `/slots?groundId=${groundId}` : '/slots';
+      const response = await API.get(url);
       return response.data.slots;
     },
   });
@@ -81,8 +88,9 @@ export const useCreateSlot = () => {
       const response = await API.post('/slots', slotData);
       return response.data.slot;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['adminSlots'] });
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['adminSlots', variables.groundId] });
+      queryClient.invalidateQueries({ queryKey: ['availableSlots'] });
     },
   });
 };
@@ -94,8 +102,10 @@ export const useUpdateSlot = () => {
       const response = await API.patch(`/slots/${id}`, data);
       return response.data.slot;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['adminSlots'] });
+      queryClient.invalidateQueries({ queryKey: ['adminSlots', data.groundId] });
+      queryClient.invalidateQueries({ queryKey: ['availableSlots'] });
     },
   });
 };
@@ -109,6 +119,73 @@ export const useDeleteSlot = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminSlots'] });
+      queryClient.invalidateQueries({ queryKey: ['availableSlots'] });
+    },
+  });
+};
+
+// --- GROUNDS / ARENAS HOOKS ---
+export const useGrounds = () => {
+  return useQuery({
+    queryKey: ['grounds'],
+    queryFn: async () => {
+      const response = await API.get('/grounds');
+      return response.data.grounds;
+    },
+  });
+};
+
+export const useCreateGround = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (groundData) => {
+      const response = await API.post('/grounds', groundData);
+      return response.data.ground;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['grounds'] });
+    },
+  });
+};
+
+export const useUpdateGround = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, data }) => {
+      const response = await API.patch(`/grounds/${id}`, data);
+      return response.data.ground;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['grounds'] });
+      queryClient.invalidateQueries({ queryKey: ['availableSlots'] });
+    },
+  });
+};
+
+export const useDeleteGround = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id) => {
+      const response = await API.delete(`/grounds/${id}`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['grounds'] });
+      queryClient.invalidateQueries({ queryKey: ['availableSlots'] });
+    },
+  });
+};
+
+export const useReorderGrounds = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (groundIds) => {
+      const response = await API.patch('/grounds/reorder', { groundIds });
+      return response.data.grounds;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['grounds'] });
+      queryClient.invalidateQueries({ queryKey: ['availableSlots'] });
     },
   });
 };
@@ -119,7 +196,7 @@ export const useCreateBooking = () => {
   return useMutation({
     mutationFn: async (bookingData) => {
       const response = await API.post('/booking', bookingData);
-      return response.data.booking;
+      return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['availableSlots'] });
@@ -354,6 +431,9 @@ export const useReorderGallery = () => {
     },
   });
 };
+
+// --- GROUNDS ALIAS ---
+export const usePublicGrounds = useGrounds;
 
 // --- DASHBOARD HOOKS ---
 export const useDashboardData = (params) => {

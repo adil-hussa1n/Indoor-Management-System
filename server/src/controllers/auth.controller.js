@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { loginSchema } from '../../validators/auth.validator.js';
+import { createAuditLog } from '../utils/auditLogger.js';
 
 export const login = async (req, res, next) => {
   try {
@@ -24,6 +25,15 @@ export const login = async (req, res, next) => {
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
+
+    req.admin = { id: admin.id, username: admin.username };
+    createAuditLog(req, {
+      action: 'ADMIN_LOGIN',
+      category: 'security',
+      entity: 'Admin',
+      entityId: admin.id,
+      description: `Admin user '${admin.username}' logged into admin portal`,
+    }).catch(err => console.error('Audit Log Error:', err.message));
 
     res.status(200).json({
       success: true,

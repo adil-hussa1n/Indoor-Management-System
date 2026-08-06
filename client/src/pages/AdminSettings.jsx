@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { useAdminSettings, useUpdateSettings, usePublicGallery } from '../hooks/useApi';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
+import { Input, Select } from '../components/ui/Input';
 import { Loader } from '../components/ui/Loader';
 import { DatePicker } from '../components/ui/DatePicker';
 import { useToast } from '../components/ui/Toast';
 import { Save, Plus, Trash2, HelpCircle } from 'lucide-react';
+import { AdminAuditLogsTab } from '../components/AdminAuditLogsTab';
 
 const compressImageIfNeeded = (file, maxSizeMB = 8, maxWidthOrHeight = 4096) => {
   return new Promise((resolve) => {
@@ -66,6 +67,12 @@ const compressImageIfNeeded = (file, maxSizeMB = 8, maxWidthOrHeight = 4096) => 
   });
 };
 
+const formatDateDMY = (dateStr) => {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+};
+
 export const AdminSettings = () => {
   const toast = useToast();
   const { data: settings, isLoading, refetch } = useAdminSettings();
@@ -83,8 +90,19 @@ export const AdminSettings = () => {
   const [maintenanceMode, setMaintenanceMode] = useState('single');
   const [maintenanceStart, setMaintenanceStart] = useState('');
   const [maintenanceEnd, setMaintenanceEnd] = useState('');
+
+  const [newPaymentMethod, setNewPaymentMethod] = useState('');
+  const [editingPaymentIndex, setEditingPaymentIndex] = useState(null);
+  const [editingPaymentText, setEditingPaymentText] = useState('');
   const [newRule, setNewRule] = useState('');
   const [activeTab, setActiveTab] = useState('general');
+
+  // Discount form state
+  const [discName, setDiscName] = useState('');
+  const [discType, setDiscType] = useState('percentage');
+  const [discValue, setDiscValue] = useState('');
+  const [discStart, setDiscStart] = useState('');
+  const [discEnd, setDiscEnd] = useState('');
 
   const [formData, setFormData] = useState(null);
   const [logoFile, setLogoFile] = useState(null);
@@ -126,6 +144,7 @@ export const AdminSettings = () => {
         theme: settings.theme || 'default',
         enableDarkMode: settings.enableDarkMode ?? true,
         rules: settings.rules || [],
+        discounts: settings.discounts || [],
         businessHours: {
           weekday: settings.businessHours?.weekday || '08:00 AM - 10:00 PM',
           weekend: settings.businessHours?.weekend || '09:00 AM - 11:00 PM',
@@ -164,6 +183,33 @@ export const AdminSettings = () => {
           blurBackground: settings.hero?.blurBackground ?? false,
           zoomAnimation: settings.hero?.zoomAnimation ?? false,
         },
+        paymentConfig: (typeof settings.paymentConfig === 'string'
+          ? (() => { try { return JSON.parse(settings.paymentConfig); } catch (e) { return null; } })()
+          : settings.paymentConfig) || {
+          enabled: false,
+          type: 'full',
+          partialType: 'percentage',
+          partialPercentage: 50,
+          partialFixedAmount: 500,
+          gateways: {
+            bkash: {
+              enabled: true,
+              accountType: 'Personal',
+              merchantNumber: '',
+              appKey: '',
+              appSecret: '',
+              username: '',
+              password: '',
+              isLive: false,
+            },
+            sslcommerz: {
+              enabled: true,
+              storeId: '',
+              storePassword: '',
+              isLive: false,
+            }
+          }
+        },
       });
     }
   }, [settings]);
@@ -184,6 +230,84 @@ export const AdminSettings = () => {
         [field]: value,
       };
     });
+  };
+
+  const updatePaymentConfig = (patch) => {
+    setFormData((prev) => {
+      let current = prev?.paymentConfig;
+      if (typeof current === 'string') {
+        try { current = JSON.parse(current); } catch (e) { current = {}; }
+      }
+      current = current || {};
+
+      const defaults = {
+        enabled: false,
+        type: 'full',
+        partialType: 'percentage',
+        partialPercentage: 50,
+        partialFixedAmount: 500,
+        gateways: {
+          bkash: { enabled: true, accountType: 'Personal', merchantNumber: '', appKey: '', appSecret: '', username: '', password: '', isLive: false },
+          sslcommerz: { enabled: true, storeId: '', storePassword: '', isLive: false },
+        },
+      };
+
+      const merged = {
+        ...defaults,
+        ...current,
+        gateways: {
+          ...defaults.gateways,
+          ...(current.gateways || {}),
+        },
+      };
+
+      const updated = typeof patch === 'function' ? patch(merged) : { ...merged, ...patch };
+
+      return {
+        ...prev,
+        paymentConfig: updated,
+      };
+    });
+  };
+
+  const handleAddDiscountRule = () => {
+    if (!discName || !discValue || !discStart || !discEnd) {
+      toast.error('Please fill in all discount fields.');
+      return;
+    }
+    const newRuleObj = {
+      id: Date.now().toString(),
+      name: discName,
+      type: discType,
+      value: Number(discValue),
+      startDate: discStart,
+      endDate: discEnd,
+      isActive: true,
+    };
+    setFormData(prev => ({
+      ...prev,
+      discounts: [...(prev.discounts || []), newRuleObj],
+    }));
+    setDiscName('');
+    setDiscValue('');
+    setDiscStart('');
+    setDiscEnd('');
+    toast.success('Discount rule added! Click "Save Configuration" to save.');
+  };
+
+  const handleToggleDiscount = (id) => {
+    setFormData(prev => ({
+      ...prev,
+      discounts: (prev.discounts || []).map(d => d.id === id ? { ...d, isActive: !d.isActive } : d),
+    }));
+  };
+
+  const handleDeleteDiscount = (id) => {
+    setFormData(prev => ({
+      ...prev,
+      discounts: (prev.discounts || []).filter(d => d.id !== id),
+    }));
+    toast.success('Discount rule removed.');
   };
 
   const handleSave = (e) => {
@@ -215,6 +339,8 @@ export const AdminSettings = () => {
     data.append('socialLinks', JSON.stringify(formData.socialLinks));
     data.append('hero', JSON.stringify(formData.hero));
     data.append('rules', JSON.stringify(formData.rules));
+    data.append('paymentConfig', JSON.stringify(formData.paymentConfig));
+    data.append('discounts', JSON.stringify(formData.discounts || []));
 
     updateSettingsMutation.mutate(data, {
       onSuccess: () => {
@@ -383,8 +509,12 @@ export const AdminSettings = () => {
             { id: 'general', label: '🌐 Branding & Media' },
             { id: 'hero', label: '✨ Hero Section' },
             { id: 'pricing', label: '৳ Hours & Pricing' },
+            { id: 'discounts', label: '🏷️ Online Discounts' },
+            { id: 'payment', label: '💳 Payment System & Gateways' },
             { id: 'court', label: '⚙️ Court & Rules' },
             { id: 'integrations', label: '🔗 SEO & Links' },
+            { id: 'subscription', label: '💳 Subscription & License' },
+            { id: 'audit_logs', label: '📜 System Audit Logs' },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -401,13 +531,15 @@ export const AdminSettings = () => {
           ))}
         </div>
 
-        <Button
-          type="submit"
-          disabled={updateSettingsMutation.isPending}
-          className="px-5 py-2.5 font-bold shadow-md shadow-purple-500/10 active:scale-[0.98] shrink-0 animate-glow"
-        >
-          {updateSettingsMutation.isPending ? 'Saving...' : 'Save Configuration'}
-        </Button>
+        {activeTab !== 'audit_logs' && activeTab !== 'subscription' && (
+          <Button
+            type="submit"
+            disabled={updateSettingsMutation.isPending}
+            className="px-5 py-2.5 font-bold shadow-md shadow-purple-500/10 active:scale-[0.98] shrink-0 animate-glow"
+          >
+            {updateSettingsMutation.isPending ? 'Saving...' : 'Save Configuration'}
+          </Button>
+        )}
       </div>
 
         {/* Tab 1: General & Media */}
@@ -834,6 +966,179 @@ export const AdminSettings = () => {
           </div>
         )}
 
+        {/* Tab: Online Discounts & Special Offers */}
+        {activeTab === 'discounts' && (
+          <div className="space-y-6 animate-fade-in">
+            {/* Discount Rules Creator Card */}
+            <div className="glass-card p-6 rounded-3xl shadow-sm space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-100 dark:border-zinc-900 pb-4">
+                <div>
+                  <h3 className="text-lg font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                    🏷️ Online Automatic Discounts & Offers
+                  </h3>
+                  <p className="text-xs text-zinc-400 mt-1">
+                    Configure date-range or single-day promotional discounts. When customers book slots within these dates online, the discount will be automatically applied at checkout!
+                  </p>
+                </div>
+              </div>
+
+              {/* Add Discount Rule Form */}
+              <div className="p-4 rounded-2xl bg-purple-500/5 dark:bg-purple-950/20 border border-purple-500/10 space-y-4">
+                <h4 className="text-xs font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wider">
+                  + Create New Promotional Discount Rule
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-zinc-650 dark:text-zinc-400 uppercase tracking-wider block">
+                      Offer Title / Name
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Summer Promo 10% Off"
+                      value={discName}
+                      onChange={(e) => setDiscName(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-purple-650"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-zinc-650 dark:text-zinc-400 uppercase tracking-wider block">
+                      Discount Type
+                    </label>
+                    <select
+                      value={discType}
+                      onChange={(e) => setDiscType(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-purple-650"
+                    >
+                      <option value="percentage">Percentage (%)</option>
+                      <option value="fixed">Fixed Amount (৳ BDT)</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-zinc-650 dark:text-zinc-400 uppercase tracking-wider block">
+                      Discount Value
+                    </label>
+                    <input
+                      type="number"
+                      placeholder={discType === 'percentage' ? 'e.g. 10 for 10%' : 'e.g. 300 for ৳300'}
+                      value={discValue}
+                      onChange={(e) => setDiscValue(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-purple-650"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-zinc-650 dark:text-zinc-400 uppercase tracking-wider block">
+                      Start Date
+                    </label>
+                    <input
+                      type="date"
+                      value={discStart}
+                      onChange={(e) => setDiscStart(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-purple-650"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-zinc-650 dark:text-zinc-400 uppercase tracking-wider block">
+                      End Date
+                    </label>
+                    <input
+                      type="date"
+                      value={discEnd}
+                      onChange={(e) => setDiscEnd(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-purple-650"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-1">
+                  <Button
+                    type="button"
+                    onClick={handleAddDiscountRule}
+                    className="font-bold text-xs py-2 px-5 bg-gradient-to-r from-purple-650 to-indigo-650 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl shadow-md shadow-purple-500/20"
+                  >
+                    + Add Discount Rule
+                  </Button>
+                </div>
+              </div>
+
+              {/* Active Discount Rules Table */}
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-extrabold uppercase text-zinc-700 dark:text-zinc-300 tracking-wider">
+                    📋 Active & Configured Online Discounts
+                  </h4>
+                  <span className="text-[10px] font-bold text-zinc-450">
+                    {formData.discounts?.length || 0} Rule(s) Configured
+                  </span>
+                </div>
+
+                {formData.discounts && formData.discounts.length > 0 ? (
+                  <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="bg-zinc-50 dark:bg-zinc-900/60 border-b border-zinc-200 dark:border-zinc-800 text-[10px] font-black uppercase text-zinc-500">
+                          <th className="py-3 px-4">Offer Name</th>
+                          <th className="py-3 px-4">Discount Type & Value</th>
+                          <th className="py-3 px-4">Valid Date Range</th>
+                          <th className="py-3 px-4">Status</th>
+                          <th className="py-3 px-4 text-center">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/80 font-medium">
+                        {formData.discounts.map((rule) => (
+                          <tr key={rule.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30">
+                            <td className="py-3 px-4 font-bold text-zinc-900 dark:text-white">
+                              {rule.name}
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className="font-mono font-extrabold text-purple-650 dark:text-purple-400">
+                                {rule.type === 'percentage' ? `${rule.value}% OFF` : `৳${rule.value} Flat OFF`}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 font-mono text-zinc-600 dark:text-zinc-300">
+                              {formatDateDMY(rule.startDate)} &rarr; {formatDateDMY(rule.endDate)}
+                            </td>
+                            <td className="py-3 px-4">
+                              <button
+                                type="button"
+                                onClick={() => handleToggleDiscount(rule.id)}
+                                className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase transition-all ${
+                                  rule.isActive
+                                    ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/30 hover:bg-emerald-500/20'
+                                    : 'bg-zinc-500/10 text-zinc-450 border border-zinc-500/30 hover:bg-zinc-500/20'
+                                }`}
+                              >
+                                {rule.isActive ? 'Active ⚡' : 'Inactive ⏸️'}
+                              </button>
+                            </td>
+                            <td className="py-3 px-4 text-center">
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteDiscount(rule.id)}
+                                className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 font-bold transition-all text-xs"
+                                title="Delete Rule"
+                              >
+                                🗑️ Delete
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="p-6 rounded-2xl bg-zinc-50 dark:bg-zinc-900/40 border border-dashed border-zinc-200 dark:border-zinc-800 text-center text-xs text-zinc-450 font-semibold">
+                    No discount rules added yet. Create a rule above to automatically apply discounts on specific dates during customer checkout!
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Tab 4: Court Management & Rules */}
         {activeTab === 'court' && (
           <div className="space-y-6 animate-fade-in">
@@ -1157,6 +1462,752 @@ export const AdminSettings = () => {
             </div>
           </div>
         )}
+
+        {/* Tab 5: Payment System & Gateways */}
+        {activeTab === 'payment' && (
+          <div className="space-y-6 animate-fade-in">
+            <div className="glass-card p-6 rounded-3xl shadow-sm space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-100 dark:border-zinc-900 pb-4">
+                <div>
+                  <h3 className="text-lg font-extrabold text-zinc-900 dark:text-white flex items-center gap-2">
+                    💳 Online Payment System Master Switch
+                  </h3>
+                  <p className="text-xs text-zinc-400 mt-1">
+                    Toggle online payment collection for customer court bookings. If turned OFF, users can book slots directly without payment.
+                  </p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={formData?.paymentConfig?.enabled || false}
+                    onChange={(e) => updatePaymentConfig(c => ({ ...c, enabled: e.target.checked }))}
+                    className="sr-only peer"
+                  />
+                  <div className="w-14 h-7 bg-zinc-200 peer-focus:outline-none rounded-full peer dark:bg-zinc-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all dark:after:border-zinc-600 peer-checked:bg-purple-650"></div>
+                </label>
+              </div>
+
+              {formData?.paymentConfig?.enabled ? (
+                <div className="space-y-6">
+                  {/* Payment Type: Full vs Partial */}
+                  <div className="p-4 rounded-2xl bg-purple-500/5 dark:bg-purple-950/20 border border-purple-500/20 space-y-4">
+                    <h4 className="text-xs font-black uppercase text-purple-650 dark:text-purple-400 tracking-wider">
+                      💰 Payment Collection Mode
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <label
+                        onClick={() => updatePaymentConfig(c => ({ ...c, type: 'full' }))}
+                        className={`p-4 rounded-2xl border cursor-pointer transition-all flex items-start gap-3 ${
+                          formData?.paymentConfig?.type === 'full'
+                            ? 'bg-purple-650 text-white border-purple-650 shadow-md'
+                            : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white hover:border-purple-300'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="paymentType"
+                          checked={formData?.paymentConfig?.type === 'full'}
+                          onChange={() => {}}
+                          className="mt-1 accent-white"
+                        />
+                        <div>
+                          <span className="text-sm font-extrabold block">Full Payment (100%)</span>
+                          <span className={`text-xs block mt-1 ${formData?.paymentConfig?.type === 'full' ? 'text-purple-100' : 'text-zinc-500'}`}>
+                            Collect 100% full booking price online before slot confirmation.
+                          </span>
+                        </div>
+                      </label>
+
+                      <label
+                        onClick={() => updatePaymentConfig(c => ({ ...c, type: 'partial' }))}
+                        className={`p-4 rounded-2xl border cursor-pointer transition-all flex items-start gap-3 ${
+                          formData?.paymentConfig?.type === 'partial'
+                            ? 'bg-purple-650 text-white border-purple-650 shadow-md'
+                            : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white hover:border-purple-300'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="paymentType"
+                          checked={formData?.paymentConfig?.type === 'partial'}
+                          onChange={() => {}}
+                          className="mt-1 accent-white"
+                        />
+                        <div>
+                          <span className="text-sm font-extrabold block">Partial / Advance Deposit</span>
+                          <span className={`text-xs block mt-1 ${formData?.paymentConfig?.type === 'partial' ? 'text-purple-100' : 'text-zinc-500'}`}>
+                            Require partial deposit online; customer pays remaining balance at venue.
+                          </span>
+                        </div>
+                      </label>
+                    </div>
+
+                    {formData?.paymentConfig?.type === 'partial' && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-purple-500/10">
+                        <Select
+                          label="Advance Deposit Method"
+                          value={formData?.paymentConfig?.partialType || 'percentage'}
+                          onChange={(e) => updatePaymentConfig(c => ({ ...c, partialType: e.target.value }))}
+                          options={[
+                            { value: 'percentage', label: 'Percentage (%) of Total Price' },
+                            { value: 'fixed', label: 'Fixed Amount (৳) Deposit' },
+                          ]}
+                        />
+                        {formData?.paymentConfig?.partialType === 'percentage' ? (
+                          <Input
+                            label="Advance Percentage (%)"
+                            type="number"
+                            value={formData?.paymentConfig?.partialPercentage || 50}
+                            onChange={(e) => updatePaymentConfig(c => ({ ...c, partialPercentage: Number(e.target.value) }))}
+                            placeholder="50"
+                          />
+                        ) : (
+                          <Input
+                            label="Fixed Advance Amount (৳)"
+                            type="number"
+                            value={formData?.paymentConfig?.partialFixedAmount || 500}
+                            onChange={(e) => updatePaymentConfig(c => ({ ...c, partialFixedAmount: Number(e.target.value) }))}
+                            placeholder="500"
+                          />
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* bKash Merchant Gateway Settings */}
+                  <div className="p-5 rounded-2xl bg-pink-500/5 dark:bg-pink-950/20 border border-pink-500/20 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-black uppercase text-pink-600 dark:text-pink-400 tracking-wider flex items-center gap-2">
+                        🌸 bKash Merchant Payment Gateway & API Credentials
+                      </h4>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData?.paymentConfig?.gateways?.bkash?.enabled ?? true}
+                          onChange={(e) => updatePaymentConfig(c => ({
+                            ...c,
+                            gateways: {
+                              ...(c.gateways || {}),
+                              bkash: { ...(c.gateways?.bkash || {}), enabled: e.target.checked },
+                            },
+                          }))}
+                          className="w-4 h-4 accent-pink-600 rounded"
+                        />
+                        <span className="text-xs font-bold text-pink-600 dark:text-pink-400">Enable bKash Gateway</span>
+                      </label>
+                    </div>
+
+                    {formData?.paymentConfig?.gateways?.bkash?.enabled !== false && (
+                      <div className="space-y-4 pt-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <Input
+                            label="bKash Merchant Receiver Phone Number"
+                            placeholder="e.g. 01712345678"
+                            value={formData?.paymentConfig?.gateways?.bkash?.merchantNumber || ''}
+                            onChange={(e) => updatePaymentConfig(c => ({
+                              ...c,
+                              gateways: {
+                                ...(c.gateways || {}),
+                                bkash: { ...(c.gateways?.bkash || {}), merchantNumber: e.target.value },
+                              },
+                            }))}
+                          />
+                          <div className="flex flex-col justify-end pb-1 text-xs text-pink-700 dark:text-pink-300 font-bold">
+                            🌸 bKash Tokenized Merchant Payment Gateway (Official API Redirect)
+                          </div>
+                        </div>
+
+                        {/* bKash Merchant API Credentials */}
+                        <div className="p-4 rounded-xl bg-pink-500/10 border border-pink-500/20 space-y-3">
+                          <h5 className="text-xs font-black uppercase text-pink-700 dark:text-pink-300">
+                            🔐 bKash Merchant API Integration Credentials
+                          </h5>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <Input
+                              label="bKash App Key"
+                              placeholder="App Key from bKash Developer Portal"
+                              value={formData?.paymentConfig?.gateways?.bkash?.appKey || ''}
+                              onChange={(e) => updatePaymentConfig(c => ({
+                                ...c,
+                                gateways: {
+                                  ...(c.gateways || {}),
+                                  bkash: { ...(c.gateways?.bkash || {}), appKey: e.target.value },
+                                },
+                              }))}
+                            />
+                            <Input
+                              label="bKash App Secret"
+                              type="password"
+                              placeholder="App Secret Secret"
+                              value={formData?.paymentConfig?.gateways?.bkash?.appSecret || ''}
+                              onChange={(e) => updatePaymentConfig(c => ({
+                                ...c,
+                                gateways: {
+                                  ...(c.gateways || {}),
+                                  bkash: { ...(c.gateways?.bkash || {}), appSecret: e.target.value },
+                                },
+                              }))}
+                            />
+                            <Input
+                              label="bKash API Username"
+                              placeholder="API Username"
+                              value={formData?.paymentConfig?.gateways?.bkash?.username || ''}
+                              onChange={(e) => updatePaymentConfig(c => ({
+                                ...c,
+                                gateways: {
+                                  ...(c.gateways || {}),
+                                  bkash: { ...(c.gateways?.bkash || {}), username: e.target.value },
+                                },
+                              }))}
+                            />
+                            <Input
+                              label="bKash API Password"
+                              type="password"
+                              placeholder="API Password"
+                              value={formData?.paymentConfig?.gateways?.bkash?.password || ''}
+                              onChange={(e) => updatePaymentConfig(c => ({
+                                ...c,
+                                gateways: {
+                                  ...(c.gateways || {}),
+                                  bkash: { ...(c.gateways?.bkash || {}), password: e.target.value },
+                                },
+                              }))}
+                            />
+                          </div>
+                          <div className="flex items-center gap-3 pt-2">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={formData?.paymentConfig?.gateways?.bkash?.isLive || false}
+                                onChange={(e) => updatePaymentConfig(c => ({
+                                  ...c,
+                                  gateways: {
+                                    ...(c.gateways || {}),
+                                    bkash: { ...(c.gateways?.bkash || {}), isLive: e.target.checked },
+                                  },
+                                }))}
+                                className="w-4 h-4 accent-pink-600 rounded"
+                              />
+                              <span className="text-xs font-bold text-pink-900 dark:text-pink-200">Live Production Mode (Uncheck for Sandbox Test Mode)</span>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* SSLCommerz Payment Gateway Settings */}
+                  <div className="p-5 rounded-2xl bg-cyan-500/5 dark:bg-cyan-950/20 border border-cyan-500/20 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-black uppercase text-cyan-600 dark:text-cyan-400 tracking-wider flex items-center gap-2">
+                        🔒 SSLCommerz Online Checkout (Cards / Net Banking / MFS)
+                      </h4>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData?.paymentConfig?.gateways?.sslcommerz?.enabled ?? true}
+                          onChange={(e) => updatePaymentConfig(c => ({
+                            ...c,
+                            gateways: {
+                              ...(c.gateways || {}),
+                              sslcommerz: { ...(c.gateways?.sslcommerz || {}), enabled: e.target.checked },
+                            },
+                          }))}
+                          className="w-4 h-4 accent-cyan-600 rounded"
+                        />
+                        <span className="text-xs font-bold text-cyan-600 dark:text-cyan-400">Enable SSLCommerz</span>
+                      </label>
+                    </div>
+
+                    {formData?.paymentConfig?.gateways?.sslcommerz?.enabled !== false && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                        <Input
+                          label="SSLCommerz Store ID"
+                          placeholder="e.g. indoor_arena_live"
+                          value={formData?.paymentConfig?.gateways?.sslcommerz?.storeId || ''}
+                          onChange={(e) => updatePaymentConfig(c => ({
+                            ...c,
+                            gateways: {
+                              ...(c.gateways || {}),
+                              sslcommerz: { ...(c.gateways?.sslcommerz || {}), storeId: e.target.value },
+                            },
+                          }))}
+                        />
+                        <Input
+                          label="SSLCommerz Store Password"
+                          type="password"
+                          placeholder="Store Secret Password"
+                          value={formData?.paymentConfig?.gateways?.sslcommerz?.storePassword || ''}
+                          onChange={(e) => updatePaymentConfig(c => ({
+                            ...c,
+                            gateways: {
+                              ...(c.gateways || {}),
+                              sslcommerz: { ...(c.gateways?.sslcommerz || {}), storePassword: e.target.value },
+                            },
+                          }))}
+                        />
+                        <div className="col-span-1 sm:col-span-2 flex items-center gap-3 pt-2">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={formData?.paymentConfig?.gateways?.sslcommerz?.isLive || false}
+                              onChange={(e) => updatePaymentConfig(c => ({
+                                ...c,
+                                gateways: {
+                                  ...(c.gateways || {}),
+                                  sslcommerz: { ...(c.gateways?.sslcommerz || {}), isLive: e.target.checked },
+                                },
+                              }))}
+                              className="w-4 h-4 accent-cyan-600 rounded"
+                            />
+                            <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Live Production Mode (Uncheck for Sandbox Test Mode)</span>
+                          </label>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Printable Invoice & Signature Customization */}
+                  <div className="p-5 rounded-2xl bg-purple-500/5 dark:bg-purple-950/20 border border-purple-500/20 space-y-4">
+                    <h4 className="text-xs font-black uppercase text-purple-650 dark:text-purple-400 tracking-wider flex items-center gap-2">
+                      📜 Printable Tax Invoice & Authorized Signature Settings
+                    </h4>
+
+                    <div className="space-y-4">
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-extrabold text-zinc-700 dark:text-zinc-300">
+                          Invoice Footer Terms & Rules (Shown at bottom of printed receipt)
+                        </label>
+                        <textarea
+                          rows={3}
+                          className="w-full px-3 py-2 text-xs font-medium rounded-xl border border-zinc-250 dark:border-zinc-800 bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-purple-650"
+                          placeholder="e.g. 1. Please present invoice at check-in&#10;2. Proper sports shoes required&#10;3. Non-refundable"
+                          value={formData?.paymentConfig?.invoiceTerms ?? '1. Please present this invoice at venue check-in.\n2. Proper sports gear and non-marking shoes required.\n3. Non-refundable unless cancelled 24 hours prior.'}
+                          onChange={(e) => updatePaymentConfig(c => ({ ...c, invoiceTerms: e.target.value }))}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <Input
+                          label="Authorized Signatory Name"
+                          placeholder="e.g. ADIL HUSSAIN"
+                          value={formData?.paymentConfig?.authorizedSignatoryName ?? 'Authorized Signature'}
+                          onChange={(e) => updatePaymentConfig(c => ({ ...c, authorizedSignatoryName: e.target.value }))}
+                        />
+                        <Input
+                          label="Signatory Title / Designation"
+                          placeholder="e.g. Venue Manager / Managing Director"
+                          value={formData?.paymentConfig?.authorizedSignatoryTitle ?? 'Authorized Signatory'}
+                          onChange={(e) => updatePaymentConfig(c => ({ ...c, authorizedSignatoryTitle: e.target.value }))}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-xs font-extrabold text-zinc-700 dark:text-zinc-300 block">
+                          Authorized Signature PNG Image (Upload File or Enter Image URL)
+                        </label>
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                          <label className="px-4 py-2.5 rounded-xl bg-purple-650 hover:bg-purple-750 text-white font-bold text-xs shadow-md cursor-pointer flex items-center gap-2 transition-all">
+                            <span>📁 Upload Signature PNG File</span>
+                            <input
+                              type="file"
+                              accept="image/png, image/jpeg, image/webp, image/svg+xml"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  const reader = new FileReader();
+                                  reader.onload = (evt) => {
+                                    const result = evt.target?.result;
+                                    if (result) {
+                                      updatePaymentConfig(c => ({ ...c, authorizedSignatureImage: result }));
+                                      toast.success('Signature PNG uploaded successfully!');
+                                    }
+                                  };
+                                  reader.readAsDataURL(file);
+                                }
+                              }}
+                            />
+                          </label>
+                          <span className="text-xs text-zinc-450 font-medium">or paste image URL below</span>
+                        </div>
+
+                        <Input
+                          placeholder="https://example.com/signature.png or data:image/png;base64,..."
+                          value={formData?.paymentConfig?.authorizedSignatureImage || ''}
+                          onChange={(e) => updatePaymentConfig(c => ({ ...c, authorizedSignatureImage: e.target.value }))}
+                        />
+
+                        {/* Signature Preview */}
+                        {formData?.paymentConfig?.authorizedSignatureImage && (
+                          <div className="p-3 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 flex items-center justify-between gap-4 mt-2">
+                            <div className="flex items-center gap-3">
+                              <span className="text-xs font-bold text-zinc-500">Preview:</span>
+                              <img
+                                src={formData.paymentConfig.authorizedSignatureImage}
+                                alt="Signature Preview"
+                                className="h-10 object-contain bg-zinc-100 dark:bg-zinc-950 p-1 rounded-lg border border-zinc-250 dark:border-zinc-800"
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => updatePaymentConfig(c => ({ ...c, authorizedSignatureImage: '' }))}
+                              className="text-xs font-bold text-rose-500 hover:text-rose-600 px-2 py-1 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all cursor-pointer"
+                            >
+                              ✕ Remove Signature
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Custom Payment Methods Manager */}
+                  {(() => {
+                    const defaultMethods = ['Cash', 'bKash Personal / Manual', 'POS / Card', 'Bank Transfer', 'Pay After Match'];
+                    const currentMethods = formData?.paymentConfig?.customPaymentMethods || defaultMethods;
+
+                    const handleAddMethod = () => {
+                      if (!newPaymentMethod.trim()) return;
+                      const updated = [...currentMethods, newPaymentMethod.trim()];
+                      updatePaymentConfig(c => ({ ...c, customPaymentMethods: updated }));
+                      setNewPaymentMethod('');
+                      toast.success(`Payment option "${newPaymentMethod.trim()}" added!`);
+                    };
+
+                    const handleRemoveMethod = (indexToRemove) => {
+                      const updated = currentMethods.filter((_, idx) => idx !== indexToRemove);
+                      updatePaymentConfig(c => ({ ...c, customPaymentMethods: updated }));
+                      toast.info('Payment option removed.');
+                    };
+
+                    const handleSaveEditMethod = (indexToEdit) => {
+                      if (!editingPaymentText.trim()) return;
+                      const updated = [...currentMethods];
+                      updated[indexToEdit] = editingPaymentText.trim();
+                      updatePaymentConfig(c => ({ ...c, customPaymentMethods: updated }));
+                      setEditingPaymentIndex(null);
+                      setEditingPaymentText('');
+                      toast.success('Payment option updated!');
+                    };
+
+                    return (
+                      <div className="p-5 rounded-2xl bg-indigo-500/5 dark:bg-indigo-950/20 border border-indigo-500/20 space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-xs font-black uppercase text-indigo-600 dark:text-indigo-400 tracking-wider flex items-center gap-2">
+                            💳 Manual & Offline Payment Options (Add, Edit, Remove)
+                          </h4>
+                        </div>
+
+                        <p className="text-xs text-zinc-500">
+                          Configure the payment methods available in the Admin manual booking portal (e.g. Cash, bKash Personal, POS/Card, Bank Transfer, Pay After Match).
+                        </p>
+
+                        {/* List of Methods */}
+                        <div className="space-y-2">
+                          {currentMethods.map((method, idx) => (
+                            <div key={idx} className="p-3 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 flex items-center justify-between gap-3 text-xs">
+                              {editingPaymentIndex === idx ? (
+                                <div className="flex items-center gap-2 flex-1">
+                                  <input
+                                    type="text"
+                                    className="flex-1 px-3 py-1.5 rounded-lg border border-indigo-500 bg-transparent text-xs font-bold text-zinc-900 dark:text-white"
+                                    value={editingPaymentText}
+                                    onChange={(e) => setEditingPaymentText(e.target.value)}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSaveEditMethod(idx)}
+                                    className="px-3 py-1 rounded-lg bg-indigo-650 text-white font-bold text-xs"
+                                  >
+                                    Save
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditingPaymentIndex(null)}
+                                    className="px-2 py-1 text-zinc-400 font-semibold"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              ) : (
+                                <>
+                                  <span className="font-extrabold text-zinc-800 dark:text-zinc-200 flex items-center gap-2">
+                                    <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
+                                    {method}
+                                  </span>
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setEditingPaymentIndex(idx);
+                                        setEditingPaymentText(method);
+                                      }}
+                                      className="text-xs font-bold text-indigo-600 hover:text-indigo-700 px-2 py-1 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-950/40 cursor-pointer"
+                                    >
+                                      Edit
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRemoveMethod(idx)}
+                                      className="text-xs font-bold text-rose-500 hover:text-rose-600 px-2 py-1 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer"
+                                    >
+                                      🗑️ Remove
+                                    </button>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Add New Method Input */}
+                        <div className="flex items-center gap-2 pt-2">
+                          <input
+                            type="text"
+                            placeholder="Add new payment method (e.g. Nagad, Cheque)..."
+                            className="flex-1 px-3.5 py-2 text-xs font-semibold rounded-xl border border-zinc-250 dark:border-zinc-800 bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                            value={newPaymentMethod}
+                            onChange={(e) => setNewPaymentMethod(e.target.value)}
+                          />
+                          <Button
+                            type="button"
+                            onClick={handleAddMethod}
+                            className="font-bold text-xs py-2 px-4 bg-indigo-650 hover:bg-indigo-700 text-white"
+                          >
+                            + Add Payment Option
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              ) : (
+                <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs font-semibold text-amber-700 dark:text-amber-400">
+                  ℹ️ Payment system is currently turned <strong>OFF</strong>. Customers can instantly confirm court bookings without paying online.
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Tab 6: Subscription & Licensing Information */}
+        {activeTab === 'subscription' && (() => {
+          const sub = settings?.subscriptionStatus;
+          return (
+            <div className="space-y-6 animate-fade-in">
+              {/* Primary Subscription Status Card */}
+              <div className="glass-card p-6 rounded-3xl shadow-sm space-y-6 relative overflow-hidden">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-100 dark:border-zinc-900 pb-4">
+                  <div>
+                    <div className="flex items-center gap-2.5">
+                      <h3 className="text-xl font-black text-zinc-900 dark:text-white">
+                        Subscription & License Overview
+                      </h3>
+                      {sub?.isGracePeriod ? (
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-rose-500 text-white animate-pulse">
+                          In 7-Day Grace Period
+                        </span>
+                      ) : sub?.isExpired ? (
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-rose-500/10 text-rose-500 border border-rose-500/20">
+                          Expired
+                        </span>
+                      ) : (
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                          Active License
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 font-medium">
+                      Client SaaS multi-tenant software instance details, expiry deadlines, and module capabilities.
+                    </p>
+                  </div>
+
+                  <a
+                    href="https://daruntech.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-black text-xs bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-md shadow-purple-500/20 transition-all cursor-pointer shrink-0"
+                  >
+                    Contact Darun Tech Private Limited
+                  </a>
+                </div>
+
+                {/* Data Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200/60 dark:border-zinc-800">
+                    <span className="text-[10px] font-bold text-zinc-450 dark:text-zinc-500 uppercase tracking-wider block mb-1">
+                      Active Subscription Package
+                    </span>
+                    <span className="text-base font-extrabold text-purple-650 dark:text-purple-400">
+                      {sub?.planName || '1 Month Subscription Plan'}
+                    </span>
+                    <span className="text-[10px] text-zinc-400 dark:text-zinc-500 block mt-0.5 font-bold uppercase tracking-wider">
+                      Tier: {sub?.tier || 'Pro SaaS'}
+                    </span>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200/60 dark:border-zinc-800">
+                    <span className="text-[10px] font-bold text-zinc-450 dark:text-zinc-500 uppercase tracking-wider block mb-1">
+                      Package Price & Billing
+                    </span>
+                    <span className="text-base font-extrabold text-zinc-900 dark:text-white">
+                      ৳{sub?.price !== undefined ? Number(sub.price).toLocaleString() : '0'}
+                    </span>
+                    <span className={`text-[10px] block mt-0.5 font-extrabold uppercase tracking-wider ${sub?.paymentStatus === 'paid' ? 'text-emerald-500' : 'text-amber-500'}`}>
+                      Payment Status: {sub?.paymentStatus || 'Paid'}
+                    </span>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200/60 dark:border-zinc-800">
+                    <span className="text-[10px] font-bold text-zinc-450 dark:text-zinc-500 uppercase tracking-wider block mb-1">
+                      Subscription Expiry Deadline
+                    </span>
+                    <span className="text-base font-extrabold text-zinc-900 dark:text-white font-mono">
+                      {sub?.expiresAt ? formatDateDMY(sub.expiresAt) : 'Lifetime / No Expiry'}
+                    </span>
+                    <span className="text-[10px] text-zinc-400 dark:text-zinc-500 block mt-0.5 font-bold uppercase tracking-wider">
+                      Set by Super Admin
+                    </span>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200/60 dark:border-zinc-800">
+                    <span className="text-[10px] font-bold text-zinc-450 dark:text-zinc-500 uppercase tracking-wider block mb-1">
+                      Current Operational Status
+                    </span>
+                    <span className="text-base font-extrabold text-zinc-900 dark:text-white">
+                      {sub?.isGracePeriod ? (
+                        <span className="text-rose-500 font-black flex items-center gap-1">
+                          ⚠️ Grace ({sub.graceDaysRemaining}d left)
+                        </span>
+                      ) : sub?.expiresAt ? (
+                        sub.isExpired ? (
+                          <span className="text-rose-500">Expired</span>
+                        ) : (
+                          <span className="text-emerald-500">{sub.daysUntilExpiry} Day(s) Left</span>
+                        )
+                      ) : (
+                        <span className="text-emerald-500">Active</span>
+                      )}
+                    </span>
+                    <span className="text-[10px] text-zinc-400 dark:text-zinc-500 block mt-0.5 font-bold uppercase tracking-wider">
+                      Live License Status
+                    </span>
+                  </div>
+                </div>
+
+                {/* Module Capabilities */}
+                <div className="border-t border-zinc-100 dark:border-zinc-900 pt-5 space-y-3">
+                  <h4 className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                    Unlocked System Modules & Capabilities
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {[
+                      { label: 'Multi-Ground / Arena Engine', desc: 'Unlimited custom playing courts with position reordering' },
+                      { label: 'Realtime Socket.IO Engine', desc: 'Live booking collision prevention & instant updates' },
+                      { label: 'Bangladesh SMS Gateway', desc: 'SSLWireless / OTP passwordless customer login' },
+                      { label: 'Shift-Based Pricing Grid', desc: '6-tier Day & Night rates for weekends/holidays' },
+                      { label: 'Audit Logging & Security', desc: 'Paranoid soft-delete & XSS security guard' },
+                      { label: 'Dedicated DB Isolation', desc: 'Separate MySQL database per client tenant' },
+                    ].map((feat, idx) => (
+                      <div key={idx} className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-100 dark:border-zinc-800/80 flex items-start gap-3">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 mt-1 shrink-0 shadow-sm shadow-emerald-500/50" />
+                        <div>
+                          <span className="text-xs font-extrabold text-zinc-900 dark:text-white block">{feat.label}</span>
+                          <span className="text-[10px] text-zinc-450 dark:text-zinc-500 block mt-0.5 font-medium">{feat.desc}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Subscription & Renewal History Section */}
+                <div className="border-t border-zinc-100 dark:border-zinc-900 pt-5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                      📜 Subscription Renewal & Billing History
+                    </h4>
+                    <span className="text-[10px] font-bold text-zinc-400">
+                      {settings?.subscriptionHistory?.length || 0} Record(s) Found
+                    </span>
+                  </div>
+
+                  {settings?.subscriptionHistory && settings.subscriptionHistory.length > 0 ? (
+                    <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
+                      <table className="w-full text-left border-collapse text-xs">
+                        <thead>
+                          <tr className="bg-zinc-50 dark:bg-zinc-900/60 border-b border-zinc-200 dark:border-zinc-800 text-[10px] font-black uppercase text-zinc-500 dark:text-zinc-400">
+                            <th className="py-2.5 px-3">Date</th>
+                            <th className="py-2.5 px-3">Plan / Package</th>
+                            <th className="py-2.5 px-3">Amount Paid</th>
+                            <th className="py-2.5 px-3">Payment Status</th>
+                            <th className="py-2.5 px-3">Expiry Deadline</th>
+                            <th className="py-2.5 px-3">Notes</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800/60 font-medium">
+                          {settings.subscriptionHistory.map((h) => (
+                            <tr key={h.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30">
+                              <td className="py-2.5 px-3 font-mono text-[11px] text-zinc-600 dark:text-zinc-300">
+                                {formatDateDMY(h.createdAt)}
+                              </td>
+                              <td className="py-2.5 px-3 font-extrabold text-purple-650 dark:text-purple-400">
+                                {h.planName || h.plan}
+                              </td>
+                              <td className="py-2.5 px-3 font-bold font-mono text-zinc-900 dark:text-white">
+                                ৳{Number(h.amount || 0).toLocaleString()}
+                              </td>
+                              <td className="py-2.5 px-3">
+                                <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase ${
+                                  h.paymentStatus === 'paid' ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-600 border border-amber-500/20'
+                                }`}>
+                                  {h.paymentStatus}
+                                </span>
+                              </td>
+                              <td className="py-2.5 px-3 font-mono text-zinc-600 dark:text-zinc-400">
+                                {h.expiryDate ? formatDateDMY(h.expiryDate) : 'Lifetime / No Expiry'}
+                              </td>
+                              <td className="py-2.5 px-3 text-zinc-500 dark:text-zinc-400 text-[11px] truncate max-w-xs">
+                                {h.notes || 'Subscription payment'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800 text-center text-xs text-zinc-400 font-semibold">
+                      Current active plan: <strong className="text-purple-650 dark:text-purple-400">{sub?.planName || 'Pro SaaS'}</strong> (৳{sub?.price || 0}). Additional renewal records will accumulate here upon billing updates.
+                    </div>
+                  )}
+                </div>
+
+                {/* Provider Card */}
+                <div className="p-5 rounded-2xl bg-gradient-to-r from-purple-500/10 via-indigo-500/10 to-purple-500/10 border border-purple-500/20 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div>
+                    <h4 className="text-xs font-black uppercase text-purple-650 dark:text-purple-400 tracking-wider">
+                      Official Software Provider & License Host
+                    </h4>
+                    <p className="text-xs text-zinc-650 dark:text-zinc-350 mt-1 font-semibold leading-relaxed">
+                      This system is engineered, hosted, and supported by <strong>Darun Tech Private Limited</strong>. Contact Darun Tech to renew, extend, or customize your license.
+                    </p>
+                  </div>
+                  <a
+                    href="https://daruntech.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2.5 rounded-xl text-xs font-black bg-white dark:bg-zinc-900 text-purple-650 dark:text-purple-400 border border-purple-200 dark:border-purple-800 hover:bg-purple-50 dark:hover:bg-purple-950 transition-all shrink-0 shadow-sm"
+                  >
+                    daruntech.com →
+                  </a>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Tab 7: System Audit Logs & Admin Activity History */}
+        {activeTab === 'audit_logs' && <AdminAuditLogsTab />}
       </form>
     </div>
   );
