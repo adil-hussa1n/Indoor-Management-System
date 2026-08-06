@@ -49,7 +49,7 @@ export const AdminRequests = () => {
           params: { userId: userRecord.id }
         });
       }
-      
+
       if (bookingsRes.data.success) {
         setUserBookings(bookingsRes.data.bookings);
       }
@@ -110,9 +110,9 @@ export const AdminRequests = () => {
         console.log('Real-time socket update: reloading requests...');
         fetchRequests();
       };
-      
+
       socket.on('new-booking-request', handleNewRequest);
-      
+
       return () => {
         socket.off('new-booking-request', handleNewRequest);
       };
@@ -330,11 +330,10 @@ export const AdminRequests = () => {
                           </div>
                         </td>
                         <td className="py-4">
-                          <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                            req.type === 'cancel'
+                          <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold ${req.type === 'cancel'
                               ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20'
                               : 'bg-indigo-500/10 text-indigo-500 border border-indigo-500/20'
-                          }`}>
+                            }`}>
                             {req.type === 'cancel' ? 'Cancellation' : 'Reschedule'}
                           </span>
                         </td>
@@ -362,11 +361,10 @@ export const AdminRequests = () => {
                           {data.reason || <span className="italic text-zinc-400">No reason specified</span>}
                         </td>
                         <td className="py-4">
-                          <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                            req.status === 'approved' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' :
-                            req.status === 'rejected' ? 'bg-red-500/10 text-red-500 border border-red-500/20' :
-                            'bg-amber-500/10 text-amber-500 border border-amber-500/20'
-                          }`}>
+                          <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold ${req.status === 'approved' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' :
+                              req.status === 'rejected' ? 'bg-red-500/10 text-red-500 border border-red-500/20' :
+                                'bg-amber-500/10 text-amber-500 border border-amber-500/20'
+                            }`}>
                             {req.status}
                           </span>
                           {req.status === 'rejected' && req.adminNote && (
@@ -496,21 +494,19 @@ export const AdminRequests = () => {
             <div className="flex gap-2 border-b border-zinc-150 dark:border-zinc-800 pb-1">
               <button
                 onClick={() => setHistoryTab('requests')}
-                className={`pb-2 px-3 text-xs font-bold transition-all border-b-2 bg-transparent border-0 cursor-pointer ${
-                  historyTab === 'requests'
+                className={`pb-2 px-3 text-xs font-bold transition-all border-b-2 bg-transparent border-0 cursor-pointer ${historyTab === 'requests'
                     ? 'border-purple-600 text-purple-600 dark:text-purple-400 dark:border-purple-400'
                     : 'border-transparent text-zinc-400 hover:text-zinc-600'
-                }`}
+                  }`}
               >
                 Reschedule & Cancel Requests ({userRequests.length})
               </button>
               <button
                 onClick={() => setHistoryTab('bookings')}
-                className={`pb-2 px-3 text-xs font-bold transition-all border-b-2 bg-transparent border-0 cursor-pointer ${
-                  historyTab === 'bookings'
+                className={`pb-2 px-3 text-xs font-bold transition-all border-b-2 bg-transparent border-0 cursor-pointer ${historyTab === 'bookings'
                     ? 'border-purple-600 text-purple-600 dark:text-purple-400 dark:border-purple-400'
                     : 'border-transparent text-zinc-400 hover:text-zinc-600'
-                }`}
+                  }`}
               >
                 Booking History ({userBookings.length})
               </button>
@@ -593,11 +589,10 @@ export const AdminRequests = () => {
                             ৳{ub.price}
                           </td>
                           <td className="p-3.5">
-                            <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                              ub.status === 'Cancelled' ? 'bg-rose-500/10 text-rose-500' :
-                              ub.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-500' :
-                              'bg-amber-500/10 text-amber-500'
-                            }`}>
+                            <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${ub.status === 'Cancelled' ? 'bg-rose-500/10 text-rose-500' :
+                                ub.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-500' :
+                                  'bg-amber-500/10 text-amber-500'
+                              }`}>
                               {ub.status}
                             </span>
                           </td>
