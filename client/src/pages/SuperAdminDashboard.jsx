@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MASTER_API } from '../services/api';
+import API, { MASTER_API } from '../services/api';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input, Select } from '../components/ui/Input';
@@ -93,6 +93,59 @@ export const SuperAdminDashboard = () => {
   // Search & Filter states
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+
+  // Super Admin Emergency Online Booking Pause Modal States
+  const [isSuperMaintOpen, setIsSuperMaintOpen] = useState(false);
+  const [superMaintTenant, setSuperMaintTenant] = useState(null);
+  const [superMaintEnabled, setSuperMaintEnabled] = useState(false);
+  const [superMaintMessage, setSuperMaintMessage] = useState('');
+  const [superMaintUntil, setSuperMaintUntil] = useState('');
+  const [superMaintSaving, setSuperMaintSaving] = useState(false);
+
+  const openSuperMaintModal = async (tenant) => {
+    setSuperMaintTenant(tenant);
+    setIsSuperMaintOpen(true);
+    try {
+      const res = await API.get('/info', { headers: { 'X-Tenant-Slug': tenant.slug } });
+      if (res.data.success && res.data.settings?.maintenanceMode) {
+        const m = res.data.settings.maintenanceMode;
+        setSuperMaintEnabled(!!m.enabled);
+        setSuperMaintMessage(m.message || '⚠️ Online booking is temporarily paused for scheduled system maintenance.');
+        setSuperMaintUntil(m.until ? new Date(m.until).toISOString().slice(0, 16) : '');
+      } else {
+        setSuperMaintEnabled(false);
+        setSuperMaintMessage('⚠️ Online booking is temporarily paused for scheduled system maintenance.');
+        setSuperMaintUntil('');
+      }
+    } catch (e) {
+      setSuperMaintEnabled(false);
+      setSuperMaintMessage('⚠️ Online booking is temporarily paused for scheduled system maintenance.');
+      setSuperMaintUntil('');
+    }
+  };
+
+  const handleSaveSuperMaint = async (e) => {
+    e.preventDefault();
+    if (!superMaintTenant) return;
+    setSuperMaintSaving(true);
+    try {
+      const payload = {
+        maintenanceMode: {
+          enabled: superMaintEnabled,
+          message: superMaintMessage,
+          until: superMaintUntil ? new Date(superMaintUntil).toISOString() : null,
+          disabledBy: 'superadmin',
+        }
+      };
+      await API.patch('/settings', payload, { headers: { 'X-Tenant-Slug': superMaintTenant.slug } });
+      toast.success(`Updated Emergency Online Booking Control for "${superMaintTenant.businessName}"`);
+      setIsSuperMaintOpen(false);
+    } catch (err) {
+      toast.error('Failed to update maintenance mode settings.');
+    } finally {
+      setSuperMaintSaving(false);
+    }
+  };
 
   const exportCSVReport = () => {
     if (!tenants || tenants.length === 0) {
@@ -473,9 +526,10 @@ export const SuperAdminDashboard = () => {
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />Central Administration
                 </span>
               </div>
-              <p className={`text-xs md:text-sm font-medium mt-1 ${themeMode === 'dark' ? 'text-zinc-400' : 'text-slate-500'}`}>
-                Centralized management and oversight of your multi-tenant indoor sports business platform &bull; <strong className="text-purple-600 dark:text-purple-400 font-bold">Built, Operated & Managed by Darun Tech Private Limited</strong>
-              </p>
+              <div className={`text-xs md:text-sm font-medium mt-1.5 space-y-0.5 ${themeMode === 'dark' ? 'text-zinc-400' : 'text-slate-500'}`}>
+                <div>Centralized management and oversight of your multi-tenant indoor sports business platform</div>
+                <div><strong className="text-purple-600 dark:text-purple-400 font-bold">Built, Operated & Managed by Darun Tech Private Limited</strong></div>
+              </div>
             </div>
           </div>
 
@@ -884,6 +938,14 @@ export const SuperAdminDashboard = () => {
                             title={t.isActive ? 'Suspend client access' : 'Activate client access'}
                           >
                             {t.isActive ? <ToggleRight className="w-5 h-5 text-emerald-500" /> : <ToggleLeft className="w-5 h-5 text-zinc-400" />}
+                          </button>
+
+                          <button
+                            onClick={() => openSuperMaintModal(t)}
+                            className="p-1.5 text-zinc-400 hover:text-rose-600 transition-colors"
+                            title="🚨 Emergency Online Booking Control & System Pause"
+                          >
+                            <ShieldAlert className="w-4 h-4 text-rose-500 hover:text-rose-600" />
                           </button>
 
                           <button
@@ -1454,6 +1516,87 @@ export const SuperAdminDashboard = () => {
               </Button>
               <Button type="submit" disabled={updating}>
                 {updating ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </div>
+          </form>
+        </Dialog>
+      )}
+
+      {/* Super Admin Emergency Online Booking Control Modal */}
+      {isSuperMaintOpen && superMaintTenant && (
+        <Dialog
+          isOpen={isSuperMaintOpen}
+          onClose={() => setIsSuperMaintOpen(false)}
+          title={`🚨 Emergency Online Booking Control — ${superMaintTenant.businessName}`}
+          className="max-w-lg"
+        >
+          <form onSubmit={handleSaveSuperMaint} className="space-y-4 pt-4 text-left">
+            <div className={`p-4 rounded-2xl border space-y-3 ${
+              superMaintEnabled ? 'bg-rose-500/10 border-rose-500/30' : 'bg-zinc-100 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800'
+            }`}>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
+                  Online Booking Status
+                </span>
+                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                  superMaintEnabled ? 'bg-rose-500 text-white animate-pulse' : 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                }`}>
+                  {superMaintEnabled ? 'PAUSED ⏸️' : 'ACTIVE ▶️'}
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSuperMaintEnabled(!superMaintEnabled)}
+                className={`w-full py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-sm cursor-pointer ${
+                  superMaintEnabled
+                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                    : 'bg-rose-600 hover:bg-rose-700 text-white'
+                }`}
+              >
+                {superMaintEnabled ? '▶️ Resume Online Booking for Client' : '⏸️ Emergency Pause Online Booking'}
+              </button>
+            </div>
+
+            {superMaintEnabled && (
+              <div className="space-y-4 pt-1 animate-fade-in">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider block">
+                    Custom Highlighted Alert Message (Shown on Booking Page)
+                  </label>
+                  <textarea
+                    rows="3"
+                    value={superMaintMessage}
+                    onChange={(e) => setSuperMaintMessage(e.target.value)}
+                    placeholder="e.g. ⚠️ Online booking is temporarily paused for scheduled maintenance. Please contact venue management for manual reservations."
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-rose-300 dark:border-rose-800 bg-white dark:bg-zinc-950 text-xs font-semibold text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider block">
+                    Optional Timer / Auto-Resume Date & Time
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={superMaintUntil}
+                    onChange={(e) => setSuperMaintUntil(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-rose-300 dark:border-rose-800 bg-white dark:bg-zinc-950 text-xs font-semibold text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500"
+                  />
+                  <p className="text-[10px] text-zinc-400 font-medium">
+                    Leave blank to remain paused until manually resumed, or set a date/time for automatic reopening.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2 pt-4 border-t border-zinc-100 dark:border-zinc-900">
+              <Button type="button" variant="secondary" onClick={() => setIsSuperMaintOpen(false)} disabled={superMaintSaving}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={superMaintSaving}>
+                {superMaintSaving ? 'Saving...' : 'Save Emergency Controls'}
               </Button>
             </div>
           </form>

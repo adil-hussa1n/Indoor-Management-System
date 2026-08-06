@@ -126,6 +126,15 @@ const Settings = sequelize.define('Settings', {
     type: DataTypes.JSON,
     defaultValue: [],
   },
+  maintenanceMode: {
+    type: DataTypes.JSON,
+    defaultValue: {
+      enabled: false,
+      message: '⚠️ Online booking is temporarily paused for system maintenance. Please contact venue management for manual reservations.',
+      until: null,
+      disabledBy: 'admin',
+    },
+  },
 }, {
   tableName: 'settings',
   timestamps: true,

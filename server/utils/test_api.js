@@ -164,6 +164,22 @@ async function run() {
     assert(verify.data.settings.discounts[0].name === 'Summer 10% Off', 'discount name mismatch');
   });
 
+  await test('PATCH /settings updates maintenanceMode and GET /info returns maintenance status', async () => {
+    const maintenanceMode = {
+      enabled: true,
+      message: '⚠️ Test maintenance mode alert message.',
+      until: '2026-12-31T23:59:59.000Z',
+      disabledBy: 'admin',
+    };
+    const r = await api('PATCH', '/settings', { maintenanceMode }, true);
+    assert(r.ok, `Status ${r.status}: ${JSON.stringify(r.data)}`);
+    const verify = await api('GET', '/info');
+    assert(verify.data.settings.maintenanceMode.enabled === true, 'maintenanceMode not enabled');
+    assert(verify.data.settings.maintenanceMode.message === '⚠️ Test maintenance mode alert message.', 'maintenance message mismatch');
+    // Reset back to false
+    await api('PATCH', '/settings', { maintenanceMode: { enabled: false, message: '', until: null, disabledBy: 'admin' } }, true);
+  });
+
   await test('GET /audit-logs returns system audit logs after actions', async () => {
     const r = await api('GET', '/audit-logs', null, true);
     assert(r.status === 200, `Status ${r.status}: ${JSON.stringify(r.data)}`);

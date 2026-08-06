@@ -145,6 +145,14 @@ export const AdminSettings = () => {
         enableDarkMode: settings.enableDarkMode ?? true,
         rules: settings.rules || [],
         discounts: settings.discounts || [],
+        maintenanceMode: (typeof settings.maintenanceMode === 'string'
+          ? (() => { try { return JSON.parse(settings.maintenanceMode); } catch (e) { return null; } })()
+          : settings.maintenanceMode) || {
+          enabled: false,
+          message: '⚠️ Online booking is temporarily paused for scheduled system maintenance. Please contact venue management for manual reservations.',
+          until: '',
+          disabledBy: 'admin',
+        },
         businessHours: {
           weekday: settings.businessHours?.weekday || '08:00 AM - 10:00 PM',
           weekend: settings.businessHours?.weekend || '09:00 AM - 11:00 PM',
@@ -341,6 +349,7 @@ export const AdminSettings = () => {
     data.append('rules', JSON.stringify(formData.rules));
     data.append('paymentConfig', JSON.stringify(formData.paymentConfig));
     data.append('discounts', JSON.stringify(formData.discounts || []));
+    data.append('maintenanceMode', JSON.stringify(formData.maintenanceMode));
 
     updateSettingsMutation.mutate(data, {
       onSuccess: () => {
@@ -545,6 +554,98 @@ export const AdminSettings = () => {
         {/* Tab 1: General & Media */}
         {activeTab === 'general' && (
           <div className="space-y-6 animate-fade-in">
+            {/* 🚨 Emergency Maintenance & System Pause Card */}
+            <div className={`glass-card p-6 rounded-3xl shadow-md transition-all space-y-4 border ${
+              formData.maintenanceMode?.enabled
+                ? 'bg-rose-500/10 dark:bg-rose-955/20 border-rose-500/30'
+                : 'border-zinc-200/80 dark:border-zinc-800'
+            }`}>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-150 dark:border-zinc-800 pb-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-extrabold text-zinc-900 dark:text-white flex items-center gap-2">
+                      🚨 Emergency Online Booking Control & System Pause
+                    </h3>
+                    {formData.maintenanceMode?.enabled && (
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500 text-white animate-pulse">
+                        ONLINE BOOKING PAUSED ⏸️
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-zinc-400 mt-1">
+                    Instantly pause public online slot bookings during venue maintenance, power outages, or emergency closures.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFormData(prev => ({
+                      ...prev,
+                      maintenanceMode: {
+                        ...prev.maintenanceMode,
+                        enabled: !prev.maintenanceMode?.enabled,
+                        disabledBy: 'admin',
+                      }
+                    }));
+                  }}
+                  className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-md cursor-pointer shrink-0 ${
+                    formData.maintenanceMode?.enabled
+                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20'
+                      : 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-500/20'
+                  }`}
+                >
+                  {formData.maintenanceMode?.enabled ? '▶️ Resume Online Booking' : '⏸️ Temporary Pause Booking'}
+                </button>
+              </div>
+
+              {formData.maintenanceMode?.enabled && (
+                <div className="space-y-4 pt-1 animate-fade-in">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider block">
+                        Custom Highlighted Alert Message (Shown to Customers)
+                      </label>
+                      <textarea
+                        rows="2"
+                        value={formData.maintenanceMode?.message || ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setFormData(prev => ({
+                            ...prev,
+                            maintenanceMode: { ...prev.maintenanceMode, message: val }
+                          }));
+                        }}
+                        placeholder="e.g. ⚠️ Online booking is temporarily paused for scheduled maintenance. Please call +8801712345678 for manual bookings."
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-rose-300 dark:border-rose-800 bg-white dark:bg-zinc-950 text-xs font-semibold text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider block">
+                        Optional Timer / Auto-Resume Date & Time
+                      </label>
+                      <input
+                        type="datetime-local"
+                        value={formData.maintenanceMode?.until ? new Date(formData.maintenanceMode.until).toISOString().slice(0, 16) : ''}
+                        onChange={(e) => {
+                          const val = e.target.value ? new Date(e.target.value).toISOString() : null;
+                          setFormData(prev => ({
+                            ...prev,
+                            maintenanceMode: { ...prev.maintenanceMode, until: val }
+                          }));
+                        }}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-rose-300 dark:border-rose-800 bg-white dark:bg-zinc-950 text-xs font-semibold text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500"
+                      />
+                      <p className="text-[10px] text-zinc-400 font-medium">
+                        Leave blank to keep paused manually, or pick a date & time when online booking should automatically resume.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Core Details */}
             <div className="glass-card p-6 rounded-3xl shadow-sm space-y-4">
               <div>

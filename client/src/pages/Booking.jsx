@@ -459,6 +459,48 @@ export const Booking = () => {
     );
   }
 
+  const isMaintenanceActive = React.useMemo(() => {
+    const maint = settings?.maintenanceMode;
+    if (!maint || !maint.enabled) return false;
+    if (maint.until) {
+      const untilDate = new Date(maint.until);
+      if (new Date() >= untilDate) return false;
+    }
+    return true;
+  }, [settings?.maintenanceMode]);
+
+  if (isMaintenanceActive) {
+    return (
+      <div className="max-w-2xl mx-auto py-16 px-4 text-center space-y-6 animate-fade-in">
+        <div className="glass-card p-8 rounded-3xl shadow-xl space-y-6 border border-rose-500/30 bg-rose-500/10">
+          <div className="w-16 h-16 rounded-full bg-rose-500/20 text-rose-500 mx-auto flex items-center justify-center font-black text-3xl animate-pulse">
+            🚨
+          </div>
+          <div className="space-y-3">
+            <h2 className="text-2xl font-black text-rose-600 dark:text-rose-400 uppercase tracking-tight">
+              Online Booking Temporarily Paused
+            </h2>
+            <p className="text-sm font-bold text-zinc-800 dark:text-zinc-200 leading-relaxed bg-white/80 dark:bg-zinc-900/80 p-4 rounded-2xl border border-rose-500/20 shadow-sm">
+              {settings?.maintenanceMode?.message || '⚠️ Online booking is temporarily paused for scheduled maintenance. Please contact venue management for manual reservations.'}
+            </p>
+            {settings?.maintenanceMode?.until && (
+              <div className="p-3.5 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-xs text-purple-700 dark:text-purple-300 font-extrabold flex items-center justify-center gap-2">
+                <span>⏳ Scheduled Auto-Resume Date:</span>
+                <span className="font-mono text-sm font-black">{new Date(settings.maintenanceMode.until).toLocaleString()}</span>
+              </div>
+            )}
+          </div>
+          <div className="p-4 rounded-2xl bg-zinc-100 dark:bg-zinc-900/80 text-xs font-semibold text-zinc-600 dark:text-zinc-400 space-y-1">
+            <p>For urgent court reservations & venue inquiries, please call us directly:</p>
+            <p className="font-extrabold text-base text-purple-650 dark:text-purple-400 font-mono pt-1">
+              📞 {settings?.contactPhone || '+880 1712-345678'}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-16 text-left animate-fade-in">
       <h1 className="text-4xl font-black tracking-tight text-zinc-900 dark:text-white mb-2 text-center">

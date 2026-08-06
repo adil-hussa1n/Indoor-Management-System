@@ -102,7 +102,7 @@ export const updateSettings = async (req, res, next) => {
     }
 
     // Parse stringified JSON fields
-    const jsonFields = ['businessHours', 'pricing', 'socialLinks', 'seo', 'availableSports', 'holidays', 'maintenanceDays', 'weekendDays', 'hero', 'rules', 'theme', 'paymentConfig', 'discounts'];
+    const jsonFields = ['businessHours', 'pricing', 'socialLinks', 'seo', 'availableSports', 'holidays', 'maintenanceDays', 'weekendDays', 'hero', 'rules', 'theme', 'paymentConfig', 'discounts', 'maintenanceMode'];
     for (const field of jsonFields) {
       if (body[field]) {
         try {
@@ -144,6 +144,9 @@ export const updateSettings = async (req, res, next) => {
     if (typeof plain.discounts === 'string') {
       try { plain.discounts = JSON.parse(plain.discounts); } catch (e) {}
     }
+    if (typeof plain.maintenanceMode === 'string') {
+      try { plain.maintenanceMode = JSON.parse(plain.maintenanceMode); } catch (e) {}
+    }
 
     res.status(200).json({ success: true, settings: plain });
   } catch (error) {
@@ -162,6 +165,10 @@ export const getPublicInfo = async (req, res, next) => {
     let discounts = settings.discounts || [];
     if (typeof discounts === 'string') {
       try { discounts = JSON.parse(discounts); } catch (e) { discounts = []; }
+    }
+    let maintenanceMode = settings.maintenanceMode || { enabled: false };
+    if (typeof maintenanceMode === 'string') {
+      try { maintenanceMode = JSON.parse(maintenanceMode); } catch (e) { maintenanceMode = { enabled: false }; }
     }
 
     const publicSettings = {
@@ -184,6 +191,7 @@ export const getPublicInfo = async (req, res, next) => {
       rules: settings.rules,
       paymentConfig: pConfig,
       discounts,
+      maintenanceMode,
     };
     res.status(200).json({ success: true, settings: publicSettings });
   } catch (error) {

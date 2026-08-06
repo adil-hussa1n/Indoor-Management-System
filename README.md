@@ -35,6 +35,11 @@ A premium, production-grade **Multi-Tenant SaaS Indoor Sports Booking System** b
 * **Bangladesh SMS Gateways**: Integrated with local SMS gateways (SSLWireless) with an automated mock fallback for developer testing.
 * **Customer Dashboard**: Users can check booking schedules, modify profiles, and track booking statuses.
 
+### 🚨 Emergency Online Booking Pause & Maintenance Engine
+* **Super Admin & Business Admin Control**: Both Super Admin (`SuperAdminDashboard.jsx`) and Venue Admins (`AdminSettings.jsx`) can temporarily pause online slot reservations instantly during emergencies, power outages, or facility maintenance.
+* **Custom Alert Message & Auto-Resume Timer**: Admins can configure a custom highlighted banner message shown to customers and an optional datetime timer for automatic system reopening.
+* **Customer Protection**: The public booking page (`Booking.jsx`) renders a glowing emergency alert box displaying the reason, contact phone number, and scheduled resume time while locking slot selection.
+
 ### 🏷️ Automatic Online & Admin Manual Discounts Engine
 * **Automatic Date-Range Discounts**: Admins can set promotional discounts (`Percentage %` or `Fixed Amount ৳`) for specific dates or date ranges in `AdminSettings`. The system automatically detects and applies discounts on the online booking page (`Booking.jsx`) with live promo badges (`🎉 Promo Offer`).
 * **Admin Manual Booking Discounts**: Admins can apply custom discounts (`Percentage %` or `Fixed Amount ৳`) at any time when creating manual reservations in `AdminBookings`, automatically recalculating net totals and settlement amounts.
@@ -81,7 +86,7 @@ Indoor-Management-System/
 │
 ├── server/                         # Backend — Node.js + Express + MySQL
 │   ├── Dockerfile                  # Node.js production image
-│   ├── utils/                      # test_api.js (Automated 57 API integration test suite)
+│   ├── utils/                      # test_api.js (Automated 58 API integration test suite)
 │   ├── src/
 │   │   ├── config/                 # master-db.js (master schema), sequelize.js (pool manager)
 │   │   ├── models/                 # master/ (Tenant, SuperAdmin) & tenant models factory (Ground, Slot, Booking, etc.)
@@ -186,7 +191,7 @@ cd client && npm run dev
 ```
 
 ### 🧪 Automated Integration Tests
-You can verify backend multi-tenant route configurations, tenant isolation logic, Grounds CRUD, discounts, and customer OTP cycles using the automated test suite (57 tests):
+You can verify backend multi-tenant route configurations, tenant isolation logic, Grounds CRUD, discounts, emergency maintenance modes, and customer OTP cycles using the automated test suite (58 tests):
 ```bash
 cd server
 npm run test:api

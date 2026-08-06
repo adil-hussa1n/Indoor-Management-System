@@ -162,6 +162,9 @@ export const tenantMiddleware = async (req, res, next) => {
         await tenantDb.query("ALTER TABLE `settings` ADD COLUMN `discounts` JSON NULL");
       } catch (err) {}
       try {
+        await tenantDb.query("ALTER TABLE `settings` ADD COLUMN `maintenanceMode` JSON NULL");
+      } catch (err) {}
+      try {
         await tenantDb.query("ALTER TABLE `slots` ADD COLUMN `groundId` INT NULL");
       } catch (err) {}
       try {
