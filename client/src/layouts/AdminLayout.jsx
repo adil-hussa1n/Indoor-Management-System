@@ -27,6 +27,8 @@ import {
   AlertTriangle,
   BellRing,
   Users,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
 import { Loader } from '../components/ui/Loader';
 
@@ -319,6 +321,18 @@ export const AdminLayout = () => {
     );
   }
 
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    return localStorage.getItem('adminSidebarCollapsed') === 'true';
+  });
+
+  const toggleSidebarCollapse = () => {
+    setIsSidebarCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem('adminSidebarCollapsed', String(next));
+      return next;
+    });
+  };
+
   if (!isAdmin) return null;
 
   const isPrimaryOwner = !adminUser || adminUser.role === 'admin';
@@ -335,14 +349,13 @@ export const AdminLayout = () => {
     { name: 'Blacklist', path: '/admin/blacklist', icon: <ShieldAlert className="w-5 h-5" />, permKey: 'bookings' },
     { name: 'Reviews', path: '/admin/reviews', icon: <Sparkles className="w-5 h-5" />, hasAlert: alerts.reviews, permKey: 'messages' },
     { name: 'Messages', path: '/admin/messages', icon: <MessageSquare className="w-5 h-5" />, hasAlert: alerts.messages, permKey: 'messages' },
-    { name: 'Staff Management', path: '/admin/settings?tab=staff', icon: <Users className="w-5 h-5" />, ownerOnly: true },
     { name: 'Gallery', path: '/admin/gallery', icon: <Images className="w-5 h-5" />, permKey: 'settings' },
     { name: 'Settings', path: '/admin/settings', icon: <SettingsIcon className="w-5 h-5" />, permKey: 'settings' },
   ];
 
   const menuItems = allMenuItems.filter((item) => {
     if (isPrimaryOwner) return true; // Owner sees all tabs
-    if (item.ownerOnly) return false; // Staff management is owner only
+    if (item.ownerOnly) return false;
     if (!item.permKey) return true; // Always visible (e.g. Dashboard)
     return perms[item.permKey] === true; // Check granted permission
   });
@@ -357,56 +370,98 @@ export const AdminLayout = () => {
   return (
     <div className="min-h-screen flex bg-slate-100/80 dark:bg-zinc-950 transition-colors duration-300">
       {/* Sidebar for Desktop */}
-      <aside className="hidden lg:flex flex-col w-64 h-screen sticky top-0 border-r border-slate-200/90 dark:border-zinc-900 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 shadow-xs dark:shadow-none">
-        <div className="h-16 flex items-center gap-2 px-6 border-b border-slate-200/70 dark:border-zinc-900">
-          {(settings?.logo || cachedSettings?.logo) ? (
-            <img src={settings?.logo || cachedSettings?.logo} alt="Logo" className="w-8 h-8 object-contain rounded-lg" />
-          ) : (
-            <div className="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center text-white font-bold text-sm">
-              {(settings?.businessName || cachedSettings?.businessName || 'A')[0].toUpperCase()}
-            </div>
+      <aside
+        className={`hidden lg:flex flex-col h-screen sticky top-0 border-r border-slate-200/90 dark:border-zinc-900 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 shadow-xs dark:shadow-none transition-all duration-300 ease-in-out ${
+          isSidebarCollapsed ? 'w-20' : 'w-64'
+        }`}
+      >
+        <div className={`h-16 flex items-center border-b border-slate-200/70 dark:border-zinc-900 ${
+          isSidebarCollapsed ? 'justify-center px-2' : 'justify-between px-5'
+        }`}>
+          <div className="flex items-center gap-2.5 min-w-0 overflow-hidden">
+            {(settings?.logo || cachedSettings?.logo) ? (
+              <img src={settings?.logo || cachedSettings?.logo} alt="Logo" className="w-8 h-8 object-contain rounded-lg shrink-0" />
+            ) : (
+              <div className="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
+                {(settings?.businessName || cachedSettings?.businessName || 'A')[0].toUpperCase()}
+              </div>
+            )}
+            {!isSidebarCollapsed && (
+              <span className="font-extrabold text-md tracking-wider bg-gradient-to-r from-purple-500 to-indigo-500 bg-clip-text text-transparent uppercase truncate">
+                Admin Console
+              </span>
+            )}
+          </div>
+
+          {!isSidebarCollapsed && (
+            <button
+              onClick={toggleSidebarCollapse}
+              className="p-1.5 rounded-xl text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors cursor-pointer shrink-0"
+              title="Collapse Sidebar"
+            >
+              <PanelLeftClose className="w-5 h-5" />
+            </button>
           )}
-          <span className="font-extrabold text-md tracking-wider bg-gradient-to-r from-purple-500 to-indigo-500 bg-clip-text text-transparent uppercase">
-            Admin Console
-          </span>
         </div>
 
-        <nav className="flex-1 px-4 py-6 space-y-1">
+        <nav className="flex-1 px-3 py-6 space-y-1.5 overflow-y-auto custom-scrollbar">
           {menuItems.map((item) => (
             <Link
               key={item.name}
               to={item.path}
-              className={`flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
+              title={isSidebarCollapsed ? item.name : undefined}
+              className={`flex items-center rounded-xl font-semibold transition-all duration-200 ${
+                isSidebarCollapsed
+                  ? 'justify-center p-3 text-base'
+                  : 'justify-between px-4 py-3 text-sm'
+              } ${
                 isActive(item.path)
                   ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-105/10 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-white'
+                  : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-white'
               }`}
             >
-              <div className="flex items-center gap-3">
-                {item.icon}
-                {item.name}
+              <div className="flex items-center gap-3 relative">
+                <span className="shrink-0">{item.icon}</span>
+                {!isSidebarCollapsed && (
+                  <span className="truncate">{item.name}</span>
+                )}
                 {item.hasAlert && (
-                  <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
+                  <span className={`w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)] ${
+                    isSidebarCollapsed ? 'absolute -top-1 -right-1' : ''
+                  }`} />
                 )}
               </div>
-              <ChevronRight className={`w-4 h-4 opacity-50 ${isActive(item.path) ? 'block' : 'hidden'}`} />
+              {!isSidebarCollapsed && (
+                <ChevronRight className={`w-4 h-4 opacity-50 ${isActive(item.path) ? 'block' : 'hidden'}`} />
+              )}
             </Link>
           ))}
         </nav>
 
-        <div className="p-4 border-t border-zinc-100 dark:border-zinc-900 space-y-3">
+        <div className="p-3 border-t border-zinc-100 dark:border-zinc-900 space-y-2">
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all cursor-pointer"
+            title={isSidebarCollapsed ? 'Sign Out' : undefined}
+            className={`flex items-center rounded-xl font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all cursor-pointer ${
+              isSidebarCollapsed ? 'justify-center p-3 w-full' : 'gap-3 w-full px-4 py-3 text-sm'
+            }`}
           >
-            <LogOut className="w-5 h-5" />
-            Sign Out
+            <LogOut className="w-5 h-5 shrink-0" />
+            {!isSidebarCollapsed && <span>Sign Out</span>}
           </button>
-          <div className="pt-2 border-t border-zinc-100/50 dark:border-zinc-900/50 text-center">
-            <a href="https://daruntech.com" target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500/80 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
-              System by Darun Tech
-            </a>
-          </div>
+
+          {!isSidebarCollapsed && (
+            <div className="pt-2 border-t border-zinc-100/50 dark:border-zinc-900/50 text-center">
+              <a
+                href="https://daruntech.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500/80 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
+              >
+                System by Darun Tech
+              </a>
+            </div>
+          )}
         </div>
       </aside>
 
@@ -422,6 +477,16 @@ export const AdminLayout = () => {
             >
               <Menu className="w-5 h-5" />
             </button>
+
+            {/* Sidebar collapse button (Desktop) */}
+            <button
+              onClick={toggleSidebarCollapse}
+              className="hidden lg:flex p-2 rounded-xl border border-zinc-200 dark:border-zinc-800/80 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer bg-white dark:bg-zinc-900"
+              title={isSidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+            >
+              {isSidebarCollapsed ? <PanelLeftOpen className="w-4.5 h-4.5" /> : <PanelLeftClose className="w-4.5 h-4.5" />}
+            </button>
+
             <h1 className="font-extrabold text-lg text-zinc-900 dark:text-white hidden sm:block">
               {menuItems.find((item) => isActive(item.path))?.name || 'Admin'}
             </h1>
