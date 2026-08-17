@@ -189,10 +189,16 @@ export const AdminSettings = () => {
           description: settings.hero?.description || 'Book our state-of-the-art climate-controlled indoor arena. Designed for futsal, basketball, badminton, and more. Clean, professional, and ready.',
           mediaType: settings.hero?.mediaType || 'image',
           autoPlay360: settings.hero?.autoPlay360 ?? true,
-          useGlassBg: settings.hero?.useGlassBg ?? false,
+          useGlassBg: settings.hero?.useGlassBg ?? true,
           darkenOverlay: settings.hero?.darkenOverlay ?? false,
           blurBackground: settings.hero?.blurBackground ?? false,
           zoomAnimation: settings.hero?.zoomAnimation ?? false,
+          overlayStyle: settings.hero?.overlayStyle || 'dark',
+          showParticles: settings.hero?.showParticles ?? true,
+          primaryCtaText: settings.hero?.primaryCtaText || 'Book Court Now',
+          primaryCtaLink: settings.hero?.primaryCtaLink || '/booking',
+          secondaryCtaText: settings.hero?.secondaryCtaText || 'Explore Arena',
+          secondaryCtaLink: settings.hero?.secondaryCtaLink || '/about',
         },
         paymentConfig: (typeof settings.paymentConfig === 'string'
           ? (() => { try { return JSON.parse(settings.paymentConfig); } catch (e) { return null; } })()
@@ -904,9 +910,51 @@ export const AdminSettings = () => {
           </div>
         )}
 
-        {/* Tab 2: Hero Text Content */}
+        {/* Tab 2: Hero Section Settings */}
         {activeTab === 'hero' && (
           <div className="space-y-6 animate-fade-in">
+            {/* Visual Overlay & Effects Settings */}
+            <div className="glass-card p-6 rounded-3xl shadow-sm space-y-4">
+              <div>
+                <h3 className="text-lg font-bold text-zinc-900 dark:text-white">Hero Visual Effects & Styling</h3>
+                <p className="text-xs text-zinc-400 mt-1">Configure background dimming, particle lighting, and glassmorphic card effects.</p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5 text-left">
+                  <label className="text-xs font-semibold text-zinc-650 dark:text-zinc-450 uppercase tracking-wider">Hero Overlay Color Tint</label>
+                  <select
+                    value={formData.hero.overlayStyle || 'dark'}
+                    onChange={(e) => handleChange('hero', 'overlayStyle', e.target.value)}
+                    className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-3 py-2.5 text-sm text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-650 transition-all duration-200 cursor-pointer"
+                  >
+                    <option value="dark">🌑 Dark Charcoal (Deep Contrast)</option>
+                    <option value="purple">🔮 Royal Purple & Indigo Glow</option>
+                    <option value="midnight">🌊 Deep Midnight Blue</option>
+                    <option value="emerald">🌿 Emerald Forest Green</option>
+                    <option value="rose">🍷 Sunset Rose & Crimson</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-3 pt-6">
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.hero.showParticles !== false}
+                      onChange={(e) => handleChange('hero', 'showParticles', e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-zinc-200 dark:bg-zinc-800 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-650 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-650" />
+                  </label>
+                  <div className="flex flex-col text-left">
+                    <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Floating Light Particles</span>
+                    <span className="text-[10px] text-zinc-400">Adds ambient floating light orbs behind hero text.</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Hero Text Content */}
             <div className="glass-card p-6 rounded-3xl shadow-sm space-y-4">
               <div>
                 <h3 className="text-lg font-bold text-zinc-900 dark:text-white">Hero Titles & Copy</h3>
@@ -925,7 +973,7 @@ export const AdminSettings = () => {
                     onChange={(e) => handleChange('hero', 'title1', e.target.value)}
                   />
                   <Input
-                    label="Headline Title Line 2"
+                    label="Headline Title Line 2 (Highlighted Gradient)"
                     value={formData.hero.title2}
                     onChange={(e) => handleChange('hero', 'title2', e.target.value)}
                   />
@@ -937,6 +985,44 @@ export const AdminSettings = () => {
                     onChange={(e) => handleChange('hero', 'description', e.target.value)}
                     className="flex min-h-[100px] w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-3 py-2.5 text-sm text-zinc-900 dark:text-white placeholder-zinc-450 focus:outline-none focus:ring-2 focus:ring-purple-655 transition-all duration-200"
                     rows={4}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* CTA Buttons & Links Editor */}
+            <div className="glass-card p-6 rounded-3xl shadow-sm space-y-4">
+              <div>
+                <h3 className="text-lg font-bold text-zinc-900 dark:text-white">Call To Action Buttons</h3>
+                <p className="text-xs text-zinc-400 mt-1">Customize button labels and destination page links on the homepage hero.</p>
+              </div>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Input
+                    label="Primary Button Text"
+                    value={formData.hero.primaryCtaText || 'Book Court Now'}
+                    onChange={(e) => handleChange('hero', 'primaryCtaText', e.target.value)}
+                    placeholder="e.g. Book Court Now ➔"
+                  />
+                  <Input
+                    label="Primary Button Target Link"
+                    value={formData.hero.primaryCtaLink || '/booking'}
+                    onChange={(e) => handleChange('hero', 'primaryCtaLink', e.target.value)}
+                    placeholder="e.g. /booking"
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-zinc-100 dark:border-zinc-900 pt-4">
+                  <Input
+                    label="Secondary Button Text"
+                    value={formData.hero.secondaryCtaText || 'Explore Arena'}
+                    onChange={(e) => handleChange('hero', 'secondaryCtaText', e.target.value)}
+                    placeholder="e.g. Explore Arena"
+                  />
+                  <Input
+                    label="Secondary Button Target Link"
+                    value={formData.hero.secondaryCtaLink || '/about'}
+                    onChange={(e) => handleChange('hero', 'secondaryCtaLink', e.target.value)}
+                    placeholder="e.g. /about"
                   />
                 </div>
               </div>

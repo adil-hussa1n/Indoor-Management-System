@@ -201,26 +201,52 @@ export const Home = () => {
         )}
 
         {/* Overlay Layers */}
-        <div
-          className={`absolute inset-0 transition-all duration-300 ${
-            settings?.heroBanner
-              ? settings?.hero?.darkenOverlay
-                ? 'bg-black/60 dark:bg-black/80 backdrop-blur-[1px]'
-                : 'bg-gradient-to-b from-black/70 via-black/50 to-zinc-950/80 sm:bg-white/50 sm:dark:bg-zinc-950/70 backdrop-blur-[1px]'
-              : 'bg-gradient-to-br from-purple-950/30 via-indigo-950/20 to-zinc-950'
-          }`}
-        />
+        {(() => {
+          const overlayStyle = settings?.hero?.overlayStyle || 'dark';
+          let overlayGradient = 'bg-black/60 dark:bg-black/80';
+
+          if (overlayStyle === 'purple') {
+            overlayGradient = 'bg-gradient-to-b from-purple-950/80 via-indigo-950/70 to-zinc-950/90';
+          } else if (overlayStyle === 'midnight') {
+            overlayGradient = 'bg-gradient-to-b from-slate-950/90 via-blue-950/80 to-zinc-950/95';
+          } else if (overlayStyle === 'emerald') {
+            overlayGradient = 'bg-gradient-to-b from-emerald-950/85 via-teal-950/70 to-zinc-950/95';
+          } else if (overlayStyle === 'rose') {
+            overlayGradient = 'bg-gradient-to-b from-rose-950/85 via-purple-950/70 to-zinc-950/95';
+          } else if (!settings?.hero?.darkenOverlay) {
+            overlayGradient = 'bg-gradient-to-b from-black/70 via-black/50 to-zinc-950/80 sm:bg-white/50 sm:dark:bg-zinc-950/70';
+          }
+
+          return (
+            <div
+              className={`absolute inset-0 transition-all duration-500 backdrop-blur-[1px] ${overlayGradient}`}
+            />
+          );
+        })()}
+
+        {/* Ambient Floating Orbs / Particle Effect */}
+        {settings?.hero?.showParticles !== false && (
+          <div className="absolute inset-0 overflow-hidden pointer-events-none z-10">
+            <div className="absolute top-1/4 left-10 w-72 h-72 bg-purple-500/20 rounded-full blur-3xl animate-pulse" />
+            <div className="absolute bottom-1/4 right-10 w-96 h-96 bg-indigo-500/15 rounded-full blur-3xl animate-pulse [animation-delay:1.5s]" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[30rem] h-[30rem] bg-pink-500/10 rounded-full blur-3xl animate-pulse [animation-delay:3s]" />
+          </div>
+        )}
 
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_60%_at_50%_-10%,rgba(168,85,247,0.25),rgba(0,0,0,0))]" />
 
         <div className="max-w-5xl mx-auto text-center relative z-10 px-2 sm:px-6 w-full">
           {(() => {
-            const isDarkOverlay = settings?.hero?.darkenOverlay;
             const useGlassCard = settings?.hero?.useGlassBg !== false;
 
             const cardBg = useGlassCard
               ? 'bg-zinc-950/70 sm:bg-white/85 dark:bg-zinc-950/85 border border-white/10 sm:border-white/80 dark:border-zinc-800/80 shadow-2xl backdrop-blur-2xl'
               : 'bg-transparent border-0 shadow-none';
+
+            const primaryText = settings?.hero?.primaryCtaText || 'Book Court Now';
+            const primaryLink = settings?.hero?.primaryCtaLink || '/booking';
+            const secondaryText = settings?.hero?.secondaryCtaText || 'Explore Arena';
+            const secondaryLink = settings?.hero?.secondaryCtaLink || '/about';
 
             return (
               <div className={`max-w-4xl mx-auto px-4 py-8 sm:p-10 md:p-14 rounded-3xl sm:rounded-[2.5rem] transition-all duration-300 ${cardBg}`}>
@@ -249,18 +275,18 @@ export const Home = () => {
                   transition={{ delay: 0.3, duration: 0.5 }}
                   className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 w-full"
                 >
-                  <Link to="/booking" className="w-full sm:w-auto">
+                  <Link to={primaryLink} className="w-full sm:w-auto">
                     <Button size="large" variant="primary" className="w-full sm:w-auto px-8 py-3.5 text-sm sm:text-base font-extrabold shadow-xl shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-105 active:scale-95 transition-all">
-                      Book Court Now <ArrowRight className="w-5 h-5 ml-1.5" />
+                      {primaryText} <ArrowRight className="w-5 h-5 ml-1.5" />
                     </Button>
                   </Link>
-                  <Link to="/about" className="w-full sm:w-auto">
+                  <Link to={secondaryLink} className="w-full sm:w-auto">
                     <Button
                       size="large"
                       variant="secondary"
                       className="w-full sm:w-auto px-8 py-3.5 text-sm sm:text-base font-extrabold bg-white/15 sm:bg-zinc-100 hover:bg-white/25 sm:hover:bg-zinc-200 text-white sm:text-zinc-900 dark:bg-white/10 dark:hover:bg-white/20 dark:text-white border-white/20 sm:border-zinc-200/80 dark:border-white/20 backdrop-blur-md hover:scale-105 active:scale-95 transition-all"
                     >
-                      Explore Arena
+                      {secondaryText}
                     </Button>
                   </Link>
                 </motion.div>
