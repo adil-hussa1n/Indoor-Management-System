@@ -7,13 +7,27 @@ import { Loader } from '../components/ui/Loader';
 import { usePublicSettings } from '../hooks/useApi';
 
 const format12Hour = (time24) => {
-  if (!time24) return '';
-  const [hourStr, minStr] = time24.split(':');
-  let hour = parseInt(hourStr, 10);
+  if (!time24 || typeof time24 !== 'string') return '';
+  const parts = time24.split(':');
+  if (parts.length < 2) return time24;
+  let hour = parseInt(parts[0], 10);
+  if (isNaN(hour)) return time24;
+  const minStr = parts[1];
   const ampm = hour >= 12 ? 'PM' : 'AM';
   hour = hour % 12;
   hour = hour ? hour : 12;
   return `${String(hour).padStart(2, '0')}:${minStr} ${ampm}`;
+};
+
+const formatDateDisplay = (dateStr, options = { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' }) => {
+  if (!dateStr) return '';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return String(dateStr);
+    return d.toLocaleDateString('en-GB', options);
+  } catch (e) {
+    return String(dateStr);
+  }
 };
 
 export const BookingSuccess = () => {
@@ -41,7 +55,16 @@ export const BookingSuccess = () => {
           setError('Booking record not found.');
         }
       } catch (err) {
-        console.error('Error fetching booking details:', err);
+        console.error('Error fetching booking via public route, attempting fallback:', err);
+        try {
+          const fallbackRes = await API.get(`/bookings/${bookingId}`);
+          if (fallbackRes.data.success && fallbackRes.data.booking) {
+            setBooking(fallbackRes.data.booking);
+            return;
+          }
+        } catch (e2) {
+          console.error('Fallback fetch error:', e2);
+        }
         setError('Failed to load booking details.');
       } finally {
         setLoading(false);
@@ -82,6 +105,10 @@ export const BookingSuccess = () => {
   const businessName = settings?.businessName || 'Indoor Sports Complex';
   const businessPhone = settings?.contactPhone || '01700000000';
   const businessEmail = settings?.contactEmail || 'contact@indoorsports.com';
+
+  const bookingRefId = booking.bookingId || booking.id || booking._id || 'N/A';
+  const isPaid = booking.paymentStatus === 'paid';
+  const isPartial = booking.paymentStatus === 'partial';
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 text-left animate-fade-in print:p-0 print:m-0 print:max-w-none">
@@ -131,20 +158,20 @@ export const BookingSuccess = () => {
               Official Tax Invoice
             </div>
             <div className="text-lg font-black font-mono pt-1 text-zinc-900 dark:text-white print:text-black">
-              #{booking.bookingId}
+              #{bookingRefId}
             </div>
             <div className="text-xs font-mono text-zinc-500">
-              Issued Date: {new Date(booking.createdAt || Date.now()).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+              Issued Date: {formatDateDisplay(booking.createdAt || Date.now(), { day: '2-digit', month: 'short', year: 'numeric' })}
             </div>
             <div className="pt-2">
               <span className={`inline-block px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider ${
-                booking.paymentStatus === 'paid'
+                isPaid
                   ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400 print:border print:border-emerald-600'
-                  : booking.paymentStatus === 'partial'
+                  : isPartial
                   ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400'
                   : 'bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-400'
               }`}>
-                {booking.paymentStatus === 'paid' ? '✓ PAID IN FULL' : booking.paymentStatus === 'partial' ? 'PARTIAL DEPOSIT PAID' : 'UNPAID'}
+                {isPaid ? '✓ PAID IN FULL' : isPartial ? 'PARTIAL DEPOSIT PAID' : 'UNPAID'}
               </span>
             </div>
           </div>
@@ -157,10 +184,10 @@ export const BookingSuccess = () => {
               👤 Billed To Customer
             </h3>
             <div className="text-sm font-bold text-zinc-900 dark:text-white print:text-black">
-              {booking.customerName}
+              {booking.customerName || 'Customer'}
             </div>
             <div className="text-zinc-600 dark:text-zinc-400 font-medium">
-              Phone: {booking.phone}
+              Phone: {booking.phone || 'N/A'}
             </div>
             {booking.email && (
               <div className="text-zinc-600 dark:text-zinc-400 font-medium">
@@ -174,13 +201,13 @@ export const BookingSuccess = () => {
               🏟️ Arena & Match Schedule
             </h3>
             <div className="text-sm font-bold text-zinc-900 dark:text-white print:text-black">
-              {booking.ground?.name || 'Main Arena'} ({booking.sport})
+              {booking.ground?.name || 'Main Arena'} ({booking.sport || 'Sports'})
             </div>
             <div className="text-zinc-600 dark:text-zinc-400 font-semibold">
-              Date: {new Date(booking.bookingDate).toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })}
+              Date: {formatDateDisplay(booking.bookingDate)}
             </div>
             <div className="text-zinc-600 dark:text-zinc-400 font-semibold">
-              Time: {format12Hour(booking.startTime)} - {format12Hour(booking.endTime)} ({booking.duration} hr)
+              Time: {format12Hour(booking.startTime)} - {format12Hour(booking.endTime)} ({booking.duration || 1} hr)
             </div>
           </div>
         </div>
@@ -202,17 +229,17 @@ export const BookingSuccess = () => {
                   <div className="font-bold text-zinc-900 dark:text-white print:text-black text-sm">
                     {booking.ground?.name || 'Main Arena'} Court Reservation
                   </div>
-                  <div className="text-[11px] text-zinc-500">Sport: {booking.sport} &bull; Ref: {booking.bookingId}</div>
+                  <div className="text-[11px] text-zinc-500">Sport: {booking.sport || 'Sports'} &bull; Ref: {bookingRefId}</div>
                 </td>
                 <td className="py-4 px-3 text-zinc-700 dark:text-zinc-300">
                   <div>{booking.bookingDate}</div>
                   <div className="text-[11px] text-purple-650 font-bold">{format12Hour(booking.startTime)} - {format12Hour(booking.endTime)}</div>
                 </td>
                 <td className="py-4 px-3 text-center font-bold text-zinc-800 dark:text-zinc-200">
-                  {booking.duration} hr{booking.duration > 1 ? 's' : ''}
+                  {booking.duration || 1} hr{(booking.duration || 1) > 1 ? 's' : ''}
                 </td>
                 <td className="py-4 px-3 text-right font-mono font-bold text-sm text-zinc-900 dark:text-white print:text-black">
-                  ৳{booking.price}
+                  ৳{booking.price || 0}
                 </td>
               </tr>
             </tbody>
@@ -225,8 +252,8 @@ export const BookingSuccess = () => {
           <div className="space-y-2 max-w-xs text-xs">
             <div className="font-extrabold text-zinc-400 uppercase tracking-widest text-[10px]">Payment Verification</div>
             <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-700 dark:text-purple-300 font-mono font-semibold space-y-1 print:border print:border-purple-600">
-              <div>Method: <strong className="uppercase">{booking.paymentGateway || 'Online Gateway'}</strong></div>
-              {booking.transactionId && <div>TrxID: <strong>{booking.transactionId}</strong></div>}
+              <div>Method: <strong className="uppercase">{String(booking.paymentGateway || 'Online Gateway')}</strong></div>
+              {booking.transactionId && <div>TrxID: <strong>{String(booking.transactionId)}</strong></div>}
               <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">✓ Transaction Verified</div>
             </div>
           </div>
@@ -235,13 +262,13 @@ export const BookingSuccess = () => {
           <div className="w-full sm:w-64 space-y-2 text-xs font-semibold">
             <div className="flex justify-between text-zinc-600 dark:text-zinc-400">
               <span>Subtotal:</span>
-              <span className="font-mono font-bold text-zinc-900 dark:text-white print:text-black">৳{booking.price}</span>
+              <span className="font-mono font-bold text-zinc-900 dark:text-white print:text-black">৳{booking.price || 0}</span>
             </div>
             <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
               <span>Paid Online:</span>
-              <span className="font-mono font-bold">৳{booking.paidAmount || booking.price}</span>
+              <span className="font-mono font-bold">৳{booking.paidAmount ?? booking.price ?? 0}</span>
             </div>
-            {booking.dueAmount > 0 && (
+            {(booking.dueAmount || 0) > 0 && (
               <div className="flex justify-between text-amber-600 dark:text-amber-400">
                 <span>Due at Venue:</span>
                 <span className="font-mono font-bold">৳{booking.dueAmount}</span>
@@ -249,7 +276,7 @@ export const BookingSuccess = () => {
             )}
             <div className="border-t border-zinc-200 dark:border-zinc-800 pt-2 flex justify-between text-base font-black text-purple-650 dark:text-purple-400 print:text-black">
               <span>Total Paid:</span>
-              <span className="font-mono">৳{booking.paidAmount || booking.price}</span>
+              <span className="font-mono">৳{booking.paidAmount ?? booking.price ?? 0}</span>
             </div>
           </div>
         </div>
@@ -258,7 +285,7 @@ export const BookingSuccess = () => {
         {(() => {
           const pConfig = settings?.paymentConfig || {};
           const termsText = pConfig.invoiceTerms || '1. Please present this invoice at venue check-in.\n2. Proper sports gear and non-marking shoes required.\n3. Non-refundable unless cancelled 24 hours prior.';
-          const termsLines = termsText.split('\n').filter(Boolean);
+          const termsLines = typeof termsText === 'string' ? termsText.split('\n').filter(Boolean) : [];
 
           const sigName = pConfig.authorizedSignatoryName || 'Authorized Signature';
           const sigTitle = pConfig.authorizedSignatoryTitle || 'Venue Manager / Management';

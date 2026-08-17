@@ -88,19 +88,28 @@ export const Booking = () => {
   const [bkashTrxId, setBkashTrxId] = useState('');
   const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
 
-  // Check URL query parameters for returning SSLCommerz payment callbacks
+  // Check URL query parameters for returning payment callbacks
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const bId = urlParams.get('bookingId');
     if (bId) {
-      API.get(`/bookings/${bId}`)
+      API.get(`/public/booking/${bId}`)
         .then((res) => {
           if (res.data.success && res.data.booking) {
             setConfirmedBooking(res.data.booking);
             toast.success('Online Payment Verified! Booking Confirmed.');
           }
         })
-        .catch(() => {});
+        .catch(() => {
+          API.get(`/bookings/${bId}`)
+            .then((res) => {
+              if (res.data.success && res.data.booking) {
+                setConfirmedBooking(res.data.booking);
+                toast.success('Online Payment Verified! Booking Confirmed.');
+              }
+            })
+            .catch(() => {});
+        });
     }
   }, []);
 
