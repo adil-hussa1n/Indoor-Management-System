@@ -204,66 +204,87 @@ export const Home = () => {
         <div
           className={`absolute inset-0 transition-all duration-300 ${
             settings?.heroBanner
-              ? 'bg-gradient-to-t from-zinc-950 via-zinc-950/70 to-zinc-950/50 backdrop-blur-[1px]'
-              : 'bg-gradient-to-br from-purple-950/30 via-indigo-950/20 to-zinc-950'
+              ? settings?.hero?.darkenOverlay
+                ? 'bg-black/60 dark:bg-black/80 backdrop-blur-[1px]'
+                : 'bg-white/50 dark:bg-zinc-950/70 backdrop-blur-[1px]'
+              : 'bg-gradient-to-br from-purple-950/20 via-indigo-950/10 to-zinc-950'
           }`}
         />
 
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_60%_at_50%_-10%,rgba(168,85,247,0.25),rgba(0,0,0,0))]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_60%_at_50%_-10%,rgba(168,85,247,0.18),rgba(0,0,0,0))]" />
 
         <div className="max-w-5xl mx-auto text-center relative z-10 px-3 sm:px-6">
-          <div className="max-w-4xl mx-auto p-6 sm:p-10 md:p-14 rounded-[2.5rem] border border-white/20 dark:border-white/10 bg-zinc-950/65 dark:bg-zinc-950/80 backdrop-blur-2xl shadow-2xl shadow-purple-500/10">
-            {(() => {
-              const textColor = 'text-white';
-              const descColor = 'text-zinc-200 dark:text-zinc-300';
-              const badgeColor = 'bg-purple-500/20 text-purple-300 border-purple-400/30 backdrop-blur-md';
+          {(() => {
+            const isDarkOverlay = settings?.hero?.darkenOverlay;
+            const useGlassCard = settings?.hero?.useGlassBg !== false;
 
-              return (
-                <>
-                  <motion.div
-                    initial="hidden"
-                    animate="visible"
-                    variants={fadeInUp}
-                  >
-                    <span className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[11px] sm:text-xs font-extrabold mb-5 uppercase tracking-widest border shadow-sm ${badgeColor}`}>
-                      {settings?.hero?.tagline || '⚡ Premium Indoor Court'}
+            const cardBg = useGlassCard
+              ? isDarkOverlay
+                ? 'bg-black/60 dark:bg-zinc-950/80 border-white/20 dark:border-white/10 shadow-2xl backdrop-blur-2xl'
+                : 'bg-white/85 dark:bg-zinc-950/85 border-white/80 dark:border-zinc-800/80 shadow-2xl shadow-purple-500/10 backdrop-blur-2xl'
+              : 'bg-transparent border-0 shadow-none';
+
+            const textColor = isDarkOverlay
+              ? 'text-white'
+              : 'text-zinc-900 dark:text-white';
+
+            const descColor = isDarkOverlay
+              ? 'text-zinc-200 dark:text-zinc-300'
+              : 'text-zinc-700 dark:text-zinc-300';
+
+            const badgeColor = isDarkOverlay
+              ? 'bg-white/15 text-white border-white/25 backdrop-blur-md'
+              : 'bg-purple-500/10 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-500/20 dark:border-purple-400/30 backdrop-blur-md';
+
+            return (
+              <div className={`max-w-4xl mx-auto p-6 sm:p-10 md:p-14 rounded-[2.5rem] transition-all duration-300 ${cardBg}`}>
+                <motion.div
+                  initial="hidden"
+                  animate="visible"
+                  variants={fadeInUp}
+                >
+                  <span className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[11px] sm:text-xs font-extrabold mb-5 uppercase tracking-widest border shadow-xs ${badgeColor}`}>
+                    {settings?.hero?.tagline || '⚡ Premium Indoor Court'}
+                  </span>
+                  <h1 className={`text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight mb-5 leading-[1.1] ${textColor}`}>
+                    {settings?.hero?.title1 || 'Experience Sports'} <br />
+                    <span className="bg-gradient-to-r from-purple-600 via-pink-500 to-indigo-600 dark:from-purple-400 dark:via-pink-400 dark:to-indigo-300 bg-clip-text text-transparent">
+                      {settings?.hero?.title2 || 'Like Never Before'}
                     </span>
-                    <h1 className={`text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight mb-5 leading-[1.1] ${textColor}`}>
-                      {settings?.hero?.title1 || 'Experience Sports'} <br />
-                      <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-300 bg-clip-text text-transparent">
-                        {settings?.hero?.title2 || 'Like Never Before'}
-                      </span>
-                    </h1>
-                    <p className={`text-sm sm:text-base md:text-lg max-w-2xl mx-auto mb-8 leading-relaxed font-medium ${descColor}`}>
-                      {settings?.hero?.description || 'Book our state-of-the-art climate-controlled indoor arena. Designed for futsal, basketball, badminton, and more. Clean, professional, and ready.'}
-                    </p>
-                  </motion.div>
+                  </h1>
+                  <p className={`text-sm sm:text-base md:text-lg max-w-2xl mx-auto mb-8 leading-relaxed font-medium ${descColor}`}>
+                    {settings?.hero?.description || 'Book our state-of-the-art climate-controlled indoor arena. Designed for futsal, basketball, badminton, and more. Clean, professional, and ready.'}
+                  </p>
+                </motion.div>
 
-                  <motion.div
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3, duration: 0.5 }}
-                    className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 w-full"
-                  >
-                    <Link to="/booking" className="w-full sm:w-auto">
-                      <Button size="large" variant="primary" className="w-full sm:w-auto px-8 py-3.5 text-sm sm:text-base font-extrabold shadow-xl shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-105 active:scale-95 transition-all">
-                        Book Court Now <ArrowRight className="w-5 h-5 ml-1.5" />
-                      </Button>
-                    </Link>
-                    <Link to="/about" className="w-full sm:w-auto">
-                      <Button
-                        size="large"
-                        variant="secondary"
-                        className="w-full sm:w-auto px-8 py-3.5 text-sm sm:text-base font-extrabold bg-white/10 hover:bg-white/20 text-white border-white/20 backdrop-blur-md hover:scale-105 active:scale-95 transition-all"
-                      >
-                        Explore Arena
-                      </Button>
-                    </Link>
-                  </motion.div>
-                </>
-              );
-            })()}
-          </div>
+                <motion.div
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3, duration: 0.5 }}
+                  className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 w-full"
+                >
+                  <Link to="/booking" className="w-full sm:w-auto">
+                    <Button size="large" variant="primary" className="w-full sm:w-auto px-8 py-3.5 text-sm sm:text-base font-extrabold shadow-xl shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-105 active:scale-95 transition-all">
+                      Book Court Now <ArrowRight className="w-5 h-5 ml-1.5" />
+                    </Button>
+                  </Link>
+                  <Link to="/about" className="w-full sm:w-auto">
+                    <Button
+                      size="large"
+                      variant="secondary"
+                      className={`w-full sm:w-auto px-8 py-3.5 text-sm sm:text-base font-extrabold hover:scale-105 active:scale-95 transition-all ${
+                        isDarkOverlay
+                          ? 'bg-white/15 hover:bg-white/25 text-white border-white/20 backdrop-blur-md'
+                          : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-900 dark:bg-white/10 dark:hover:bg-white/20 dark:text-white border-zinc-200/80 dark:border-white/20 backdrop-blur-md'
+                      }`}
+                    >
+                      Explore Arena
+                    </Button>
+                  </Link>
+                </motion.div>
+              </div>
+            );
+          })()}
         </div>
       </section>
 
