@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAdminSettings, useUpdateSettings, usePublicGallery } from '../hooks/useApi';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -8,6 +9,7 @@ import { DatePicker } from '../components/ui/DatePicker';
 import { useToast } from '../components/ui/Toast';
 import { Save, Plus, Trash2, HelpCircle } from 'lucide-react';
 import { AdminAuditLogsTab } from '../components/AdminAuditLogsTab';
+import { AdminStaffTab } from '../components/AdminStaffTab';
 
 const compressImageIfNeeded = (file, maxSizeMB = 8, maxWidthOrHeight = 4096) => {
   return new Promise((resolve) => {
@@ -95,7 +97,8 @@ export const AdminSettings = () => {
   const [editingPaymentIndex, setEditingPaymentIndex] = useState(null);
   const [editingPaymentText, setEditingPaymentText] = useState('');
   const [newRule, setNewRule] = useState('');
-  const [activeTab, setActiveTab] = useState('general');
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(() => searchParams.get('tab') || 'general');
 
   // Discount form state
   const [discName, setDiscName] = useState('');
@@ -522,6 +525,7 @@ export const AdminSettings = () => {
             { id: 'payment', label: '💳 Payment System & Gateways' },
             { id: 'court', label: '⚙️ Court & Rules' },
             { id: 'integrations', label: '🔗 SEO & Links' },
+            { id: 'staff', label: '👥 Staff & Managers' },
             { id: 'subscription', label: '💳 Subscription & License' },
             { id: 'audit_logs', label: '📜 System Audit Logs' },
           ].map((tab) => (
@@ -540,7 +544,7 @@ export const AdminSettings = () => {
           ))}
         </div>
 
-        {activeTab !== 'audit_logs' && activeTab !== 'subscription' && (
+        {activeTab !== 'audit_logs' && activeTab !== 'subscription' && activeTab !== 'staff' && (
           <Button
             type="submit"
             disabled={updateSettingsMutation.isPending}
@@ -2306,6 +2310,9 @@ export const AdminSettings = () => {
             </div>
           );
         })()}
+
+        {/* Tab: Staff & Manager Management */}
+        {activeTab === 'staff' && <AdminStaffTab />}
 
         {/* Tab 7: System Audit Logs & Admin Activity History */}
         {activeTab === 'audit_logs' && <AdminAuditLogsTab />}

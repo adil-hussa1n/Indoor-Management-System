@@ -335,7 +335,7 @@ export const AdminLayout = () => {
     { name: 'Blacklist', path: '/admin/blacklist', icon: <ShieldAlert className="w-5 h-5" />, permKey: 'bookings' },
     { name: 'Reviews', path: '/admin/reviews', icon: <Sparkles className="w-5 h-5" />, hasAlert: alerts.reviews, permKey: 'messages' },
     { name: 'Messages', path: '/admin/messages', icon: <MessageSquare className="w-5 h-5" />, hasAlert: alerts.messages, permKey: 'messages' },
-    { name: 'Staff Management', path: '/admin/staff', icon: <Users className="w-5 h-5" />, ownerOnly: true },
+    { name: 'Staff Management', path: '/admin/settings?tab=staff', icon: <Users className="w-5 h-5" />, ownerOnly: true },
     { name: 'Gallery', path: '/admin/gallery', icon: <Images className="w-5 h-5" />, permKey: 'settings' },
     { name: 'Settings', path: '/admin/settings', icon: <SettingsIcon className="w-5 h-5" />, permKey: 'settings' },
   ];
