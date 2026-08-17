@@ -324,6 +324,7 @@ export const AdminLayout = () => {
     { name: 'Dashboard', path: '/admin/dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
     { name: 'Bookings', path: '/admin/bookings', icon: <UserCheck className="w-5 h-5" />, hasAlert: alerts.bookings },
     { name: 'Calendar', path: '/admin/calendar', icon: <CalendarDays className="w-5 h-5" /> },
+    { name: 'Finances', path: '/admin/finances', icon: <DollarSign className="w-5 h-5" /> },
     { name: 'Slots', path: '/admin/slots', icon: <Clock className="w-5 h-5" /> },
     { name: 'Arenas', path: '/admin/grounds', icon: <Layers className="w-5 h-5" /> },
     { name: 'Requests', path: '/admin/requests', icon: <Inbox className="w-5 h-5" />, hasAlert: alerts.requests },
@@ -342,10 +343,10 @@ export const AdminLayout = () => {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <div className="min-h-screen flex bg-zinc-50 dark:bg-zinc-950 transition-colors duration-300">
+    <div className="min-h-screen flex bg-slate-100/80 dark:bg-zinc-950 transition-colors duration-300">
       {/* Sidebar for Desktop */}
-      <aside className="hidden lg:flex flex-col w-64 h-screen sticky top-0 border-r border-zinc-200/50 dark:border-zinc-900 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
-        <div className="h-16 flex items-center gap-2 px-6 border-b border-zinc-100 dark:border-zinc-900">
+      <aside className="hidden lg:flex flex-col w-64 h-screen sticky top-0 border-r border-slate-200/90 dark:border-zinc-900 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 shadow-xs dark:shadow-none">
+        <div className="h-16 flex items-center gap-2 px-6 border-b border-slate-200/70 dark:border-zinc-900">
           {(settings?.logo || cachedSettings?.logo) ? (
             <img src={settings?.logo || cachedSettings?.logo} alt="Logo" className="w-8 h-8 object-contain rounded-lg" />
           ) : (
@@ -400,7 +401,7 @@ export const AdminLayout = () => {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <header className="h-16 border-b border-zinc-200/50 dark:border-zinc-900 bg-white dark:bg-zinc-950 px-4 flex items-center justify-between sticky top-0 z-30">
+        <header className="h-16 border-b border-slate-200/90 dark:border-zinc-900 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-md px-4 flex items-center justify-between sticky top-0 z-30 shadow-xs dark:shadow-none">
           <div className="flex items-center gap-3">
             {/* Sidebar toggle button (Mobile Only) */}
             <button

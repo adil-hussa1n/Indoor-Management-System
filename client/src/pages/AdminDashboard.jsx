@@ -12,12 +12,16 @@ import {
   CheckCircle,
   XCircle,
   TrendingUp,
+  TrendingDown,
   Percent,
   FileText,
   Trash2,
   DollarSign,
   UserCheck,
   Layers,
+  PieChart,
+  ArrowUpRight,
+  ArrowDownRight,
 } from 'lucide-react';
 
 const format12Hour = (time24) => {
@@ -156,7 +160,9 @@ export const AdminDashboard = () => {
     { label: "Tomorrow's Bookings", val: metrics.tomorrowBookings, icon: <Clock className="w-5 h-5 text-indigo-500" />, desc: "Slots reserved for tomorrow" },
     { label: "Upcoming Bookings", val: metrics.upcomingBookings, icon: <UserCheck className="w-5 h-5 text-blue-500" />, desc: "Total future reservations" },
     { label: "Monthly Completed", val: metrics.completedBookings, icon: <CheckCircle className="w-5 h-5 text-emerald-500" />, desc: "Fully played sessions" },
-    { label: "Monthly Sales", val: `৳${metrics.monthlyRevenue}`, icon: <TrendingUp className="w-5 h-5 text-pink-500" />, desc: "Completed sales this month" },
+    { label: "Monthly Sales", val: `৳${Number(metrics.monthlyRevenue || 0).toLocaleString()}`, icon: <TrendingUp className="w-5 h-5 text-emerald-500" />, desc: "Completed sales this month" },
+    { label: "Total Investments", val: `৳${Number(metrics.totalInvestments || 0).toLocaleString()}`, icon: <TrendingUp className="w-5 h-5 text-emerald-600" />, desc: "Capital & infrastructure" },
+    { label: "Total Expenses", val: `৳${Number(metrics.totalExpenses || 0).toLocaleString()}`, icon: <TrendingDown className="w-5 h-5 text-rose-500" />, desc: "Maintenance & operational costs" },
     { label: "Arena Occupancy", val: `${metrics.occupancyRate}%`, icon: <Percent className="w-5 h-5 text-amber-500" />, desc: "Utilization percentage" },
   ];  return (
     <div className="space-y-8 text-left animate-fade-in">
@@ -259,6 +265,67 @@ export const AdminDashboard = () => {
             )}
           </div>
         )}
+      </div>
+
+      {/* Financial Overview & Cashflow Section */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-extrabold uppercase tracking-widest text-zinc-500">
+            Financial & Cashflow Overview
+          </h3>
+          <a href="/admin/finances" className="text-xs font-extrabold text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1">
+            Manage Finances & Expenses →
+          </a>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <div className="glass-card p-6 rounded-3xl border border-emerald-500/20 bg-emerald-500/5 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Total Investments</span>
+              <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                <TrendingUp className="w-5 h-5" />
+              </div>
+            </div>
+            <h2 className="text-3xl font-black text-zinc-900 dark:text-white font-mono">
+              ৳ {Number(metrics.totalInvestments || 0).toLocaleString()}
+            </h2>
+            <p className="text-[11px] text-zinc-400 font-semibold flex items-center gap-1">
+              <ArrowUpRight className="w-3.5 h-3.5 text-emerald-500" /> Capital & Equipment
+            </p>
+          </div>
+
+          <div className="glass-card p-6 rounded-3xl border border-rose-500/20 bg-rose-500/5 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-extrabold uppercase tracking-wider text-rose-600 dark:text-rose-400">Total Expenses</span>
+              <div className="p-2 rounded-xl bg-rose-500/20 text-rose-600 dark:text-rose-400">
+                <TrendingDown className="w-5 h-5" />
+              </div>
+            </div>
+            <h2 className="text-3xl font-black text-zinc-900 dark:text-white font-mono">
+              ৳ {Number(metrics.totalExpenses || 0).toLocaleString()}
+            </h2>
+            <p className="text-[11px] text-zinc-400 font-semibold flex items-center gap-1">
+              <ArrowDownRight className="w-3.5 h-3.5 text-rose-500" /> Maintenance & Utilities
+            </p>
+          </div>
+
+          <div className="glass-card p-6 rounded-3xl border border-purple-500/20 bg-purple-500/5 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400">Net Cashflow / Balance</span>
+              <div className="p-2 rounded-xl bg-purple-500/20 text-purple-600 dark:text-purple-400">
+                <PieChart className="w-5 h-5" />
+              </div>
+            </div>
+            <h2 className={`text-3xl font-black font-mono ${
+              (metrics.netBalance || 0) >= 0 ? 'text-zinc-900 dark:text-white' : 'text-rose-500'
+            }`}>
+              ৳ {Number(metrics.netBalance || 0).toLocaleString()}
+            </h2>
+            <p className="text-[11px] text-zinc-400 font-semibold">
+              Investments minus Expenses
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Selected Day metrics */}

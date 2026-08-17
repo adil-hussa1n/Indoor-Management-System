@@ -822,6 +822,79 @@ export function createModels(sequelize) {
     updatedAt: false,
   });
 
+  // ── FinanceCategory Model ──
+  const FinanceCategory = sequelize.define('FinanceCategory', {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+    },
+    name: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    type: {
+      type: DataTypes.ENUM('investment', 'expense'),
+      allowNull: false,
+    },
+    description: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+  }, {
+    tableName: 'finance_categories',
+    timestamps: true,
+  });
+
+  // ── FinanceEntry Model ──
+  const FinanceEntry = sequelize.define('FinanceEntry', {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+    },
+    type: {
+      type: DataTypes.ENUM('investment', 'expense'),
+      allowNull: false,
+    },
+    categoryId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
+    amount: {
+      type: DataTypes.DECIMAL(12, 2),
+      allowNull: false,
+      defaultValue: 0.00,
+    },
+    date: {
+      type: DataTypes.DATEONLY,
+      allowNull: false,
+    },
+    paymentMethod: {
+      type: DataTypes.STRING,
+      defaultValue: 'Cash',
+    },
+    title: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    description: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    referenceNo: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    groundId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+  }, {
+    tableName: 'finance_entries',
+    timestamps: true,
+  });
+
   // ── Associations ──
   Booking.hasMany(BookingStatusHistory, { foreignKey: 'bookingId', as: 'statusHistory' });
   BookingStatusHistory.belongsTo(Booking, { foreignKey: 'bookingId', as: 'booking' });
@@ -843,6 +916,12 @@ export function createModels(sequelize) {
 
   Ground.hasMany(SlotLock, { foreignKey: 'groundId', as: 'slotLocks' });
   SlotLock.belongsTo(Ground, { foreignKey: 'groundId', as: 'ground' });
+
+  FinanceCategory.hasMany(FinanceEntry, { foreignKey: 'categoryId', as: 'entries' });
+  FinanceEntry.belongsTo(FinanceCategory, { foreignKey: 'categoryId', as: 'category' });
+
+  Ground.hasMany(FinanceEntry, { foreignKey: 'groundId', as: 'financeEntries' });
+  FinanceEntry.belongsTo(Ground, { foreignKey: 'groundId', as: 'ground' });
 
   // ── Sync function ──
   const syncDatabase = async () => {
@@ -872,6 +951,8 @@ export function createModels(sequelize) {
     Settings,
     AuditLog,
     BlockedCustomer,
+    FinanceCategory,
+    FinanceEntry,
     syncDatabase,
   };
 

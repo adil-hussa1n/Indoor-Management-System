@@ -206,6 +206,9 @@ export const tenantMiddleware = async (req, res, next) => {
       try {
         await tenantDb.query("ALTER TABLE `bookings` ADD COLUMN `paymentDetails` JSON NULL");
       } catch (err) {}
+      try {
+        await tenantDb.query("ALTER TABLE `finance_entries` ADD COLUMN `groundId` INT NULL");
+      } catch (err) {}
 
       // 2. Perform Sequelize sync
       await models.syncDatabase();

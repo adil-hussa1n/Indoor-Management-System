@@ -335,6 +335,42 @@ export const createBlockedCustomerRepository = (models) => ({
   },
 });
 
+// ── Finance Repository ──
+export const createFinanceRepository = (models) => ({
+  findAllCategories: (where = {}, options = {}) =>
+    models.FinanceCategory.findAll({ where, order: [['name', 'ASC']], ...options }),
+  findCategoryById: (id) => models.FinanceCategory.findByPk(id),
+  createCategory: (data) => models.FinanceCategory.create(data),
+  updateCategory: (id, data) => models.FinanceCategory.update(data, { where: { id } }),
+  deleteCategory: (id) => models.FinanceCategory.destroy({ where: { id } }),
+
+  findAllEntries: (where = {}, options = {}) =>
+    models.FinanceEntry.findAll({
+      where,
+      include: [
+        { model: models.FinanceCategory, as: 'category' },
+        { model: models.Ground, as: 'ground' },
+      ],
+      order: [['date', 'DESC'], ['createdAt', 'DESC']],
+      ...options,
+    }),
+  findEntryById: (id) =>
+    models.FinanceEntry.findByPk(id, {
+      include: [
+        { model: models.FinanceCategory, as: 'category' },
+        { model: models.Ground, as: 'ground' },
+      ],
+    }),
+  createEntry: (data) => models.FinanceEntry.create(data),
+  updateEntry: (id, data) => models.FinanceEntry.update(data, { where: { id } }),
+  deleteEntry: (id) => models.FinanceEntry.destroy({ where: { id } }),
+
+  sumEntries: async (type, where = {}) => {
+    const total = await models.FinanceEntry.sum('amount', { where: { type, ...where } });
+    return Number(total || 0);
+  },
+});
+
 /**
  * Create all repositories for a tenant.
  * @param {Object} models - The tenant's models (from req.models)
@@ -357,5 +393,6 @@ export function createRepositories(models) {
     otpRepo: createOtpRepository(models),
     bookingRequestRepo: createBookingRequestRepository(models),
     blockedCustomerRepo: createBlockedCustomerRepository(models),
+    financeRepo: createFinanceRepository(models),
   };
 }

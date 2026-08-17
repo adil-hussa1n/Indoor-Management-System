@@ -736,9 +736,26 @@ export const deleteBooking = async (req, res, next) => {
 // Dashboard analytics
 export const getDashboardData = async (req, res, next) => {
   try {
-    const { bookingRepo } = req.repos;
+    const { bookingRepo, financeRepo } = req.repos;
     const { date, startDate, endDate, groundId } = req.query;
     const todayStr = new Date().toISOString().split('T')[0];
+
+    // Build optional ground filter
+    const gFilter = {};
+    const finFilter = {};
+    if (groundId) {
+      if (typeof groundId === 'string' && groundId.includes(',')) {
+        const ids = groundId.split(',').map(id => Number(id.trim())).filter(Boolean);
+        gFilter.groundId = { [Op.in]: ids };
+        finFilter.groundId = { [Op.in]: ids };
+      } else {
+        gFilter.groundId = Number(groundId);
+        finFilter.groundId = Number(groundId);
+      }
+    }
+
+    const totalInvestments = financeRepo ? await financeRepo.sumEntries('investment', finFilter) : 0;
+    const totalExpenses = financeRepo ? await financeRepo.sumEntries('expense', finFilter) : 0;
 
     let rangeStart = todayStr;
     let rangeEnd = todayStr;
@@ -749,17 +766,6 @@ export const getDashboardData = async (req, res, next) => {
     } else if (date) {
       rangeStart = date.split('T')[0];
       rangeEnd = date.split('T')[0];
-    }
-
-    // Build optional ground filter
-    const gFilter = {};
-    if (groundId) {
-      if (typeof groundId === 'string' && groundId.includes(',')) {
-        const ids = groundId.split(',').map(id => Number(id.trim())).filter(Boolean);
-        gFilter.groundId = { [Op.in]: ids };
-      } else {
-        gFilter.groundId = Number(groundId);
-      }
     }
 
     // Calculate date diffs for occupancy
@@ -874,6 +880,9 @@ export const getDashboardData = async (req, res, next) => {
         selectedDateCount,
         selectedDateRevenue,
         selectedDateOccupancy,
+        totalInvestments,
+        totalExpenses,
+        netBalance: totalInvestments - totalExpenses,
       },
       recentBookings: mappedRecent,
       weeklyStats: mappedRecent, // Fallback mapping

@@ -49,6 +49,11 @@ A premium, production-grade **Multi-Tenant SaaS Indoor Sports Booking System** b
 * **Strict Duration Matching**: Enforces strict slot count equality based on the original booking (e.g. 1 slot -> 1 slot, 2 slots -> 2 contiguous slots).
 * **Live Slot Pricing Badges**: Real-time display of shift-based rates (`৳1,500`, `৳2,000`) and automatic price adjustment calculation (`+৳500 Additional Due` / `-৳500 Credit` / `No Change`).
 
+### 💵 Investment & Expense Management Engine
+* **Category Classification**: Admins can define custom categories for both **Investments** (e.g. Owner Capital, Partner Funding) and **Expenses** (e.g. Turf Maintenance, Electricity, Staff Salary).
+* **Financial Transaction Logging**: Dedicated interface (`AdminFinances.jsx`) for recording investments and expenses with amounts (৳ BDT), dates, payment methods, title, voucher reference numbers, and notes.
+* **Admin Dashboard Financial Overview**: Real-time integration into `AdminDashboard.jsx` featuring Total Investments, Total Expenses, Net Cashflow, and Net Operating Profit breakdown cards.
+
 ### 💵 Due Amount Settlement & Partial Payments
 * **Admin Due Settlement (`💵 Pay Due`)**: Allows venue admins to record partial and full due payments on confirmed reservations directly from `AdminBookings`.
 * **Custom Payment Methods**: Supports Cash, bKash, POS/Card, Bank Transfer, and Pay After Match.
@@ -86,7 +91,7 @@ Indoor-Management-System/
 │
 ├── server/                         # Backend — Node.js + Express + MySQL
 │   ├── Dockerfile                  # Node.js production image
-│   ├── utils/                      # test_api.js (Automated 58 API integration test suite)
+│   ├── utils/                      # test_api.js (Automated 65 API integration test suite)
 │   ├── src/
 │   │   ├── config/                 # master-db.js (master schema), sequelize.js (pool manager)
 │   │   ├── models/                 # master/ (Tenant, SuperAdmin) & tenant models factory (Ground, Slot, Booking, etc.)
@@ -191,7 +196,7 @@ cd client && npm run dev
 ```
 
 ### 🧪 Automated Integration Tests
-You can verify backend multi-tenant route configurations, tenant isolation logic, Grounds CRUD, discounts, emergency maintenance modes, and customer OTP cycles using the automated test suite (58 tests):
+You can verify backend multi-tenant route configurations, tenant isolation logic, Grounds CRUD, discounts, emergency maintenance modes, Investment & Expense APIs, and customer OTP cycles using the automated test suite (65 tests):
 ```bash
 cd server
 npm run test:api

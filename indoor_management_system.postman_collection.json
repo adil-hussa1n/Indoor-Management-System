@@ -1378,6 +1378,124 @@
       ]
     },
     {
+      "name": "Finances & Expenses",
+      "item": [
+        {
+          "name": "List Categories",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/finances/categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["finances", "categories"]
+            },
+            "description": "Fetch all investment and expense category classifications."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Category",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Turf Maintenance\",\n  \"type\": \"expense\",\n  \"description\": \"Grass repair, cleaning & lighting upkeep\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/finances/categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["finances", "categories"]
+            },
+            "description": "Create a new investment or expense category."
+          },
+          "response": []
+        },
+        {
+          "name": "List Financial Entries",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/finances/entries?groundId=all",
+              "host": ["{{baseUrl}}"],
+              "path": ["finances", "entries"],
+              "query": [
+                { "key": "groundId", "value": "all" }
+              ]
+            },
+            "description": "List filterable financial records (by type, category, date range, groundId, search query)."
+          },
+          "response": []
+        },
+        {
+          "name": "Log Financial Entry",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"expense\",\n  \"categoryId\": 1,\n  \"groundId\": 1,\n  \"title\": \"Floodlight Repair\",\n  \"amount\": 3500,\n  \"date\": \"2026-08-18\",\n  \"paymentMethod\": \"Cash\",\n  \"referenceNo\": \"VCH-102\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/finances/entries",
+              "host": ["{{baseUrl}}"],
+              "path": ["finances", "entries"]
+            },
+            "description": "Log an investment or expense transaction with optional groundId scope."
+          },
+          "response": []
+        },
+        {
+          "name": "Financial Overview Summary",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/finances/summary",
+              "host": ["{{baseUrl}}"],
+              "path": ["finances", "summary"]
+            },
+            "description": "Fetch financial aggregate metrics: total booking revenue, total investments, total expenses, net balance, and operating profit."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "Health & Status",
       "item": [
         {

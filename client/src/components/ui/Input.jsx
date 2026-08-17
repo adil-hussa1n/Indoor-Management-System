@@ -24,7 +24,7 @@ export const Input = React.forwardRef(({
         <input
           ref={ref}
           type={type}
-          className={`w-full ${prefix ? 'pl-16 pr-4' : 'px-4'} py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800/80 bg-white dark:bg-zinc-950 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all ${
+          className={`w-full ${prefix ? 'pl-16 pr-4' : 'px-4'} py-2.5 rounded-xl border border-slate-200 dark:border-zinc-800/80 bg-white dark:bg-zinc-950 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 shadow-xs shadow-slate-200/40 dark:shadow-none transition-all ${
             error ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''
           } ${className}`}
           {...props}
@@ -56,7 +56,7 @@ export const Select = React.forwardRef(({
       )}
       <select
         ref={ref}
-        className={`w-full px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800/80 bg-white dark:bg-zinc-950 text-sm text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all ${
+        className={`w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-800/80 bg-white dark:bg-zinc-950 text-sm text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 shadow-xs shadow-slate-200/40 dark:shadow-none transition-all ${
           error ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''
         } ${className}`}
         {...props}

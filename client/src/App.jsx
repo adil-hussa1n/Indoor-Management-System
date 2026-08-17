@@ -37,6 +37,7 @@ import { AdminSettings } from './pages/AdminSettings';
 import { AdminBlacklist } from './pages/AdminBlacklist';
 import { AdminRequests } from './pages/AdminRequests';
 import { AdminGrounds } from './pages/AdminGrounds';
+import { AdminFinances } from './pages/AdminFinances';
 import { ScrollToTop } from './components/ScrollToTop';
 
 const queryClient = new QueryClient({
@@ -104,6 +105,7 @@ function App() {
                       <Route path="dashboard" element={<AdminDashboard />} />
                       <Route path="bookings" element={<AdminBookings />} />
                       <Route path="calendar" element={<AdminCalendar />} />
+                      <Route path="finances" element={<AdminFinances />} />
                       <Route path="slots" element={<AdminSlots />} />
                       <Route path="grounds" element={<AdminGrounds />} />
                       <Route path="reviews" element={<AdminReviews />} />

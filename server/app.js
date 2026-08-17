@@ -20,6 +20,7 @@ import userAuthRoutes from './src/routes/user-auth.routes.js';
 import bookingRequestRoutes from './src/routes/booking-request.routes.js';
 import auditLogRoutes from './src/routes/auditLog.routes.js';
 import paymentRoutes from './src/routes/payment.routes.js';
+import financeRoutes from './src/routes/finance.routes.js';
 
 import { errorHandler } from './src/middlewares/errorHandler.js';
 import { apiLimiter, bookingLimiter, loginLimiter, contactLimiter, otpLimiter, otpVerifyLimiter } from './src/middlewares/rateLimiter.js';
@@ -103,6 +104,7 @@ app.use(`${apiPrefix}/user`, userAuthRoutes);
 app.use(`${apiPrefix}`, bookingRequestRoutes);
 app.use(`${apiPrefix}/audit-logs`, auditLogRoutes);
 app.use(`${apiPrefix}`, paymentRoutes);
+app.use(`${apiPrefix}/finances`, financeRoutes);
 
 // Health check
 app.use(`${apiPrefix}`, healthRoutes);

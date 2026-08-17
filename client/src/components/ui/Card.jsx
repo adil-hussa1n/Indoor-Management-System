@@ -3,8 +3,8 @@ import React from 'react';
 export const Card = ({ children, className = '', hoverEffect = false, ...props }) => {
   return (
     <div
-      className={`bg-white dark:bg-zinc-900 border border-zinc-150 dark:border-zinc-800/80 rounded-2xl p-6 shadow-sm ${
-        hoverEffect ? 'hover:shadow-md transition-all duration-300 hover:-translate-y-0.5' : ''
+      className={`bg-white dark:bg-zinc-900 border border-slate-200/90 dark:border-zinc-800/80 rounded-2xl p-6 shadow-sm shadow-slate-200/60 dark:shadow-none ${
+        hoverEffect ? 'hover:shadow-md hover:shadow-slate-300/60 transition-all duration-300 hover:-translate-y-0.5' : ''
       } ${className}`}
       {...props}
     >

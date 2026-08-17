@@ -487,6 +487,90 @@ async function run() {
     assert(!r.ok || r.status >= 400, `Expected rejection for past date, got ${r.status}`);
   });
 
+  let testCatId = null;
+  let testEntryId = null;
+
+  await test('POST /finances/categories creates a new category', async () => {
+    const r = await api('POST', '/finances/categories', {
+      name: 'Test Equipment Expense',
+      type: 'expense',
+      description: 'Test category description'
+    }, true);
+    assert(r.ok, `Status ${r.status}: ${JSON.stringify(r.data)}`);
+    assert(r.data.category.name === 'Test Equipment Expense', 'Category name mismatch');
+    testCatId = r.data.category.id;
+  });
+
+  await test('GET /finances/categories returns category list', async () => {
+    const r = await api('GET', '/finances/categories', null, true);
+    assert(r.ok, `Status ${r.status}`);
+    assert(Array.isArray(r.data.categories), 'Categories is not array');
+  });
+
+  await test('POST /finances/entries creates a financial entry', async () => {
+    const r = await api('POST', '/finances/entries', {
+      type: 'expense',
+      categoryId: testCatId,
+      title: 'New Futsal Net Purchase',
+      amount: 4500,
+      date: '2026-08-17',
+      paymentMethod: 'Cash',
+      referenceNo: 'REF-001',
+    }, true);
+    assert(r.ok, `Status ${r.status}: ${JSON.stringify(r.data)}`);
+    assert(Number(r.data.entry.amount) === 4500, 'Entry amount mismatch');
+    testEntryId = r.data.entry.id;
+  });
+
+  await test('GET /finances/entries lists entries', async () => {
+    const r = await api('GET', '/finances/entries', null, true);
+    assert(r.ok, `Status ${r.status}`);
+    assert(Array.isArray(r.data.entries), 'Entries is not array');
+  });
+
+  await test('GET /finances/summary returns financial overview', async () => {
+    const r = await api('GET', '/finances/summary', null, true);
+    assert(r.ok, `Status ${r.status}`);
+    assert(r.data.summary.totalExpenses >= 4500, 'Expense summary total mismatch');
+  });
+
+  let testEntryId2 = null;
+
+  await test('POST /finances/entries creates a ground-scoped entry', async () => {
+    const r = await api('POST', '/finances/entries', {
+      type: 'expense',
+      categoryId: testCatId,
+      groundId: createdGroundId || 1,
+      title: 'Arena 1 Floodlight Repair',
+      amount: 2500,
+      date: '2026-08-18',
+      paymentMethod: 'Bank Transfer',
+    }, true);
+    assert(r.ok, `Status ${r.status}: ${JSON.stringify(r.data)}`);
+    assert(r.data.entry.groundId === (createdGroundId || 1), 'Ground ID mismatch');
+    testEntryId2 = r.data.entry.id;
+  });
+
+  await test('GET /finances/entries?groundId=general filters general venue entries', async () => {
+    const r = await api('GET', '/finances/entries?groundId=general', null, true);
+    assert(r.ok, `Status ${r.status}`);
+    assert(r.data.entries.every(e => e.groundId === null), 'Expected only general venue entries');
+  });
+
+  await test('DELETE /finances/entries/:id removes entry', async () => {
+    const r1 = await api('DELETE', `/finances/entries/${testEntryId}`, null, true);
+    assert(r1.ok, `Status ${r1.status}`);
+    if (testEntryId2) {
+      const r2 = await api('DELETE', `/finances/entries/${testEntryId2}`, null, true);
+      assert(r2.ok, `Status ${r2.status}`);
+    }
+  });
+
+  await test('DELETE /finances/categories/:id removes category', async () => {
+    const r = await api('DELETE', `/finances/categories/${testCatId}`, null, true);
+    assert(r.ok, `Status ${r.status}`);
+  });
+
   // Print Results
   console.log('\n' + '═'.repeat(60));
   console.log('DEEP CHECK RESULTS');
