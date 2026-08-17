@@ -376,7 +376,7 @@ export const AdminLayout = () => {
         }`}
       >
         <div className={`h-16 flex items-center border-b border-slate-200/70 dark:border-zinc-900 ${
-          isSidebarCollapsed ? 'justify-center px-2' : 'justify-between px-5'
+          isSidebarCollapsed ? 'justify-center px-2' : 'px-5'
         }`}>
           <div className="flex items-center gap-2.5 min-w-0 overflow-hidden">
             {(settings?.logo || cachedSettings?.logo) ? (
@@ -392,16 +392,6 @@ export const AdminLayout = () => {
               </span>
             )}
           </div>
-
-          {!isSidebarCollapsed && (
-            <button
-              onClick={toggleSidebarCollapse}
-              className="p-1.5 rounded-xl text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors cursor-pointer shrink-0"
-              title="Collapse Sidebar"
-            >
-              <PanelLeftClose className="w-5 h-5" />
-            </button>
-          )}
         </div>
 
         <nav className="flex-1 px-3 py-6 space-y-1.5 overflow-y-auto custom-scrollbar">
