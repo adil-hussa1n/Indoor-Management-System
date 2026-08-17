@@ -1852,7 +1852,7 @@ export const AdminSettings = () => {
                     Automated Online Payment Gateway Integration
                   </h3>
                   <p className="text-sm text-zinc-300 leading-relaxed font-medium">
-                    Automated online payment gateway integration (bKash, Nagad, Rocket, SSLCommerz, Visa & Mastercard) is currently disabled for your account license tier. Contact Darun Tech Private Limited to unlock automated online gateway payments for your venue.
+                    Automated online payment gateway processing (bKash Merchant Pay, Nagad API, SSLCommerz, Visa & Mastercard) is currently disabled for your account license tier. Contact Darun Tech Private Limited to unlock automated online gateway payments for your venue.
                   </p>
                 </div>
 
@@ -1879,8 +1879,10 @@ export const AdminSettings = () => {
                   </a>
                 </div>
               </div>
-            ) : (
-              <div className="glass-card p-6 rounded-3xl shadow-sm space-y-6">
+            ) : null}
+
+            <div className="glass-card p-6 rounded-3xl shadow-sm space-y-6">
+              {settings?.allowPaymentGateway !== false && (
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-100 dark:border-zinc-900 pb-4">
                   <div>
                     <h3 className="text-lg font-extrabold text-zinc-900 dark:text-white flex items-center gap-2">
@@ -1900,6 +1902,7 @@ export const AdminSettings = () => {
                     <div className="w-14 h-7 bg-zinc-200 peer-focus:outline-none rounded-full peer dark:bg-zinc-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all dark:after:border-zinc-600 peer-checked:bg-purple-650"></div>
                   </label>
                 </div>
+              )}
 
                 {formData?.paymentConfig?.enabled ? (
                 <div className="space-y-6">
@@ -2402,7 +2405,6 @@ export const AdminSettings = () => {
                 </div>
               )}
             </div>
-            )}
           </div>
         )}
 
