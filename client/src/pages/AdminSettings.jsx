@@ -7,7 +7,7 @@ import { Input, Select } from '../components/ui/Input';
 import { Loader } from '../components/ui/Loader';
 import { DatePicker } from '../components/ui/DatePicker';
 import { useToast } from '../components/ui/Toast';
-import { Save, Plus, Trash2, HelpCircle } from 'lucide-react';
+import { Save, Plus, Trash2, HelpCircle, CreditCard, Check, Sparkles } from 'lucide-react';
 import { AdminAuditLogsTab } from '../components/AdminAuditLogsTab';
 import { AdminStaffTab } from '../components/AdminStaffTab';
 
