@@ -393,8 +393,32 @@ export const AdminStaffTab = () => {
 
       {/* Create / Edit Manager Modal */}
       {isModalOpen && (
-        <Dialog isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingStaff ? 'Edit Staff Manager' : 'Create New Manager'}>
+        <Dialog
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          title={editingStaff ? (editingStaff.role === 'admin' ? '👑 Edit Business Owner Profile' : '🛡️ Edit Staff Manager') : '✨ Create New Manager'}
+          className="max-w-3xl sm:max-w-3xl"
+        >
           <form onSubmit={handleSubmit} className="space-y-5 text-left pt-2">
+            {/* Primary Business Owner Protection Banner */}
+            {editingStaff?.role === 'admin' && (
+              <div className="p-4 rounded-2xl bg-amber-500/10 dark:bg-amber-950/30 border border-amber-500/30 text-amber-800 dark:text-amber-300 space-y-1 text-xs">
+                <div className="flex items-center gap-2 font-black text-sm text-amber-700 dark:text-amber-400">
+                  <ShieldAlert className="w-5 h-5 text-amber-500 flex-shrink-0" />
+                  Primary Business Owner Credentials Protected
+                </div>
+                <p className="font-medium">
+                  Primary Business Owner username and account password cannot be modified from this menu to protect system access.
+                </p>
+                <p className="font-extrabold text-purple-650 dark:text-purple-400 pt-1">
+                  Need to change owner ID or password? Please contact{' '}
+                  <a href="https://daruntech.com" target="_blank" rel="noreferrer" className="underline hover:text-purple-750 font-bold">
+                    Darun Tech Private Limited
+                  </a>.
+                </p>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
@@ -444,20 +468,32 @@ export const AdminStaffTab = () => {
               </div>
             </div>
 
+            {/* Password Field */}
             <div>
               <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                {editingStaff ? 'New Password (leave blank to keep current)' : 'Account Password *'}
+                {editingStaff?.role === 'admin'
+                  ? 'Account Password (Protected)'
+                  : editingStaff
+                  ? 'New Password (leave blank to keep current)'
+                  : 'Account Password *'}
               </label>
               <Input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder={editingStaff ? '••••••••' : 'Minimum 6 characters'}
+                placeholder={
+                  editingStaff?.role === 'admin'
+                    ? 'Contact Darun Tech Private Limited to change owner password'
+                    : editingStaff
+                    ? '••••••••'
+                    : 'Minimum 6 characters'
+                }
+                disabled={editingStaff?.role === 'admin'}
                 required={!editingStaff}
               />
             </div>
 
-            {/* Role & Quick Presets */}
+            {/* Role & Quick Presets (For Managers) */}
             {editingStaff?.role !== 'admin' && (
               <div className="space-y-3 pt-2 border-t border-zinc-150 dark:border-zinc-800">
                 <div className="flex items-center justify-between">
@@ -485,7 +521,7 @@ export const AdminStaffTab = () => {
                     Granular Access Permissions:
                   </label>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[300px] overflow-y-auto pr-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[320px] overflow-y-auto pr-1">
                     {PERMISSION_KEYS.map((p) => {
                       const IconComp = p.icon;
                       const isChecked = permissions[p.key] === true;
@@ -494,20 +530,20 @@ export const AdminStaffTab = () => {
                         <div
                           key={p.key}
                           onClick={() => handleTogglePermission(p.key)}
-                          className={`p-3 rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${
+                          className={`p-3.5 rounded-2xl border flex items-center justify-between cursor-pointer transition-all hover:border-purple-400/50 ${
                             isChecked
-                              ? 'bg-purple-500/5 dark:bg-purple-950/20 border-purple-500/30'
-                              : 'bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 opacity-60'
+                              ? 'bg-purple-500/5 dark:bg-purple-950/30 border-purple-500/30 shadow-xs'
+                              : 'bg-zinc-50 dark:bg-zinc-900 border-zinc-200/80 dark:border-zinc-800/80 opacity-60'
                           }`}
                         >
-                          <div className="flex items-center gap-3">
-                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-                              isChecked ? 'bg-purple-600 text-white' : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-500'
+                          <div className="flex items-center gap-3 min-w-0 pr-2">
+                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                              isChecked ? 'bg-purple-600 text-white shadow-sm shadow-purple-500/20' : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-500'
                             }`}>
-                              <IconComp className="w-4 h-4" />
+                              <IconComp className="w-4.5 h-4.5" />
                             </div>
-                            <div>
-                              <p className="font-bold text-xs text-zinc-900 dark:text-white">{p.label}</p>
+                            <div className="min-w-0">
+                              <p className="font-bold text-xs text-zinc-900 dark:text-white truncate">{p.label}</p>
                               <p className="text-[10px] text-zinc-400 line-clamp-1">{p.description}</p>
                             </div>
                           </div>
