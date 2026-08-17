@@ -2183,12 +2183,20 @@ export const AdminSettings = () => {
                       </div>
                     )}
                   </div>
+                </div>
+              ) : (
+                <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs font-semibold text-amber-700 dark:text-amber-400">
+                  ℹ️ Online payment system is currently turned <strong>OFF</strong>. Customers can instantly confirm court bookings without paying online.
+                </div>
+              )}
+            </div>
 
-                  {/* Printable Invoice & Signature Customization */}
-                  <div className="p-5 rounded-2xl bg-purple-500/5 dark:bg-purple-950/20 border border-purple-500/20 space-y-4">
-                    <h4 className="text-xs font-black uppercase text-purple-650 dark:text-purple-400 tracking-wider flex items-center gap-2">
-                      📜 Printable Tax Invoice & Authorized Signature Settings
-                    </h4>
+            {/* Printable Invoice & Signature Customization */}
+            <div className="glass-card p-6 rounded-3xl shadow-sm space-y-6">
+              <div className="p-5 rounded-2xl bg-purple-500/5 dark:bg-purple-950/20 border border-purple-500/20 space-y-4">
+                <h4 className="text-xs font-black uppercase text-purple-650 dark:text-purple-400 tracking-wider flex items-center gap-2">
+                  📜 Printable Tax Invoice & Authorized Signature Settings
+                </h4>
 
                     <div className="space-y-4">
                       <div className="flex flex-col gap-1.5">
@@ -2278,132 +2286,128 @@ export const AdminSettings = () => {
                       </div>
                     </div>
                   </div>
+            </div>
 
-                  {/* Custom Payment Methods Manager */}
-                  {(() => {
-                    const defaultMethods = ['Cash', 'bKash Personal / Manual', 'POS / Card', 'Bank Transfer', 'Pay After Match'];
-                    const currentMethods = formData?.paymentConfig?.customPaymentMethods || defaultMethods;
+            {/* Custom Payment Methods Manager */}
+            <div className="glass-card p-6 rounded-3xl shadow-sm space-y-6">
+              {(() => {
+                const defaultMethods = ['Cash', 'bKash Personal / Manual', 'POS / Card', 'Bank Transfer', 'Pay After Match'];
+                const currentMethods = formData?.paymentConfig?.customPaymentMethods || defaultMethods;
 
-                    const handleAddMethod = () => {
-                      if (!newPaymentMethod.trim()) return;
-                      const updated = [...currentMethods, newPaymentMethod.trim()];
-                      updatePaymentConfig(c => ({ ...c, customPaymentMethods: updated }));
-                      setNewPaymentMethod('');
-                      toast.success(`Payment option "${newPaymentMethod.trim()}" added!`);
-                    };
+                const handleAddMethod = () => {
+                  if (!newPaymentMethod.trim()) return;
+                  const updated = [...currentMethods, newPaymentMethod.trim()];
+                  updatePaymentConfig(c => ({ ...c, customPaymentMethods: updated }));
+                  setNewPaymentMethod('');
+                  toast.success(`Payment option "${newPaymentMethod.trim()}" added!`);
+                };
 
-                    const handleRemoveMethod = (indexToRemove) => {
-                      const updated = currentMethods.filter((_, idx) => idx !== indexToRemove);
-                      updatePaymentConfig(c => ({ ...c, customPaymentMethods: updated }));
-                      toast.info('Payment option removed.');
-                    };
+                const handleRemoveMethod = (indexToRemove) => {
+                  const updated = currentMethods.filter((_, idx) => idx !== indexToRemove);
+                  updatePaymentConfig(c => ({ ...c, customPaymentMethods: updated }));
+                  toast.info('Payment option removed.');
+                };
 
-                    const handleSaveEditMethod = (indexToEdit) => {
-                      if (!editingPaymentText.trim()) return;
-                      const updated = [...currentMethods];
-                      updated[indexToEdit] = editingPaymentText.trim();
-                      updatePaymentConfig(c => ({ ...c, customPaymentMethods: updated }));
-                      setEditingPaymentIndex(null);
-                      setEditingPaymentText('');
-                      toast.success('Payment option updated!');
-                    };
+                const handleSaveEditMethod = (indexToEdit) => {
+                  if (!editingPaymentText.trim()) return;
+                  const updated = [...currentMethods];
+                  updated[indexToEdit] = editingPaymentText.trim();
+                  updatePaymentConfig(c => ({ ...c, customPaymentMethods: updated }));
+                  setEditingPaymentIndex(null);
+                  setEditingPaymentText('');
+                  toast.success('Payment option updated!');
+                };
 
-                    return (
-                      <div className="p-5 rounded-2xl bg-indigo-500/5 dark:bg-indigo-950/20 border border-indigo-500/20 space-y-4">
-                        <div className="flex items-center justify-between">
-                          <h4 className="text-xs font-black uppercase text-indigo-600 dark:text-indigo-400 tracking-wider flex items-center gap-2">
-                            💳 Manual & Offline Payment Options (Add, Edit, Remove)
-                          </h4>
-                        </div>
+                return (
+                  <div className="p-5 rounded-2xl bg-indigo-500/5 dark:bg-indigo-950/20 border border-indigo-500/20 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-black uppercase text-indigo-600 dark:text-indigo-400 tracking-wider flex items-center gap-2">
+                        💳 Manual & Offline Payment Options (Add, Edit, Remove)
+                      </h4>
+                    </div>
 
-                        <p className="text-xs text-zinc-500">
-                          Configure the payment methods available in the Admin manual booking portal (e.g. Cash, bKash Personal, POS/Card, Bank Transfer, Pay After Match).
-                        </p>
+                    <p className="text-xs text-zinc-500">
+                      Configure the payment methods available in the Admin manual booking portal (e.g. Cash, bKash Personal, POS/Card, Bank Transfer, Pay After Match).
+                    </p>
 
-                        {/* List of Methods */}
-                        <div className="space-y-2">
-                          {currentMethods.map((method, idx) => (
-                            <div key={idx} className="p-3 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 flex items-center justify-between gap-3 text-xs">
-                              {editingPaymentIndex === idx ? (
-                                <div className="flex items-center gap-2 flex-1">
-                                  <input
-                                    type="text"
-                                    className="flex-1 px-3 py-1.5 rounded-lg border border-indigo-500 bg-transparent text-xs font-bold text-zinc-900 dark:text-white"
-                                    value={editingPaymentText}
-                                    onChange={(e) => setEditingPaymentText(e.target.value)}
-                                  />
-                                  <button
-                                    type="button"
-                                    onClick={() => handleSaveEditMethod(idx)}
-                                    className="px-3 py-1 rounded-lg bg-indigo-650 text-white font-bold text-xs"
-                                  >
-                                    Save
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => setEditingPaymentIndex(null)}
-                                    className="px-2 py-1 text-zinc-400 font-semibold"
-                                  >
-                                    Cancel
-                                  </button>
-                                </div>
-                              ) : (
-                                <>
-                                  <span className="font-extrabold text-zinc-800 dark:text-zinc-200 flex items-center gap-2">
-                                    <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
-                                    {method}
-                                  </span>
-                                  <div className="flex items-center gap-2">
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setEditingPaymentIndex(idx);
-                                        setEditingPaymentText(method);
-                                      }}
-                                      className="text-xs font-bold text-indigo-600 hover:text-indigo-700 px-2 py-1 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-950/40 cursor-pointer"
-                                    >
-                                      Edit
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleRemoveMethod(idx)}
-                                      className="text-xs font-bold text-rose-500 hover:text-rose-600 px-2 py-1 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer"
-                                    >
-                                      🗑️ Remove
-                                    </button>
-                                  </div>
-                                </>
-                              )}
+                    {/* List of Methods */}
+                    <div className="space-y-2">
+                      {currentMethods.map((method, idx) => (
+                        <div key={idx} className="p-3 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 flex items-center justify-between gap-3 text-xs">
+                          {editingPaymentIndex === idx ? (
+                            <div className="flex items-center gap-2 flex-1">
+                              <input
+                                type="text"
+                                className="flex-1 px-3 py-1.5 rounded-lg border border-indigo-500 bg-transparent text-xs font-bold text-zinc-900 dark:text-white"
+                                value={editingPaymentText}
+                                onChange={(e) => setEditingPaymentText(e.target.value)}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleSaveEditMethod(idx)}
+                                className="px-3 py-1 rounded-lg bg-indigo-650 text-white font-bold text-xs"
+                              >
+                                Save
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setEditingPaymentIndex(null)}
+                                className="px-2 py-1 text-zinc-400 font-semibold"
+                              >
+                                Cancel
+                              </button>
                             </div>
-                          ))}
+                          ) : (
+                            <>
+                              <span className="font-extrabold text-zinc-800 dark:text-zinc-200 flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
+                                {method}
+                              </span>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingPaymentIndex(idx);
+                                    setEditingPaymentText(method);
+                                  }}
+                                  className="text-xs font-bold text-indigo-600 hover:text-indigo-700 px-2 py-1 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-950/40 cursor-pointer"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveMethod(idx)}
+                                  className="text-xs font-bold text-rose-500 hover:text-rose-600 px-2 py-1 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer"
+                                >
+                                  🗑️ Remove
+                                </button>
+                              </div>
+                            </>
+                          )}
                         </div>
+                      ))}
+                    </div>
 
-                        {/* Add New Method Input */}
-                        <div className="flex items-center gap-2 pt-2">
-                          <input
-                            type="text"
-                            placeholder="Add new payment method (e.g. Nagad, Cheque)..."
-                            className="flex-1 px-3.5 py-2 text-xs font-semibold rounded-xl border border-zinc-250 dark:border-zinc-800 bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-indigo-600"
-                            value={newPaymentMethod}
-                            onChange={(e) => setNewPaymentMethod(e.target.value)}
-                          />
-                          <Button
-                            type="button"
-                            onClick={handleAddMethod}
-                            className="font-bold text-xs py-2 px-4 bg-indigo-650 hover:bg-indigo-700 text-white"
-                          >
-                            + Add Payment Option
-                          </Button>
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </div>
-              ) : (
-                <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs font-semibold text-amber-700 dark:text-amber-400">
-                  ℹ️ Payment system is currently turned <strong>OFF</strong>. Customers can instantly confirm court bookings without paying online.
-                </div>
-              )}
+                    {/* Add New Method Input */}
+                    <div className="flex items-center gap-2 pt-2">
+                      <input
+                        type="text"
+                        placeholder="Add new payment method (e.g. Nagad, Cheque)..."
+                        className="flex-1 px-3.5 py-2 text-xs font-semibold rounded-xl border border-zinc-250 dark:border-zinc-800 bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                        value={newPaymentMethod}
+                        onChange={(e) => setNewPaymentMethod(e.target.value)}
+                      />
+                      <Button
+                        type="button"
+                        onClick={handleAddMethod}
+                        className="font-bold text-xs py-2 px-4 bg-indigo-650 hover:bg-indigo-700 text-white"
+                      >
+                        + Add Payment Option
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         )}
