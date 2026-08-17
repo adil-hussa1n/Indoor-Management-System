@@ -19,6 +19,7 @@ const syncMasterDatabase = async () => {
       "ALTER TABLE `tenants` ADD COLUMN `totalRevenueCollected` DECIMAL(10,2) DEFAULT 0.00",
       "ALTER TABLE `tenants` ADD COLUMN `paymentStatus` VARCHAR(255) DEFAULT 'paid'",
       "ALTER TABLE `tenants` ADD COLUMN `lastPaymentDate` DATETIME NULL",
+      "ALTER TABLE `tenants` ADD COLUMN `allowPaymentGateway` TINYINT(1) DEFAULT 1",
     ];
 
     for (const q of columns) {
