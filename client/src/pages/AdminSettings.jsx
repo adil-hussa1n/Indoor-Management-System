@@ -195,10 +195,22 @@ export const AdminSettings = () => {
           zoomAnimation: settings.hero?.zoomAnimation ?? false,
           overlayStyle: settings.hero?.overlayStyle || 'dark',
           showParticles: settings.hero?.showParticles ?? true,
+          titleGradient: settings.hero?.titleGradient || 'purple-pink',
+          cardStyle: settings.hero?.cardStyle || 'glass-xl',
           primaryCtaText: settings.hero?.primaryCtaText || 'Book Court Now',
           primaryCtaLink: settings.hero?.primaryCtaLink || '/booking',
           secondaryCtaText: settings.hero?.secondaryCtaText || 'Explore Arena',
           secondaryCtaLink: settings.hero?.secondaryCtaLink || '/about',
+          stats: settings.hero?.stats || {
+            stat1Val: 'FIFA/FIBA',
+            stat1Label: 'Standard Court',
+            stat2Val: 'Roof',
+            stat2Label: 'Weather Protected',
+            stat3Val: 'Natural',
+            stat3Label: 'Air Ventilation',
+            stat4Val: '24/7',
+            stat4Label: 'CCTV & Security',
+          },
         },
         paymentConfig: (typeof settings.paymentConfig === 'string'
           ? (() => { try { return JSON.parse(settings.paymentConfig); } catch (e) { return null; } })()
@@ -952,6 +964,36 @@ export const AdminSettings = () => {
                   </div>
                 </div>
               </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-zinc-100 dark:border-zinc-900 pt-4">
+                <div className="flex flex-col gap-1.5 text-left">
+                  <label className="text-xs font-semibold text-zinc-650 dark:text-zinc-450 uppercase tracking-wider">Headline Highlight Gradient</label>
+                  <select
+                    value={formData.hero.titleGradient || 'purple-pink'}
+                    onChange={(e) => handleChange('hero', 'titleGradient', e.target.value)}
+                    className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-3 py-2.5 text-sm text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-650 transition-all duration-200 cursor-pointer"
+                  >
+                    <option value="purple-pink">🔮 Purple ➔ Pink ➔ Indigo (Vibrant Glass)</option>
+                    <option value="cyan-blue">💎 Electric Cyan ➔ Sky Blue ➔ Indigo</option>
+                    <option value="emerald-gold">🌿 Emerald ➔ Teal ➔ Warm Gold</option>
+                    <option value="sunset-orange">🌅 Sunset Red ➔ Crimson ➔ Bright Orange</option>
+                    <option value="neon-green">⚡ Neon Lime ➔ Emerald ➔ Cyan Cyberpunk</option>
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-1.5 text-left">
+                  <label className="text-xs font-semibold text-zinc-650 dark:text-zinc-450 uppercase tracking-wider">Hero Card Preset Style</label>
+                  <select
+                    value={formData.hero.cardStyle || 'glass-xl'}
+                    onChange={(e) => handleChange('hero', 'cardStyle', e.target.value)}
+                    className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-3 py-2.5 text-sm text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-650 transition-all duration-200 cursor-pointer"
+                  >
+                    <option value="glass-xl">💎 Liquid Glassmorphism (Frosted Glow)</option>
+                    <option value="cyber-neon">⚡ Cyber Neon Accent (Glowing Edge)</option>
+                    <option value="minimal-dark">🖤 Minimalist Obsidian Dark</option>
+                    <option value="clean-border">⬜ Clean White Border</option>
+                  </select>
+                </div>
+              </div>
             </div>
 
             {/* Hero Text Content */}
@@ -1023,6 +1065,145 @@ export const AdminSettings = () => {
                     value={formData.hero.secondaryCtaLink || '/about'}
                     onChange={(e) => handleChange('hero', 'secondaryCtaLink', e.target.value)}
                     placeholder="e.g. /about"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="glass-card p-6 rounded-3xl shadow-sm space-y-4">
+              <div>
+                <h3 className="text-lg font-bold text-zinc-900 dark:text-white">Real-time Hero Counter Badges</h3>
+                <p className="text-xs text-zinc-400 mt-1">Configure feature callout values and labels displayed in the stats bar below the hero section.</p>
+              </div>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Input
+                    label="Stat #1 Highlight Value"
+                    value={formData.hero.stats?.stat1Val || 'FIFA/FIBA'}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setFormData(prev => ({
+                        ...prev,
+                        hero: {
+                          ...prev.hero,
+                          stats: { ...(prev.hero.stats || {}), stat1Val: val }
+                        }
+                      }));
+                    }}
+                    placeholder="e.g. Roof"
+                  />
+                  <Input
+                    label="Stat #1 Label"
+                    value={formData.hero.stats?.stat1Label || 'Standard Court'}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setFormData(prev => ({
+                        ...prev,
+                        hero: {
+                          ...prev.hero,
+                          stats: { ...(prev.hero.stats || {}), stat1Label: val }
+                        }
+                      }));
+                    }}
+                    placeholder="e.g. Weather Protected"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-zinc-100 dark:border-zinc-900 pt-4">
+                  <Input
+                    label="Stat #2 Highlight Value"
+                    value={formData.hero.stats?.stat2Val || 'Roof'}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setFormData(prev => ({
+                        ...prev,
+                        hero: {
+                          ...prev.hero,
+                          stats: { ...(prev.hero.stats || {}), stat2Val: val }
+                        }
+                      }));
+                    }}
+                    placeholder="e.g. Roof"
+                  />
+                  <Input
+                    label="Stat #2 Label"
+                    value={formData.hero.stats?.stat2Label || 'Weather Protected'}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setFormData(prev => ({
+                        ...prev,
+                        hero: {
+                          ...prev.hero,
+                          stats: { ...(prev.hero.stats || {}), stat2Label: val }
+                        }
+                      }));
+                    }}
+                    placeholder="e.g. Protected Court"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-zinc-100 dark:border-zinc-900 pt-4">
+                  <Input
+                    label="Stat #3 Highlight Value"
+                    value={formData.hero.stats?.stat3Val || 'Natural'}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setFormData(prev => ({
+                        ...prev,
+                        hero: {
+                          ...prev.hero,
+                          stats: { ...(prev.hero.stats || {}), stat3Val: val }
+                        }
+                      }));
+                    }}
+                    placeholder="e.g. Natural"
+                  />
+                  <Input
+                    label="Stat #3 Label"
+                    value={formData.hero.stats?.stat3Label || 'Air Ventilation'}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setFormData(prev => ({
+                        ...prev,
+                        hero: {
+                          ...prev.hero,
+                          stats: { ...(prev.hero.stats || {}), stat3Label: val }
+                        }
+                      }));
+                    }}
+                    placeholder="e.g. Air Ventilation"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-zinc-100 dark:border-zinc-900 pt-4">
+                  <Input
+                    label="Stat #4 Highlight Value"
+                    value={formData.hero.stats?.stat4Val || '24/7'}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setFormData(prev => ({
+                        ...prev,
+                        hero: {
+                          ...prev.hero,
+                          stats: { ...(prev.hero.stats || {}), stat4Val: val }
+                        }
+                      }));
+                    }}
+                    placeholder="e.g. 24/7"
+                  />
+                  <Input
+                    label="Stat #4 Label"
+                    value={formData.hero.stats?.stat4Label || 'CCTV & Security'}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setFormData(prev => ({
+                        ...prev,
+                        hero: {
+                          ...prev.hero,
+                          stats: { ...(prev.hero.stats || {}), stat4Label: val }
+                        }
+                      }));
+                    }}
+                    placeholder="e.g. CCTV & Security"
                   />
                 </div>
               </div>

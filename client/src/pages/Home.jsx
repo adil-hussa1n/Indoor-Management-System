@@ -238,10 +238,32 @@ export const Home = () => {
         <div className="max-w-5xl mx-auto text-center relative z-10 px-2 sm:px-6 w-full">
           {(() => {
             const useGlassCard = settings?.hero?.useGlassBg !== false;
+            const cardStyle = settings?.hero?.cardStyle || 'glass-xl';
 
-            const cardBg = useGlassCard
+            let cardBg = useGlassCard
               ? 'bg-zinc-950/70 sm:bg-white/85 dark:bg-zinc-950/85 border border-white/10 sm:border-white/80 dark:border-zinc-800/80 shadow-2xl backdrop-blur-2xl'
               : 'bg-transparent border-0 shadow-none';
+
+            if (useGlassCard && cardStyle === 'cyber-neon') {
+              cardBg = 'bg-zinc-950/85 border-2 border-purple-500/50 shadow-[0_0_30px_rgba(168,85,247,0.3)] backdrop-blur-2xl';
+            } else if (useGlassCard && cardStyle === 'minimal-dark') {
+              cardBg = 'bg-zinc-950/90 border border-zinc-800 shadow-xl backdrop-blur-md';
+            } else if (useGlassCard && cardStyle === 'clean-border') {
+              cardBg = 'bg-white/90 dark:bg-zinc-900/90 border-2 border-zinc-200 dark:border-zinc-800 shadow-xl backdrop-blur-md';
+            }
+
+            const titleGradient = settings?.hero?.titleGradient || 'purple-pink';
+            let gradientClass = 'from-purple-400 via-pink-400 to-indigo-300 sm:from-purple-600 sm:via-pink-500 sm:to-indigo-600 sm:dark:from-purple-400 sm:dark:via-pink-400 sm:dark:to-indigo-300';
+
+            if (titleGradient === 'cyan-blue') {
+              gradientClass = 'from-cyan-400 via-sky-400 to-indigo-300 sm:from-cyan-600 sm:via-sky-500 sm:to-indigo-600 sm:dark:from-cyan-400 sm:dark:via-sky-400 sm:dark:to-indigo-300';
+            } else if (titleGradient === 'emerald-gold') {
+              gradientClass = 'from-emerald-400 via-teal-400 to-amber-300 sm:from-emerald-600 sm:via-teal-500 sm:to-amber-500 sm:dark:from-emerald-400 sm:dark:via-teal-400 sm:dark:to-amber-300';
+            } else if (titleGradient === 'sunset-orange') {
+              gradientClass = 'from-rose-400 via-orange-400 to-amber-300 sm:from-rose-600 sm:via-orange-500 sm:to-amber-500 sm:dark:from-rose-400 sm:dark:via-orange-400 sm:dark:to-amber-300';
+            } else if (titleGradient === 'neon-green') {
+              gradientClass = 'from-lime-400 via-emerald-400 to-cyan-300 sm:from-lime-500 sm:via-emerald-500 sm:to-cyan-500 sm:dark:from-lime-400 sm:dark:via-emerald-400 sm:dark:to-cyan-300';
+            }
 
             const primaryText = settings?.hero?.primaryCtaText || 'Book Court Now';
             const primaryLink = settings?.hero?.primaryCtaLink || '/booking';
@@ -260,7 +282,7 @@ export const Home = () => {
                   </span>
                   <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight mb-4 sm:mb-5 leading-[1.15] text-white sm:text-zinc-900 sm:dark:text-white drop-shadow-sm">
                     {settings?.hero?.title1 || 'Experience Sports'} <br />
-                    <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-300 sm:from-purple-600 sm:via-pink-500 sm:to-indigo-600 sm:dark:from-purple-400 sm:dark:via-pink-400 sm:dark:to-indigo-300 bg-clip-text text-transparent">
+                    <span className={`bg-gradient-to-r ${gradientClass} bg-clip-text text-transparent`}>
                       {settings?.hero?.title2 || 'Like Never Before'}
                     </span>
                   </h1>
@@ -300,20 +322,36 @@ export const Home = () => {
       <section className="relative z-20 -mt-8 max-w-6xl mx-auto px-4">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 rounded-3xl glass-card shadow-xl border border-zinc-200/50 dark:border-zinc-800/60 bg-white/80 dark:bg-zinc-900/80">
           <div className="flex flex-col items-center justify-center text-center p-3 border-r border-zinc-200/50 dark:border-zinc-800 last:border-0">
-            <span className="text-3xl md:text-4xl font-black text-purple-650 dark:text-purple-400">Roof</span>
-            <span className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mt-1">Protected Court</span>
+            <span className="text-2xl md:text-3xl font-black text-purple-650 dark:text-purple-400">
+              {settings?.hero?.stats?.stat1Val || 'FIFA/FIBA'}
+            </span>
+            <span className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mt-1">
+              {settings?.hero?.stats?.stat1Label || 'Standard Court'}
+            </span>
           </div>
           <div className="flex flex-col items-center justify-center text-center p-3 border-r border-zinc-200/50 dark:border-zinc-800 last:border-0 md:border-r">
-            <span className="text-3xl md:text-4xl font-black text-purple-650 dark:text-purple-400">Natural</span>
-            <span className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mt-1">Air Ventilation</span>
+            <span className="text-2xl md:text-3xl font-black text-purple-650 dark:text-purple-400">
+              {settings?.hero?.stats?.stat2Val || 'Roof'}
+            </span>
+            <span className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mt-1">
+              {settings?.hero?.stats?.stat2Label || 'Weather Protected'}
+            </span>
           </div>
           <div className="flex flex-col items-center justify-center text-center p-3 border-r border-zinc-200/50 dark:border-zinc-800 last:border-0">
-            <span className="text-3xl md:text-4xl font-black text-purple-650 dark:text-purple-400">0</span>
-            <span className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mt-1">Double Bookings</span>
+            <span className="text-2xl md:text-3xl font-black text-purple-650 dark:text-purple-400">
+              {settings?.hero?.stats?.stat3Val || 'Natural'}
+            </span>
+            <span className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mt-1">
+              {settings?.hero?.stats?.stat3Label || 'Air Ventilation'}
+            </span>
           </div>
-          <div className="flex flex-col items-center justify-center text-center p-3 last:border-0">
-            <span className="text-3xl md:text-4xl font-black text-purple-650 dark:text-purple-400">24/7</span>
-            <span className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mt-1">Smart Reservation</span>
+          <div className="flex flex-col items-center justify-center text-center p-3">
+            <span className="text-2xl md:text-3xl font-black text-purple-650 dark:text-purple-400">
+              {settings?.hero?.stats?.stat4Val || '24/7'}
+            </span>
+            <span className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mt-1">
+              {settings?.hero?.stats?.stat4Label || 'CCTV & Security'}
+            </span>
           </div>
         </div>
       </section>
