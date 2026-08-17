@@ -201,24 +201,22 @@ export const Home = () => {
         )}
 
         {/* Overlay Layers */}
-        <div className={`absolute inset-0 transition-all duration-300 ${settings?.heroBanner
-            ? (settings?.hero?.darkenOverlay
-              ? 'bg-black/40 dark:bg-black/60 backdrop-blur-[1px]'
-              : 'bg-white/75 dark:bg-zinc-950/75 backdrop-blur-[2px]')
-            : 'bg-gradient-to-br from-purple-950/20 via-indigo-950/10 to-transparent'
-          }`} />
+        <div
+          className={`absolute inset-0 transition-all duration-300 ${
+            settings?.heroBanner
+              ? 'bg-gradient-to-t from-zinc-950 via-zinc-950/70 to-zinc-950/50 backdrop-blur-[1px]'
+              : 'bg-gradient-to-br from-purple-950/30 via-indigo-950/20 to-zinc-950'
+          }`}
+        />
 
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_60%_at_50%_-10%,rgba(168,85,247,0.15),rgba(255,255,255,0))] dark:bg-[radial-gradient(ellipse_60%_60%_at_50%_-10%,rgba(168,85,247,0.2),rgba(0,0,0,0))]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_60%_at_50%_-10%,rgba(168,85,247,0.25),rgba(0,0,0,0))]" />
 
-        <div className="max-w-5xl mx-auto text-center relative z-10 px-4">
-          <div className="max-w-4xl mx-auto p-6 md:p-12 rounded-[2.5rem] border border-white/20 dark:border-zinc-800/40 bg-white/40 dark:bg-zinc-900/35 backdrop-blur-xl shadow-2xl shadow-purple-500/5">
+        <div className="max-w-5xl mx-auto text-center relative z-10 px-3 sm:px-6">
+          <div className="max-w-4xl mx-auto p-6 sm:p-10 md:p-14 rounded-[2.5rem] border border-white/20 dark:border-white/10 bg-zinc-950/65 dark:bg-zinc-950/80 backdrop-blur-2xl shadow-2xl shadow-purple-500/10">
             {(() => {
-              const isDark = settings?.hero?.darkenOverlay;
-              const textColor = isDark ? 'text-white' : 'text-zinc-900 dark:text-white';
-              const descColor = isDark ? 'text-zinc-200' : 'text-zinc-650 dark:text-zinc-300';
-              const badgeColor = isDark
-                ? 'bg-white/10 text-white border-white/20'
-                : 'bg-purple-500/10 text-purple-650 dark:text-purple-400 border-purple-500/20';
+              const textColor = 'text-white';
+              const descColor = 'text-zinc-200 dark:text-zinc-300';
+              const badgeColor = 'bg-purple-500/20 text-purple-300 border-purple-400/30 backdrop-blur-md';
 
               return (
                 <>
@@ -227,17 +225,16 @@ export const Home = () => {
                     animate="visible"
                     variants={fadeInUp}
                   >
-                    <span className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold mb-6 uppercase tracking-widest border ${badgeColor}`}>
-
+                    <span className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[11px] sm:text-xs font-extrabold mb-5 uppercase tracking-widest border shadow-sm ${badgeColor}`}>
                       {settings?.hero?.tagline || '⚡ Premium Indoor Court'}
                     </span>
-                    <h1 className={`text-4xl md:text-6xl lg:text-7xl font-black tracking-tight mb-6 leading-[1.1] ${textColor}`}>
+                    <h1 className={`text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight mb-5 leading-[1.1] ${textColor}`}>
                       {settings?.hero?.title1 || 'Experience Sports'} <br />
-                      <span className="bg-gradient-to-r from-purple-600 via-pink-500 to-indigo-600 bg-clip-text text-transparent">
+                      <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-300 bg-clip-text text-transparent">
                         {settings?.hero?.title2 || 'Like Never Before'}
                       </span>
                     </h1>
-                    <p className={`text-base md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed font-medium ${descColor}`}>
+                    <p className={`text-sm sm:text-base md:text-lg max-w-2xl mx-auto mb-8 leading-relaxed font-medium ${descColor}`}>
                       {settings?.hero?.description || 'Book our state-of-the-art climate-controlled indoor arena. Designed for futsal, basketball, badminton, and more. Clean, professional, and ready.'}
                     </p>
                   </motion.div>
@@ -246,21 +243,18 @@ export const Home = () => {
                     initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3, duration: 0.5 }}
-                    className="flex flex-col sm:flex-row items-center justify-center gap-4"
+                    className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 w-full"
                   >
-                    <Link to="/booking">
-                      <Button size="large" variant="primary" className="px-10 py-4 text-base font-bold shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40">
-                        Book Court Now <ArrowRight className="w-5 h-5 ml-1" />
+                    <Link to="/booking" className="w-full sm:w-auto">
+                      <Button size="large" variant="primary" className="w-full sm:w-auto px-8 py-3.5 text-sm sm:text-base font-extrabold shadow-xl shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-105 active:scale-95 transition-all">
+                        Book Court Now <ArrowRight className="w-5 h-5 ml-1.5" />
                       </Button>
                     </Link>
-                    <Link to="/about">
+                    <Link to="/about" className="w-full sm:w-auto">
                       <Button
                         size="large"
                         variant="secondary"
-                        className={`px-10 py-4 text-base font-bold ${isDark
-                            ? 'bg-white/10 text-white hover:bg-white/20 border-white/20 backdrop-blur-xs'
-                            : 'bg-zinc-200/50 hover:bg-zinc-200 text-zinc-850 dark:bg-zinc-850 dark:hover:bg-zinc-800 dark:text-zinc-200'
-                          }`}
+                        className="w-full sm:w-auto px-8 py-3.5 text-sm sm:text-base font-extrabold bg-white/10 hover:bg-white/20 text-white border-white/20 backdrop-blur-md hover:scale-105 active:scale-95 transition-all"
                       >
                         Explore Arena
                       </Button>
