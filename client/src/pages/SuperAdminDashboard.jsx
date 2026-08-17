@@ -89,6 +89,7 @@ export const SuperAdminDashboard = () => {
 
   const [editDiscountType, setEditDiscountType] = useState('none');
   const [editDiscountVal, setEditDiscountVal] = useState('0');
+  const [editAllowPaymentGateway, setEditAllowPaymentGateway] = useState(true);
 
   // Search & Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -346,6 +347,7 @@ export const SuperAdminDashboard = () => {
     setEditSubPrice(tenant.subscriptionPrice || '5000');
     setEditSubPlan(tenant.subscriptionPlan || '1_month');
     setEditPaymentStatus(tenant.paymentStatus || 'paid');
+    setEditAllowPaymentGateway(tenant.allowPaymentGateway !== false);
     setRecordPayment(false);
 
     // Load full details (with SMS credentials)
@@ -357,6 +359,7 @@ export const SuperAdminDashboard = () => {
           if (res.data.tenant.subscriptionPrice) setEditSubPrice(res.data.tenant.subscriptionPrice);
           if (res.data.tenant.subscriptionPlan) setEditSubPlan(res.data.tenant.subscriptionPlan);
           if (res.data.tenant.paymentStatus) setEditPaymentStatus(res.data.tenant.paymentStatus);
+          if (res.data.tenant.allowPaymentGateway !== undefined) setEditAllowPaymentGateway(res.data.tenant.allowPaymentGateway !== false);
         }
       })
       .catch(() => {
@@ -422,6 +425,7 @@ export const SuperAdminDashboard = () => {
         subscriptionPrice: Number(editSubPrice) || 0,
         subscriptionPlan: editSubPlan,
         paymentStatus: editPaymentStatus,
+        allowPaymentGateway: editAllowPaymentGateway,
         recordPayment,
       };
 
@@ -1285,6 +1289,29 @@ export const SuperAdminDashboard = () => {
                   value={editAdminPassword}
                   onChange={(e) => setEditAdminPassword(e.target.value)}
                 />
+              </div>
+            </div>
+
+            {/* Online Payment Gateway Master Toggle */}
+            <div className="p-4 bg-purple-500/5 dark:bg-purple-950/20 rounded-2xl border border-purple-500/20 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex flex-col text-left">
+                  <span className="text-xs font-black uppercase text-purple-600 dark:text-purple-400 tracking-wider flex items-center gap-1.5">
+                    💳 Online Payment Gateway System
+                  </span>
+                  <span className="text-[10px] text-zinc-400 font-medium mt-0.5">
+                    Master control to enable or disable bKash/Nagad/SSLCommerz online payment gateways for this venue.
+                  </span>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={editAllowPaymentGateway}
+                    onChange={(e) => setEditAllowPaymentGateway(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-zinc-200 dark:bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-650" />
+                </label>
               </div>
             </div>
 

@@ -263,7 +263,8 @@ export const updateTenant = async (req, res, next) => {
       'subscriptionPlan',
       'totalRevenueCollected',
       'paymentStatus',
-      'lastPaymentDate'
+      'lastPaymentDate',
+      'allowPaymentGateway'
     ];
     const updateData = {};
     for (const field of allowedFields) {

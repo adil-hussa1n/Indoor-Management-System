@@ -73,7 +73,9 @@ export const getSettings = async (req, res, next) => {
         isGracePeriod,
         graceDaysRemaining,
         daysUntilExpiry,
+        allowPaymentGateway: tenant.allowPaymentGateway !== false,
       };
+      plain.allowPaymentGateway = tenant.allowPaymentGateway !== false;
       plain.subscriptionHistory = history;
     }
 
@@ -192,6 +194,7 @@ export const getPublicInfo = async (req, res, next) => {
       paymentConfig: pConfig,
       discounts,
       maintenanceMode,
+      allowPaymentGateway: req.tenant ? req.tenant.allowPaymentGateway !== false : true,
     };
     res.status(200).json({ success: true, settings: publicSettings });
   } catch (error) {

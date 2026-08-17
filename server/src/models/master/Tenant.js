@@ -85,6 +85,11 @@ const Tenant = masterSequelize.define('Tenant', {
     type: DataTypes.DATE,
     allowNull: true,
   },
+  allowPaymentGateway: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true,
+    comment: 'Super Admin master flag to enable/disable automated online payment gateways for this tenant',
+  },
 }, {
   tableName: 'tenants',
   timestamps: true,
