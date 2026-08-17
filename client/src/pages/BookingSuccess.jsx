@@ -110,6 +110,14 @@ export const BookingSuccess = () => {
   const isPaid = booking.paymentStatus === 'paid';
   const isPartial = booking.paymentStatus === 'partial';
 
+  const rawGateway = (booking.paymentGateway || '').toLowerCase();
+  const hasOnlineGatewayMethod = rawGateway && !['cash', 'pay at venue', 'direct', 'venue', 'manual', 'offline'].includes(rawGateway);
+  const paymentMethodLabel = booking.paymentGateway || (hasOnlineGatewayMethod ? 'Online Gateway' : 'Pay at Venue / Cash');
+
+  const paidAmount = Number(booking.paidAmount || 0);
+  const totalPrice = Number(booking.price || 0);
+  const dueAmount = booking.dueAmount !== undefined ? Number(booking.dueAmount) : Math.max(0, totalPrice - paidAmount);
+
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 text-left animate-fade-in print:p-0 print:m-0 print:max-w-none">
       
@@ -169,9 +177,9 @@ export const BookingSuccess = () => {
                   ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400 print:border print:border-emerald-600'
                   : isPartial
                   ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400'
-                  : 'bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-400'
+                  : 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-400 print:border print:border-indigo-600'
               }`}>
-                {isPaid ? '✓ PAID IN FULL' : isPartial ? 'PARTIAL DEPOSIT PAID' : 'UNPAID'}
+                {isPaid ? '✓ PAID IN FULL' : isPartial ? 'PARTIAL DEPOSIT PAID' : 'CONFIRMED (PAY AT VENUE)'}
               </span>
             </div>
           </div>
@@ -239,7 +247,7 @@ export const BookingSuccess = () => {
                   {booking.duration || 1} hr{(booking.duration || 1) > 1 ? 's' : ''}
                 </td>
                 <td className="py-4 px-3 text-right font-mono font-bold text-sm text-zinc-900 dark:text-white print:text-black">
-                  ৳{booking.price || 0}
+                  ৳{totalPrice}
                 </td>
               </tr>
             </tbody>
@@ -248,13 +256,17 @@ export const BookingSuccess = () => {
 
         {/* Payment Summary Box */}
         <div className="flex flex-col sm:flex-row justify-between items-start gap-6 border-t-2 border-zinc-200 dark:border-zinc-800 pt-6 print:flex-row print:border-black">
-          {/* Payment Gateway Verification Badge */}
+          {/* Payment Verification / Mode Badge */}
           <div className="space-y-2 max-w-xs text-xs">
-            <div className="font-extrabold text-zinc-400 uppercase tracking-widest text-[10px]">Payment Verification</div>
+            <div className="font-extrabold text-zinc-400 uppercase tracking-widest text-[10px]">
+              {hasOnlineGatewayMethod ? 'Payment Verification' : 'Reservation Payment Mode'}
+            </div>
             <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-700 dark:text-purple-300 font-mono font-semibold space-y-1 print:border print:border-purple-600">
-              <div>Method: <strong className="uppercase">{String(booking.paymentGateway || 'Online Gateway')}</strong></div>
+              <div>Method: <strong className="uppercase">{paymentMethodLabel}</strong></div>
               {booking.transactionId && <div>TrxID: <strong>{String(booking.transactionId)}</strong></div>}
-              <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">✓ Transaction Verified</div>
+              <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
+                {hasOnlineGatewayMethod ? '✓ Online Transaction Verified' : '✓ Slot Reservation Confirmed'}
+              </div>
             </div>
           </div>
 
@@ -262,21 +274,23 @@ export const BookingSuccess = () => {
           <div className="w-full sm:w-64 space-y-2 text-xs font-semibold">
             <div className="flex justify-between text-zinc-600 dark:text-zinc-400">
               <span>Subtotal:</span>
-              <span className="font-mono font-bold text-zinc-900 dark:text-white print:text-black">৳{booking.price || 0}</span>
+              <span className="font-mono font-bold text-zinc-900 dark:text-white print:text-black">৳{totalPrice}</span>
             </div>
-            <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
-              <span>Paid Online:</span>
-              <span className="font-mono font-bold">৳{booking.paidAmount ?? booking.price ?? 0}</span>
-            </div>
-            {(booking.dueAmount || 0) > 0 && (
+            {paidAmount > 0 && (
+              <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
+                <span>{hasOnlineGatewayMethod ? 'Paid Online:' : 'Amount Paid:'}</span>
+                <span className="font-mono font-bold">৳{paidAmount}</span>
+              </div>
+            )}
+            {dueAmount > 0 && (
               <div className="flex justify-between text-amber-600 dark:text-amber-400">
                 <span>Due at Venue:</span>
-                <span className="font-mono font-bold">৳{booking.dueAmount}</span>
+                <span className="font-mono font-bold">৳{dueAmount}</span>
               </div>
             )}
             <div className="border-t border-zinc-200 dark:border-zinc-800 pt-2 flex justify-between text-base font-black text-purple-650 dark:text-purple-400 print:text-black">
-              <span>Total Paid:</span>
-              <span className="font-mono">৳{booking.paidAmount ?? booking.price ?? 0}</span>
+              <span>{paidAmount > 0 ? 'Total Paid:' : 'Payable at Venue:'}</span>
+              <span className="font-mono">৳{paidAmount > 0 ? paidAmount : dueAmount}</span>
             </div>
           </div>
         </div>
