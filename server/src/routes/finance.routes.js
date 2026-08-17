@@ -1,5 +1,5 @@
 import express from 'express';
-import { protect } from '../middlewares/auth.js';
+import { protect, requirePermission } from '../middlewares/auth.js';
 import {
   getCategories,
   createCategory,
@@ -14,8 +14,9 @@ import {
 
 const router = express.Router();
 
-// All routes require Admin Authentication
+// All routes require Admin Authentication & Finances permission
 router.use(protect);
+router.use(requirePermission('finances'));
 
 // Category Management Routes
 router.get('/categories', getCategories);

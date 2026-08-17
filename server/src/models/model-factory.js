@@ -40,6 +40,22 @@ export function createModels(sequelize) {
       type: DataTypes.STRING,
       defaultValue: 'admin',
     },
+    name: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    email: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    phone: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    permissions: {
+      type: DataTypes.JSON,
+      allowNull: true,
+    },
   }, {
     tableName: 'admins',
     timestamps: true,

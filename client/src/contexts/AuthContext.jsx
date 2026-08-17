@@ -13,6 +13,7 @@ const parseJwt = (token) => {
 
 export const AuthProvider = ({ children }) => {
   const [isAdmin, setIsAdmin] = useState(false);
+  const [adminUser, setAdminUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const getStorageKey = () => `adminToken_${getTenantSlug()}`;
@@ -20,6 +21,18 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem(getStorageKey());
     setIsAdmin(false);
+    setAdminUser(null);
+  };
+
+  const fetchAdminDetails = async () => {
+    try {
+      const res = await API.get('/auth/me');
+      if (res.data.success) {
+        setAdminUser(res.data.admin);
+      }
+    } catch (err) {
+      console.warn('Failed to fetch admin profile:', err);
+    }
   };
 
   useEffect(() => {
@@ -27,12 +40,11 @@ export const AuthProvider = ({ children }) => {
     const checkAuth = async () => {
       const token = localStorage.getItem(getStorageKey());
       if (token) {
-        // Inspect JWT payload expiration
         const decoded = parseJwt(token);
         if (decoded && decoded.exp * 1000 > Date.now()) {
           setIsAdmin(true);
+          await fetchAdminDetails();
 
-          // Setup timeout for auto-logout
           const timeRemaining = decoded.exp * 1000 - Date.now();
           const timer = setTimeout(() => {
             console.log('Token expired. Logging out.');
@@ -57,6 +69,11 @@ export const AuthProvider = ({ children }) => {
       if (response.data.success) {
         localStorage.setItem(getStorageKey(), response.data.token);
         setIsAdmin(true);
+        if (response.data.admin) {
+          setAdminUser(response.data.admin);
+        } else {
+          await fetchAdminDetails();
+        }
         return { success: true };
       }
       return { success: false, message: response.data.message || 'Login failed' };
@@ -69,7 +86,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ isAdmin, login, logout, loading }}>
+    <AuthContext.Provider value={{ isAdmin, adminUser, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );

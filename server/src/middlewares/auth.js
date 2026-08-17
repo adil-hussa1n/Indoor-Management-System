@@ -21,7 +21,16 @@ export const protect = async (req, res, next) => {
       if (!admin) {
         return res.status(401).json({ success: false, message: 'Not authorized, admin not found' });
       }
-      req.admin = { id: admin.id, _id: admin.id, username: admin.username };
+      req.admin = {
+        id: admin.id,
+        _id: admin.id,
+        username: admin.username,
+        name: admin.name,
+        email: admin.email,
+        phone: admin.phone,
+        role: admin.role || 'admin',
+        permissions: admin.permissions || null,
+      };
       next();
     } catch (error) {
       console.error(error);
@@ -30,6 +39,44 @@ export const protect = async (req, res, next) => {
   } else {
     res.status(401).json({ success: false, message: 'Not authorized, no token' });
   }
+};
+
+/**
+ * Require a specific module permission for managers/staff.
+ * Primary admins (role === 'admin') automatically bypass all permission checks.
+ */
+export const requirePermission = (permissionKey) => {
+  return (req, res, next) => {
+    if (!req.admin) {
+      return res.status(401).json({ success: false, message: 'Authentication required' });
+    }
+    if (req.admin.role === 'admin') {
+      return next();
+    }
+    if (req.admin.permissions && req.admin.permissions[permissionKey] === true) {
+      return next();
+    }
+    return res.status(403).json({
+      success: false,
+      message: `Access denied. You do not have permission to access the "${permissionKey}" module.`,
+    });
+  };
+};
+
+/**
+ * Restrict endpoints to primary tenant admins (owners) only.
+ */
+export const requirePrimaryAdmin = (req, res, next) => {
+  if (!req.admin) {
+    return res.status(401).json({ success: false, message: 'Authentication required' });
+  }
+  if (req.admin.role !== 'admin') {
+    return res.status(403).json({
+      success: false,
+      message: 'Access denied. Only the primary business owner can manage staff accounts.',
+    });
+  }
+  next();
 };
 
 /**

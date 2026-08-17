@@ -26,6 +26,7 @@ import {
   Layers,
   AlertTriangle,
   BellRing,
+  Users,
 } from 'lucide-react';
 import { Loader } from '../components/ui/Loader';
 
@@ -36,7 +37,7 @@ const formatDateDMY = (dateStr) => {
 };
 
 export const AdminLayout = () => {
-  const { isAdmin, logout, loading } = useAuth();
+  const { isAdmin, adminUser, logout, loading } = useAuth();
   const { data: settings, isError, error, refetch } = useAdminSettings();
   const location = useLocation();
   const navigate = useNavigate();
@@ -320,20 +321,31 @@ export const AdminLayout = () => {
 
   if (!isAdmin) return null;
 
-  const menuItems = [
-    { name: 'Dashboard', path: '/admin/dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
-    { name: 'Bookings', path: '/admin/bookings', icon: <UserCheck className="w-5 h-5" />, hasAlert: alerts.bookings },
-    { name: 'Calendar', path: '/admin/calendar', icon: <CalendarDays className="w-5 h-5" /> },
-    { name: 'Finances', path: '/admin/finances', icon: <DollarSign className="w-5 h-5" /> },
-    { name: 'Slots', path: '/admin/slots', icon: <Clock className="w-5 h-5" /> },
-    { name: 'Arenas', path: '/admin/grounds', icon: <Layers className="w-5 h-5" /> },
-    { name: 'Requests', path: '/admin/requests', icon: <Inbox className="w-5 h-5" />, hasAlert: alerts.requests },
-    { name: 'Blacklist', path: '/admin/blacklist', icon: <ShieldAlert className="w-5 h-5" /> },
-    { name: 'Reviews', path: '/admin/reviews', icon: <Sparkles className="w-5 h-5" />, hasAlert: alerts.reviews },
-    { name: 'Messages', path: '/admin/messages', icon: <MessageSquare className="w-5 h-5" />, hasAlert: alerts.messages },
-    { name: 'Gallery', path: '/admin/gallery', icon: <Images className="w-5 h-5" /> },
-    { name: 'Settings', path: '/admin/settings', icon: <SettingsIcon className="w-5 h-5" /> },
+  const isPrimaryOwner = !adminUser || adminUser.role === 'admin';
+  const perms = adminUser?.permissions || {};
+
+  const allMenuItems = [
+    { name: 'Dashboard', path: '/admin/dashboard', icon: <LayoutDashboard className="w-5 h-5" />, permKey: null },
+    { name: 'Bookings', path: '/admin/bookings', icon: <UserCheck className="w-5 h-5" />, hasAlert: alerts.bookings, permKey: 'bookings' },
+    { name: 'Calendar', path: '/admin/calendar', icon: <CalendarDays className="w-5 h-5" />, permKey: 'bookings' },
+    { name: 'Finances', path: '/admin/finances', icon: <DollarSign className="w-5 h-5" />, permKey: 'finances' },
+    { name: 'Slots', path: '/admin/slots', icon: <Clock className="w-5 h-5" />, permKey: 'bookings' },
+    { name: 'Arenas', path: '/admin/grounds', icon: <Layers className="w-5 h-5" />, permKey: 'grounds' },
+    { name: 'Requests', path: '/admin/requests', icon: <Inbox className="w-5 h-5" />, hasAlert: alerts.requests, permKey: 'requests' },
+    { name: 'Blacklist', path: '/admin/blacklist', icon: <ShieldAlert className="w-5 h-5" />, permKey: 'bookings' },
+    { name: 'Reviews', path: '/admin/reviews', icon: <Sparkles className="w-5 h-5" />, hasAlert: alerts.reviews, permKey: 'messages' },
+    { name: 'Messages', path: '/admin/messages', icon: <MessageSquare className="w-5 h-5" />, hasAlert: alerts.messages, permKey: 'messages' },
+    { name: 'Staff Management', path: '/admin/staff', icon: <Users className="w-5 h-5" />, ownerOnly: true },
+    { name: 'Gallery', path: '/admin/gallery', icon: <Images className="w-5 h-5" />, permKey: 'settings' },
+    { name: 'Settings', path: '/admin/settings', icon: <SettingsIcon className="w-5 h-5" />, permKey: 'settings' },
   ];
+
+  const menuItems = allMenuItems.filter((item) => {
+    if (isPrimaryOwner) return true; // Owner sees all tabs
+    if (item.ownerOnly) return false; // Staff management is owner only
+    if (!item.permKey) return true; // Always visible (e.g. Dashboard)
+    return perms[item.permKey] === true; // Check granted permission
+  });
 
   const handleLogout = () => {
     logout();

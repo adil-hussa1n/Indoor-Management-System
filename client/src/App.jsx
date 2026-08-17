@@ -35,9 +35,9 @@ import { AdminMessages } from './pages/AdminMessages';
 import { AdminGallery } from './pages/AdminGallery';
 import { AdminSettings } from './pages/AdminSettings';
 import { AdminBlacklist } from './pages/AdminBlacklist';
-import { AdminRequests } from './pages/AdminRequests';
 import { AdminGrounds } from './pages/AdminGrounds';
 import { AdminFinances } from './pages/AdminFinances';
+import { AdminStaff } from './pages/AdminStaff';
 import { ScrollToTop } from './components/ScrollToTop';
 
 const queryClient = new QueryClient({
@@ -114,6 +114,7 @@ function App() {
                       <Route path="settings" element={<AdminSettings />} />
                       <Route path="blacklist" element={<AdminBlacklist />} />
                       <Route path="requests" element={<AdminRequests />} />
+                      <Route path="staff" element={<AdminStaff />} />
                     </Route>
 
                     {/* Super Admin Console Routes */}

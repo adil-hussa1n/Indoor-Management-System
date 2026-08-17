@@ -9,7 +9,10 @@ import { normalizePhone } from '../utils/phone.js';
 export const createAdminRepository = (models) => ({
   findByUsername: (username) => models.Admin.findOne({ where: { username } }),
   findById: (id) => models.Admin.findByPk(id),
+  findAll: (where = {}) => models.Admin.findAll({ where, order: [['createdAt', 'ASC']] }),
   create: (data) => models.Admin.create(data),
+  update: (id, data) => models.Admin.update(data, { where: { id } }),
+  delete: (id) => models.Admin.destroy({ where: { id } }),
 });
 
 // ── Booking Repository ──
