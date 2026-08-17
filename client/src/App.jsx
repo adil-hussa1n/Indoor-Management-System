@@ -35,6 +35,7 @@ import { AdminMessages } from './pages/AdminMessages';
 import { AdminGallery } from './pages/AdminGallery';
 import { AdminSettings } from './pages/AdminSettings';
 import { AdminBlacklist } from './pages/AdminBlacklist';
+import { AdminRequests } from './pages/AdminRequests';
 import { AdminGrounds } from './pages/AdminGrounds';
 import { AdminFinances } from './pages/AdminFinances';
 import { AdminStaff } from './pages/AdminStaff';
