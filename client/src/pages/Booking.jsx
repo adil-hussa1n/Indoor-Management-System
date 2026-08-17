@@ -30,8 +30,13 @@ const format12Hour = (time24) => {
 
 const formatDateDMY = (dateStr) => {
   if (!dateStr) return '';
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return String(dateStr);
+    return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  } catch (e) {
+    return String(dateStr);
+  }
 };
 
 const formatPhoneDisplay = (phone) => {
@@ -367,7 +372,13 @@ export const Booking = () => {
           setSelectedSlots([]);
         } else {
           toast.success('Court successfully booked!');
-          setConfirmedBooking(data.booking || data);
+          const created = data.booking || data;
+          const targetId = created.id || created.bookingId || created._id;
+          if (targetId) {
+            navigate(`/booking/success?bookingId=${targetId}`);
+          } else {
+            setConfirmedBooking(created);
+          }
           reset();
           setSelectedSlots([]);
         }
@@ -388,6 +399,9 @@ export const Booking = () => {
   const checkoutStepNumber = hasMultipleArenas ? 4 : 3;
 
   if (confirmedBooking) {
+    const bookingRefId = confirmedBooking.bookingId || confirmedBooking.id || confirmedBooking._id || 'N/A';
+    const rulesList = Array.isArray(settings?.rules) ? settings.rules : [];
+
     return (
       <div className="max-w-xl mx-auto px-4 py-16 text-center">
         <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-950/30 flex items-center justify-center mx-auto mb-6">
@@ -405,19 +419,19 @@ export const Booking = () => {
             <div className="flex justify-between items-center border-b border-zinc-150 dark:border-zinc-800 pb-3">
               <span className="text-zinc-500 text-sm font-bold">Booking ID</span>
               <span className="font-extrabold text-purple-600 dark:text-purple-400 tracking-wider">
-                {confirmedBooking.bookingId}
+                #{bookingRefId}
               </span>
             </div>
             <div className="flex justify-between items-center text-sm">
               <span className="text-zinc-500">Player Name</span>
               <span className="font-semibold text-zinc-850 dark:text-zinc-200">
-                {confirmedBooking.customerName}
+                {confirmedBooking.customerName || 'Customer'}
               </span>
             </div>
             <div className="flex justify-between items-center text-sm">
               <span className="text-zinc-500">Sport & Arena</span>
               <span className="font-semibold text-zinc-850 dark:text-zinc-200 flex items-center gap-1.5">
-                {confirmedBooking.sport} &bull; {selectedGroundObj?.name || 'Main Arena'}
+                {confirmedBooking.sport || 'Sports'} &bull; {selectedGroundObj?.name || 'Main Arena'}
               </span>
             </div>
             <div className="flex justify-between items-center text-sm">
@@ -429,19 +443,19 @@ export const Booking = () => {
             <div className="flex justify-between items-center text-sm">
               <span className="text-zinc-500">Time Selected</span>
               <span className="font-semibold text-zinc-850 dark:text-zinc-200">
-                {format12Hour(confirmedBooking.startTime)} - {format12Hour(confirmedBooking.endTime)} ({confirmedBooking.duration} hr)
+                {format12Hour(confirmedBooking.startTime)} - {format12Hour(confirmedBooking.endTime)} ({confirmedBooking.duration || 1} hr)
               </span>
             </div>
             <div className="flex justify-between items-center border-t border-zinc-150 dark:border-zinc-800 pt-3">
               <span className="text-zinc-500 font-bold text-sm">Total Price</span>
               <span className="font-extrabold text-lg text-zinc-900 dark:text-white">
-                ৳{confirmedBooking.price}
+                ৳{confirmedBooking.price || 0}
               </span>
             </div>
           </CardContent>
         </Card>
 
-        {settings?.rules && settings.rules.length > 0 && (
+        {rulesList.length > 0 && (
           <Card className="mb-8 text-left bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800">
             <CardHeader className="pb-2 pt-5">
               <CardTitle className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-wider">
@@ -450,7 +464,7 @@ export const Booking = () => {
             </CardHeader>
             <CardContent className="pb-5">
               <ul className="space-y-2.5">
-                {settings.rules.map((rule, idx) => (
+                {rulesList.map((rule, idx) => (
                   <li key={idx} className="flex gap-2.5 text-xs text-zinc-650 dark:text-zinc-455">
                     <span className="font-extrabold text-purple-650 shrink-0">{idx + 1}.</span>
                     <span>{rule}</span>
@@ -461,9 +475,17 @@ export const Booking = () => {
           </Card>
         )}
 
-        <Button onClick={() => setConfirmedBooking(null)} className="w-full">
-          Book Another Court Session
-        </Button>
+        <div className="space-y-3">
+          <Button
+            onClick={() => navigate(`/booking/success?bookingId=${confirmedBooking.id || confirmedBooking.bookingId}`)}
+            className="w-full font-bold bg-purple-650 hover:bg-purple-750 text-white shadow-md"
+          >
+            📄 View & Print Official Tax Invoice
+          </Button>
+          <Button variant="outline" onClick={() => setConfirmedBooking(null)} className="w-full font-semibold">
+            Book Another Court Session
+          </Button>
+        </div>
       </div>
     );
   }
