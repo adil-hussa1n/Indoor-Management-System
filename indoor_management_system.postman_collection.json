@@ -215,6 +215,102 @@
             "description": "Retrieve the currently authenticated tenant admin profile."
           },
           "response": []
+        },
+        {
+          "name": "List Staff Managers (Primary Owner)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/staff",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "staff"]
+            },
+            "description": "Retrieve all staff manager accounts and active granular permissions (Primary Business Owner only)."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Staff Manager Account (Primary Owner)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"manager_jahid\",\n  \"password\": \"jahidpassword123\",\n  \"name\": \"Jahid Hassan\",\n  \"email\": \"jahid@example.com\",\n  \"phone\": \"+8801700000000\",\n  \"role\": \"manager\",\n  \"permissions\": {\n    \"bookings\": true,\n    \"calendar\": true,\n    \"finances\": false,\n    \"slots\": false,\n    \"grounds\": true,\n    \"requests\": true,\n    \"blacklist\": true,\n    \"reviews\": false,\n    \"messages\": true,\n    \"gallery\": false,\n    \"settings\": false,\n    \"auditLogs\": false\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/staff",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "staff"]
+            },
+            "description": "Create a new sub-manager account with custom granular permissions (Primary Business Owner only)."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Staff Manager Permissions (Primary Owner)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+            },
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jahid Hassan (Promoted)\",\n  \"permissions\": {\n    \"bookings\": true,\n    \"calendar\": true,\n    \"finances\": true,\n    \"slots\": true,\n    \"grounds\": true,\n    \"requests\": true,\n    \"blacklist\": true,\n    \"reviews\": true,\n    \"messages\": true,\n    \"gallery\": true,\n    \"settings\": false,\n    \"auditLogs\": true\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/staff/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "staff", ":id"],
+              "variable": [
+                { "key": "id", "value": "2" }
+              ]
+            },
+            "description": "Update manager details or feature permission object (Primary Business Owner only)."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Staff Manager (Primary Owner)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+            },
+            "method": "DELETE",
+            "header": [
+              { "key": "X-Tenant-Slug", "value": "{{tenantSlug}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/staff/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "staff", ":id"],
+              "variable": [
+                { "key": "id", "value": "2" }
+              ]
+            },
+            "description": "Delete a staff manager account (Primary Business Owner only)."
+          },
+          "response": []
         }
       ]
     },

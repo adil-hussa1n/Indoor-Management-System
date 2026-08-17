@@ -141,3 +141,28 @@ When a new business owner signs up and gets provisioned in the Super Admin dashb
 5. **Initial Seeding**: The system automatically inserts standard shifts pricing, provisions active playing courts, initializes discount rule lists, provisions their custom tenant admin credentials (`admin` / `adminpassword123`), and uploads default placeholders.
 6. **Website Ready**: The business site is immediately active. Visiting `apexarena.daruntech.com` connects dynamically to the fresh database.
 
+---
+
+## 🛡️ 6. Role-Based Access Control (RBAC) & Multi-Manager Security
+
+The platform supports **Multi-Manager Accounts** per tenant space with granular feature restriction middleware:
+
+```mermaid
+graph TD
+    A[Primary Tenant Owner] -->|Access /admin/settings?tab=staff| B[Staff & Manager Access Control UI]
+    B -->|Configures 12-Module Permission Matrix| C[(admins Table in Tenant Database)]
+    D[Staff Manager Login] -->|Receives JWT with role & permissions| E[Express API Middleware]
+    E -->|Check req.admin.role === 'admin'| F[Allow Unrestricted Access]
+    E -->|Check req.admin.permissions[key]| G[Grant or Deny Access]
+```
+
+### RBAC Authorization Rules:
+1. **Primary Business Owner (`role = 'admin'`)**:
+   - Holds full unrestricted access across all admin portal modules.
+   - Primary owner credentials (`username`, `password`) are protected against accidental lockouts/edits inside the staff menu.
+   - Only the primary owner can access `/api/v1/auth/staff` to create, edit, or delete manager accounts.
+2. **Staff Manager (`role = 'manager'`)**:
+   - Access is restricted to the specific feature keys toggled by the primary admin (`bookings`, `calendar`, `finances`, `slots`, `grounds`, `requests`, `blacklist`, `reviews`, `messages`, `gallery`, `settings`, `auditLogs`).
+   - UI navigation tabs filter dynamically based on `user.permissions` in `AdminLayout.jsx`.
+   - Middleware `requirePermission(permissionKey)` enforces permissions on the backend, returning `403 Forbidden` if an unauthorized API call is attempted.
+

@@ -30,6 +30,28 @@ A premium, production-grade **Multi-Tenant SaaS Indoor Sports Booking System** b
   * Received Payment tracker to easily mark accounts as paid on time.
 * **SMS Credentials Manager**: Edit SSLWireless/BulkSMSBD API configurations directly via JSON schema properties inside the Super Admin dashboard.
 
+### 🛡️ Multi-Manager Accounts & Granular Access Control (RBAC)
+* **Multiple Staff Accounts**: Primary business owners (`role = 'admin'`) can create multiple manager accounts (`role = 'manager'`) with custom credentials under **Admin Settings** -> `👥 Staff & Managers` (`/admin/settings?tab=staff`).
+* **Complete 12-Module Granular Permission Matrix**: Admins can customize feature permissions for each manager independently:
+  - 📅 **Bookings & Reservations** (`bookings`)
+  - 📆 **Schedule Calendar** (`calendar`)
+  - 💵 **Investments & Expenses** (`finances`)
+  - ⏰ **Time Slot Management** (`slots`)
+  - 🏟️ **Arenas & Playing Courts** (`grounds`)
+  - 📩 **Reschedule & Cancel Requests** (`requests`)
+  - 🚫 **Customer Blacklist** (`blacklist`)
+  - ⭐ **Player Reviews & Ratings** (`reviews`)
+  - 💬 **Contact Inbox & Inquiries** (`messages`)
+  - 🖼️ **Media Gallery** (`gallery`)
+  - ⚙️ **Business Settings** (`settings`)
+  - 📋 **System Audit Logs** (`auditLogs`)
+* **Role Presets**: Quick one-click role templates (*Front Desk Operator*, *Finance Manager*, *Arena & Court Manager*, *Full Operational Manager*).
+* **Owner Protection & Darun Tech Notice**: Primary owner credentials cannot be altered or locked out from the staff menu. Contact notice points to *Darun Tech Private Limited* for owner security changes.
+* **Dynamic Navigation & API Enforcement**: Sidebar navigation tabs filter dynamically based on manager permissions, and backend middleware (`requirePermission`, `requirePrimaryAdmin`) blocks unauthorized API access with `403 Forbidden`.
+
+### 📄 Standardized Table Pagination System
+* **Responsive Pagination Controls**: Reusable `<Pagination />` UI component with page pills, total item counters (`Showing X to Y of Z items`), and smart Previous/Next controls integrated into **Admin Bookings**, **Admin Requests**, **Admin Finances**, **Admin Messages**, and **Admin Reviews**.
+
 ### 🔒 Customer Portal & SMS OTP Authentication
 * **Passwordless OTP Login**: Customers log in instantly by verifying a 6-digit OTP code sent via SMS.
 * **Bangladesh SMS Gateways**: Integrated with local SMS gateways (SSLWireless) with an automated mock fallback for developer testing.
@@ -119,6 +141,16 @@ Indoor-Management-System/
 | GET | `/api/master/tenants/:id` | SuperAdmin | Get detailed tenant configurations |
 | PATCH | `/api/master/tenants/:id` | SuperAdmin | Update tenant status, custom domain, SMS credentials, or subscription date |
 | DELETE | `/api/master/tenants/:id` | SuperAdmin | Deprovision & completely wipe a tenant database |
+
+### 🛡️ Admin & Staff Manager Management (`/api/v1/auth`)
+| Method | Endpoint | Access | Description |
+|--------|----------|--------|-------------|
+| POST | `/api/v1/auth/login` | Public | Admin & Manager login, returns JWT token with role & permissions |
+| GET | `/api/v1/auth/me` | Authenticated | Fetch logged-in admin/manager profile & granted permissions |
+| GET | `/api/v1/auth/staff` | Primary Owner | List all staff manager accounts and active permission configurations |
+| POST | `/api/v1/auth/staff` | Primary Owner | Create a new staff manager account with custom permission matrix |
+| PATCH | `/api/v1/auth/staff/:id` | Primary Owner | Update manager profile, password, role, or granular permissions |
+| DELETE | `/api/v1/auth/staff/:id` | Primary Owner | Delete a staff manager account (Primary owner protected) |
 
 ### 🔒 Customer OTP Auth & Portal (`/api/v1/user`)
 *Must include `X-Tenant-Slug` header in development*
