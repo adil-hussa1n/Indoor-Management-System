@@ -507,9 +507,9 @@ export const AdminRequests = () => {
                           {data.reason || <span className="italic text-zinc-400">No reason specified</span>}
                         </td>
                         <td className="py-4">
-                          <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold ${req.status === 'approved' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' :
-                              req.status === 'rejected' ? 'bg-red-500/10 text-red-500 border border-red-500/20' :
-                                'bg-amber-500/10 text-amber-500 border border-amber-500/20'
+                          <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold capitalize ${req.status === 'approved' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' :
+                              req.status === 'rejected' ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20' :
+                                'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
                             }`}>
                             {req.status}
                           </span>
@@ -541,7 +541,11 @@ export const AdminRequests = () => {
                               </Button>
                             </div>
                           ) : (
-                            <span className="text-zinc-400 text-xs italic font-semibold">Processed</span>
+                            <div className="flex justify-end">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-zinc-100 dark:bg-zinc-800/80 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700">
+                                <CheckCircle className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500" /> Processed
+                              </span>
+                            </div>
                           )}
                         </td>
                       </tr>
