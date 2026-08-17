@@ -49,6 +49,17 @@ export const AdminLayout = () => {
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem('theme') === 'dark';
   });
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    return localStorage.getItem('adminSidebarCollapsed') === 'true';
+  });
+
+  const toggleSidebarCollapse = () => {
+    setIsSidebarCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem('adminSidebarCollapsed', String(next));
+      return next;
+    });
+  };
 
   const [cachedSettings] = useState(() => {
     try {
@@ -320,18 +331,6 @@ export const AdminLayout = () => {
       </div>
     );
   }
-
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
-    return localStorage.getItem('adminSidebarCollapsed') === 'true';
-  });
-
-  const toggleSidebarCollapse = () => {
-    setIsSidebarCollapsed((prev) => {
-      const next = !prev;
-      localStorage.setItem('adminSidebarCollapsed', String(next));
-      return next;
-    });
-  };
 
   if (!isAdmin) return null;
 
