@@ -6,7 +6,7 @@ import { Input } from '../components/ui/Input';
 import { Loader } from '../components/ui/Loader';
 import { useToast } from '../components/ui/Toast';
 import { useConfirm } from '../contexts/ConfirmContext';
-import { Inbox, CheckCircle, XCircle, Clock, Calendar, RefreshCw, ShieldAlert, AlertTriangle, History, Ban, X, EyeOff, Trash2 } from 'lucide-react';
+import { Inbox, CheckCircle, XCircle, Clock, Calendar, RefreshCw, ShieldAlert, AlertTriangle, History, Ban, X, Eye, EyeOff, Trash2 } from 'lucide-react';
 import { Dialog } from '../components/ui/Dialog';
 import { useSocket } from '../contexts/SocketContext';
 
@@ -198,6 +198,19 @@ export const AdminRequests = () => {
     });
   };
 
+  // Suspicious Activity Hiding & Dismissal State
+  const [isBannerHidden, setIsBannerHidden] = useState(() => {
+    return localStorage.getItem('hide_suspicious_banner') === 'true';
+  });
+
+  const [hiddenSuspiciousIds, setHiddenSuspiciousIds] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('hidden_suspicious_ids') || '[]');
+    } catch {
+      return [];
+    }
+  });
+
   const [dismissedSuspiciousIds, setDismissedSuspiciousIds] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem('dismissed_suspicious_ids') || '[]');
@@ -206,19 +219,37 @@ export const AdminRequests = () => {
     }
   });
 
-  const saveDismissed = (newIds) => {
-    setDismissedSuspiciousIds(newIds);
+  const toggleHideBanner = (hide) => {
+    setIsBannerHidden(hide);
+    localStorage.setItem('hide_suspicious_banner', hide ? 'true' : 'false');
+    if (hide) toast.success('Suspicious activity warnings hidden.');
+    else toast.success('Suspicious activity warnings displayed.');
+  };
+
+  const handleHideSingle = (id) => {
+    const updated = Array.from(new Set([...hiddenSuspiciousIds, id]));
+    setHiddenSuspiciousIds(updated);
     try {
-      localStorage.setItem('dismissed_suspicious_ids', JSON.stringify(newIds));
-    } catch (e) {
-      console.error(e);
-    }
+      localStorage.setItem('hidden_suspicious_ids', JSON.stringify(updated));
+    } catch (e) {}
+    toast.success('Warning message hidden.');
+  };
+
+  const handleUnhideAll = () => {
+    setHiddenSuspiciousIds([]);
+    setIsBannerHidden(false);
+    localStorage.removeItem('hidden_suspicious_ids');
+    localStorage.setItem('hide_suspicious_banner', 'false');
+    toast.success('All hidden warnings unhidden.');
   };
 
   const handleDismissSingle = (id) => {
     const updated = Array.from(new Set([...dismissedSuspiciousIds, id]));
-    saveDismissed(updated);
-    toast.success('Warning message cleared.');
+    setDismissedSuspiciousIds(updated);
+    try {
+      localStorage.setItem('dismissed_suspicious_ids', JSON.stringify(updated));
+    } catch (e) {}
+    toast.success('Warning message cleared permanently.');
   };
 
   const handleDismissAll = () => {
@@ -226,102 +257,159 @@ export const AdminRequests = () => {
       .filter((r) => r.isSuspicious && r.status === 'pending')
       .map((r) => r.id);
     const updated = Array.from(new Set([...dismissedSuspiciousIds, ...activeIds]));
-    saveDismissed(updated);
-    toast.success('All warning messages cleared.');
+    setDismissedSuspiciousIds(updated);
+    try {
+      localStorage.setItem('dismissed_suspicious_ids', JSON.stringify(updated));
+    } catch (e) {}
+    toast.success('All warning messages cleared permanently.');
   };
 
-  const activeSuspiciousRequests = requests.filter(
+  // Uncleared (not permanently deleted) requests
+  const unclearedSuspiciousRequests = requests.filter(
     (r) => r.isSuspicious && r.status === 'pending' && !dismissedSuspiciousIds.includes(r.id)
+  );
+
+  // Visible (neither hidden nor deleted) requests
+  const visibleSuspiciousRequests = unclearedSuspiciousRequests.filter(
+    (r) => !hiddenSuspiciousIds.includes(r.id)
   );
 
   return (
     <div className="space-y-6 text-left animate-fade-in">
-      {/* Suspicious Activity Alerts */}
-      {activeSuspiciousRequests.length > 0 && (
-        <div className="p-5 rounded-2xl bg-gradient-to-r from-red-500/10 via-amber-500/5 to-transparent border-l-4 border-l-rose-500 border border-y-red-500/20 border-r-red-500/10 shadow-[0_4px_20px_rgba(239,68,68,0.08)] dark:shadow-[0_4px_30px_rgba(239,68,68,0.15)] text-left space-y-4 animate-pulse-slow">
-          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-            <div className="flex items-start gap-3">
-              <div className="p-2 rounded-xl bg-rose-500/20 dark:bg-rose-500/30 text-rose-600 dark:text-rose-450 mt-0.5 shrink-0">
-                <ShieldAlert className="w-5 h-5" />
-              </div>
-              <div className="space-y-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h4 className="text-base font-extrabold text-rose-700 dark:text-rose-400 tracking-tight">
-                    Critical Warning: Suspicious Activity Detected
-                  </h4>
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500 text-white animate-pulse">
-                    High Risk ({activeSuspiciousRequests.length})
-                  </span>
+      {/* Suspicious Activity Alerts Bar */}
+      {unclearedSuspiciousRequests.length > 0 && (
+        isBannerHidden || visibleSuspiciousRequests.length === 0 ? (
+          <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30 flex flex-wrap items-center justify-between gap-3 text-xs font-bold text-amber-800 dark:text-amber-300">
+            <div className="flex items-center gap-2">
+              <ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+              <span>⚠️ {unclearedSuspiciousRequests.length} Suspicious Activity Warning(s) Currently Hidden</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={handleUnhideAll}
+                className="text-xs font-bold py-1 px-3 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 text-amber-900 dark:text-amber-200 cursor-pointer rounded-xl flex items-center gap-1.5"
+              >
+                <Eye className="w-3.5 h-3.5" /> Show Warnings
+              </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={handleDismissAll}
+                className="text-xs font-bold py-1 px-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/20 cursor-pointer rounded-xl flex items-center gap-1.5"
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Clear All
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="p-5 rounded-2xl bg-gradient-to-r from-red-500/10 via-amber-500/5 to-transparent border-l-4 border-l-rose-500 border border-y-red-500/20 border-r-red-500/10 shadow-[0_4px_20px_rgba(239,68,68,0.08)] dark:shadow-[0_4px_30px_rgba(239,68,68,0.15)] text-left space-y-4 animate-pulse-slow">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-xl bg-rose-500/20 dark:bg-rose-500/30 text-rose-600 dark:text-rose-450 mt-0.5 shrink-0">
+                  <ShieldAlert className="w-5 h-5" />
                 </div>
-                <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed font-semibold">
-                  The system flagged automated or high-frequency cancellation/reschedule patterns. Review customer activity logs before taking action.
-                </p>
+                <div className="space-y-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h4 className="text-base font-extrabold text-rose-700 dark:text-rose-400 tracking-tight">
+                      Critical Warning: Suspicious Activity Detected
+                    </h4>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500 text-white animate-pulse">
+                      High Risk ({visibleSuspiciousRequests.length})
+                    </span>
+                  </div>
+                  <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed font-semibold">
+                    The system flagged automated or high-frequency cancellation/reschedule patterns. Review customer activity logs before taking action.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => toggleHideBanner(true)}
+                  className="text-xs font-bold py-1.5 px-3 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 cursor-pointer rounded-xl flex items-center gap-1.5"
+                  title="Hide entire warning banner"
+                >
+                  <EyeOff className="w-3.5 h-3.5" /> Hide Banner
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={handleDismissAll}
+                  className="text-xs font-bold py-1.5 px-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/20 cursor-pointer rounded-xl flex items-center gap-1.5"
+                  title="Clear all warnings permanently"
+                >
+                  <Trash2 className="w-3.5 h-3.5" /> Clear All
+                </Button>
               </div>
             </div>
 
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={handleDismissAll}
-              className="text-xs font-bold py-1.5 px-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/20 cursor-pointer rounded-xl shrink-0 flex items-center gap-1.5"
-            >
-              <Trash2 className="w-3.5 h-3.5" /> Clear All Warnings
-            </Button>
-          </div>
-
-          <div className="grid gap-2.5 pl-0 sm:pl-12">
-            {activeSuspiciousRequests.map((r) => {
-              const phoneNum = r.user?.phone || r.booking?.phone;
-              return (
-                <div
-                  key={r.id}
-                  className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl bg-white/80 dark:bg-zinc-900/90 border border-rose-500/20 dark:border-rose-500/30 hover:border-rose-500/40 shadow-sm transition-all duration-200"
-                >
-                  <div className="space-y-1.5 max-w-[65%]">
-                    <div className="flex items-center gap-2">
-                      <span className="font-extrabold text-zinc-900 dark:text-zinc-100 text-sm">
-                        {r.user?.name || r.booking?.customerName || 'Walk-in Customer'}
-                      </span>
-                      <span className="font-mono text-zinc-500 dark:text-zinc-450 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded text-[11px] font-bold">
-                        {phoneNum}
-                      </span>
+            <div className="grid gap-2.5 pl-0 sm:pl-12">
+              {visibleSuspiciousRequests.map((r) => {
+                const phoneNum = r.user?.phone || r.booking?.phone;
+                return (
+                  <div
+                    key={r.id}
+                    className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl bg-white/80 dark:bg-zinc-900/90 border border-rose-500/20 dark:border-rose-500/30 hover:border-rose-500/40 shadow-sm transition-all duration-200"
+                  >
+                    <div className="space-y-1.5 max-w-[60%]">
+                      <div className="flex items-center gap-2">
+                        <span className="font-extrabold text-zinc-900 dark:text-zinc-100 text-sm">
+                          {r.user?.name || r.booking?.customerName || 'Walk-in Customer'}
+                        </span>
+                        <span className="font-mono text-zinc-500 dark:text-zinc-450 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded text-[11px] font-bold">
+                          {phoneNum}
+                        </span>
+                      </div>
+                      <div className="flex items-start gap-1.5 text-xs text-rose-600 dark:text-rose-400 font-bold bg-rose-500/5 dark:bg-rose-500/10 px-2.5 py-1.5 rounded-lg border border-rose-500/10">
+                        <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600 dark:text-rose-400" />
+                        <span>Reason: {r.suspiciousReason}</span>
+                      </div>
                     </div>
-                    <div className="flex items-start gap-1.5 text-xs text-rose-600 dark:text-rose-400 font-bold bg-rose-500/5 dark:bg-rose-500/10 px-2.5 py-1.5 rounded-lg border border-rose-500/10">
-                      <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600 dark:text-rose-400" />
-                      <span>Reason: {r.suspiciousReason}</span>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => openHistory(r.user, phoneNum)}
+                        className="text-xs font-bold py-1.5 px-3 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-850 dark:text-zinc-200 border-none cursor-pointer rounded-lg shadow-sm"
+                      >
+                        Inspect History
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => handleBlockFromHistory(phoneNum)}
+                        className="text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white border-none py-1.5 px-3 cursor-pointer rounded-lg shadow-sm shadow-rose-600/20 hover:shadow-rose-600/30"
+                      >
+                        Block Customer
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => handleHideSingle(r.id)}
+                        className="text-xs font-bold py-1.5 px-2.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 cursor-pointer rounded-lg transition-colors flex items-center gap-1"
+                        title="Hide this single warning"
+                      >
+                        <EyeOff className="w-3.5 h-3.5" /> Hide
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => handleDismissSingle(r.id)}
+                        className="text-xs font-bold py-1.5 px-2.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/20 cursor-pointer rounded-lg transition-colors flex items-center gap-1"
+                        title="Clear / Delete this warning"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" /> Clear
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => openHistory(r.user, phoneNum)}
-                      className="text-xs font-bold py-1.5 px-3 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-850 dark:text-zinc-200 border-none cursor-pointer rounded-lg shadow-sm"
-                    >
-                      Inspect History
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => handleBlockFromHistory(phoneNum)}
-                      className="text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white border-none py-1.5 px-3 cursor-pointer rounded-lg shadow-sm shadow-rose-600/20 hover:shadow-rose-600/30"
-                    >
-                      Block Customer
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => handleDismissSingle(r.id)}
-                      className="text-xs font-bold py-1.5 px-2.5 bg-zinc-100 hover:bg-rose-500/10 hover:text-rose-600 dark:bg-zinc-800 dark:hover:bg-rose-500/20 text-zinc-500 border border-zinc-200 dark:border-zinc-700 cursor-pointer rounded-lg transition-colors flex items-center gap-1"
-                      title="Clear / Hide message"
-                    >
-                      <X className="w-3.5 h-3.5" /> Clear
-                    </Button>
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )
       )}
 
       <Card className="glass-card border border-zinc-200/50 dark:border-zinc-800 bg-white dark:bg-zinc-950">
