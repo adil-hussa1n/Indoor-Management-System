@@ -1846,26 +1846,37 @@ export const AdminSettings = () => {
 
                 <div className="max-w-xl mx-auto space-y-3">
                   <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-widest bg-purple-500/20 text-purple-300 border border-purple-400/30">
-                    ⚡ Future Upgrade
+                    🔒 Payment System Not Available
                   </span>
                   <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight">
-                    Automated Online Payment Gateway Integration
+                    Online Payment Gateway Disabled
                   </h3>
                   <p className="text-sm text-zinc-300 leading-relaxed font-medium">
-                    Automated online payment gateway processing (bKash Merchant Pay, Nagad API, SSLCommerz, Visa & Mastercard) is scheduled for a future system update.
+                    Online payment gateway collection (bKash Merchant Pay, Nagad API, SSLCommerz) is currently not available for your venue. <strong>Contact Darun Tech Private Limited to enable the online payment gateway system.</strong>
                   </p>
                 </div>
 
                 <div className="p-5 rounded-2xl bg-zinc-950/70 border border-zinc-800 text-left max-w-lg mx-auto space-y-3">
                   <div className="font-bold text-xs text-purple-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <Sparkles className="w-4 h-4" /> Next-Gen Gateway Capabilities Coming in Future Upgrade:
+                    <Sparkles className="w-4 h-4" /> Next-Gen Gateway Capabilities Included Upon Activation:
                   </div>
                   <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-zinc-300 font-medium">
-                    <li className="flex items-center gap-1.5"><Check className="w-4 h-4 text-purple-400 shrink-0" /> bKash & Nagad Merchant Pay</li>
-                    <li className="flex items-center gap-1.5"><Check className="w-4 h-4 text-purple-400 shrink-0" /> Instant TrxID Verification</li>
-                    <li className="flex items-center gap-1.5"><Check className="w-4 h-4 text-purple-400 shrink-0" /> Auto-Settlement & Advance Lock</li>
-                    <li className="flex items-center gap-1.5"><Check className="w-4 h-4 text-purple-400 shrink-0" /> Instant Digital Receipts</li>
+                    <li className="flex items-center gap-1.5"><Check className="w-4 h-4 text-emerald-400 shrink-0" /> bKash & Nagad Merchant Pay</li>
+                    <li className="flex items-center gap-1.5"><Check className="w-4 h-4 text-emerald-400 shrink-0" /> Instant TrxID Verification</li>
+                    <li className="flex items-center gap-1.5"><Check className="w-4 h-4 text-emerald-400 shrink-0" /> Auto-Settlement & Advance Lock</li>
+                    <li className="flex items-center gap-1.5"><Check className="w-4 h-4 text-emerald-400 shrink-0" /> Instant Digital Receipts</li>
                   </ul>
+                </div>
+
+                <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+                  <a
+                    href="https://wa.me/8801712345678"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-6 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-extrabold text-xs shadow-lg shadow-purple-500/25 transition-all flex items-center gap-2"
+                  >
+                    📞 Contact Darun Tech to Enable Payment System
+                  </a>
                 </div>
               </div>
             ) : null}
@@ -1874,35 +1885,22 @@ export const AdminSettings = () => {
               <div className="glass-card p-6 rounded-3xl shadow-sm space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-100 dark:border-zinc-900 pb-4">
                   <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-extrabold text-zinc-900 dark:text-white flex items-center gap-2">
-                        💳 Online Payment System Master Switch
-                      </h3>
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
-                        🔒 Future Upgrade
-                      </span>
-                    </div>
+                    <h3 className="text-lg font-extrabold text-zinc-900 dark:text-white flex items-center gap-2">
+                      💳 Online Payment System Master Switch
+                    </h3>
                     <p className="text-xs text-zinc-400 mt-1">
-                      Toggle online payment collection for customer court bookings. This feature is coming in a future upgrade.
+                      Toggle online payment collection for customer court bookings. If turned OFF, users can book slots directly without payment.
                     </p>
                   </div>
-                  <label className="relative inline-flex items-center cursor-not-allowed opacity-60 shrink-0" title="Future Upgrade">
+                  <label className="relative inline-flex items-center cursor-pointer shrink-0">
                     <input
                       type="checkbox"
-                      disabled={true}
-                      checked={false}
-                      onChange={() => {}}
+                      checked={formData?.paymentConfig?.enabled || false}
+                      onChange={(e) => updatePaymentConfig(c => ({ ...c, enabled: e.target.checked }))}
                       className="sr-only peer"
                     />
-                    <div className="w-14 h-7 bg-zinc-200 peer-focus:outline-none rounded-full peer dark:bg-zinc-800 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-zinc-400 after:border-zinc-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all dark:after:border-zinc-600"></div>
+                    <div className="w-14 h-7 bg-zinc-200 peer-focus:outline-none rounded-full peer dark:bg-zinc-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all dark:after:border-zinc-600 peer-checked:bg-purple-650"></div>
                   </label>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-xs font-semibold text-purple-700 dark:text-purple-300 flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
-                  <span>
-                    ⚡ <strong>Future Upgrade:</strong> Automated bKash Merchant Pay, Nagad API & SSLCommerz online payment gateways are scheduled for a future update.
-                  </span>
                 </div>
 
                 {formData?.paymentConfig?.enabled ? (
