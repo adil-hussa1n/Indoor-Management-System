@@ -120,7 +120,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"businessName\": \"Apex Multi-Sports\",\n  \"isActive\": true,\n  \"subscriptionExpiresAt\": \"2027-06-30T00:00:00.000Z\",\n  \"smsCredentials\": {\n    \"provider\": \"SSLWireless\",\n    \"apiKey\": \"PROD_API_KEY\",\n    \"senderId\": \"PROD_SENDER_ID\"\n  }\n}"
+              "raw": "{\n  \"businessName\": \"Apex Multi-Sports\",\n  \"isActive\": true,\n  \"allowPaymentGateway\": true,\n  \"subscriptionExpiresAt\": \"2027-06-30T00:00:00.000Z\",\n  \"smsCredentials\": {\n    \"provider\": \"SSLWireless\",\n    \"apiKey\": \"PROD_API_KEY\",\n    \"senderId\": \"PROD_SENDER_ID\"\n  }\n}"
             },
             "url": {
               "raw": "{{masterUrl}}/tenants/:id",

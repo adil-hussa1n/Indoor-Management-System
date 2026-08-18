@@ -24,11 +24,17 @@ A premium, production-grade **Multi-Tenant SaaS Indoor Sports Booking System** b
 ### 👑 Super Admin Control Panel (`/superadmin`)
 * **Master Tenant Orchestration**: Super admins log in with master credentials (`superadmin` / `superadminpassword123`) to list, provision, suspend, or wipe tenant clients.
 * **Instant Client Provisioning**: Provisions new database schemas, syncs Sequelize tables, and seeds initial parameters (branding, pricing, slot configurations, and custom admin credentials) in under 5 seconds.
+* **Master Online Payment Gateway Switch (`allowPaymentGateway`)**: Super Admin can globally enable or disable online payment gateway capabilities (bKash, Nagad, SSLCommerz) per tenant. Disabling it automatically forces offline pay-at-venue mode across client backend APIs and displays a disabled switch with direct contact links (`https://www.daruntech.com/`) in venue admin settings.
 * **Subscription & Lifecycle Management**:
   * Set precise expiry dates using a custom calendar picker or presets (1 Month, 3 Months, 6 Months, 1 Year, or Lifetime).
   * Automatically suspends client tenant sites and rejects bookings if their subscription deadline ends.
   * Received Payment tracker to easily mark accounts as paid on time.
 * **SMS Credentials Manager**: Edit SSLWireless/BulkSMSBD API configurations directly via JSON schema properties inside the Super Admin dashboard.
+
+### 📜 Official Printable Tax Invoice & Receipt Engine (`/booking/success`)
+* **A4 Tax Receipt & Invoice**: Generates an official printable tax invoice sheet with unique booking reference IDs, customer details, match schedule, itemized pricing breakdown, and venue terms.
+* **Offline Pay-at-Venue & Online Gateway Modes**: Automatically adjusts badges and payment summaries (`CONFIRMED (PAY AT VENUE)`, `PAY AT VENUE / CASH`, `Payable at Venue: ৳X`) when online payments are disabled or not used.
+* **Resilient Formatting**: Built with fail-safe date (`formatDateDisplay`) and 12-hour time (`format12Hour`) helpers to guarantee zero rendering crashes.
 
 ### 🛡️ Multi-Manager Accounts & Granular Access Control (RBAC)
 * **Multiple Staff Accounts**: Primary business owners (`role = 'admin'`) can create multiple manager accounts (`role = 'manager'`) with custom credentials under **Admin Settings** -> `👥 Staff & Managers` (`/admin/settings?tab=staff`).

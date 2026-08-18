@@ -98,6 +98,7 @@ CREATE TABLE Tenants (
   businessName VARCHAR(255) NOT NULL,
   slug VARCHAR(255) UNIQUE NOT NULL, -- e.g. "cagindoor"
   dbName VARCHAR(255) UNIQUE NOT NULL, -- e.g. "db_cagindoor"
+  allowPaymentGateway BOOLEAN DEFAULT TRUE, -- Super Admin master switch
   isActive BOOLEAN DEFAULT TRUE,
   subscriptionExpiresAt DATETIME,
   smsCredentials JSON

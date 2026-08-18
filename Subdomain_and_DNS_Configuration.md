@@ -79,13 +79,14 @@ server {
 
 ---
 
-## 🚀 Step 4: Provisioning a New Business
+## 🚀 Step 4: Provisioning & Managing Business Venues
 
-Once steps 1-3 are completed, follow this workflow to spawn new client venues:
+Once steps 1-3 are completed, follow this workflow to spawn and manage client venues:
 
 1.  **Access Super Admin Panel**: Go to `http://indoormanagement.daruntech.com/superadmin/login` and log in.
 2.  **Add Business**: Click **"Provision New Client"**. Enter your details (e.g. business name `D-Box Indoor`, subdomain slug `dboxindoor`, set credentials).
-3.  **Deploy**: The platform instantly initializes their isolated database, seeds playing arenas, shift slots, automatic date-range discount engines, and brand settings.
-4.  **Live Access**:
+3.  **Master Payment Control**: Toggle **`ONLINE PAYMENT GATEWAY SYSTEM`** ON/OFF per tenant. If disabled by Super Admin, client admin settings will show the switch as disabled and direct users to `https://www.daruntech.com/`.
+4.  **Deploy**: The platform instantly initializes their isolated database, seeds playing arenas, shift slots, automatic date-range discount engines, and brand settings.
+5.  **Live Access**:
     *   **Customer Booking Site**: `http://dboxindoor.daruntech.com`
     *   **Venue Admin Site**: `http://dboxindoor.daruntech.com/admin/login`
