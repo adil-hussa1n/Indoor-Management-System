@@ -2208,7 +2208,6 @@ export const AdminSettings = () => {
                 </div>
               </div>
             )}
-            )}
 
             {/* Printable Invoice & Signature Customization */}
             <div className="glass-card p-6 rounded-3xl shadow-sm space-y-6">
