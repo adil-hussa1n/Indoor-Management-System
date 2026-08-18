@@ -21,8 +21,8 @@ export const initiatePayment = async (req, res, next) => {
       try { pConfig = JSON.parse(pConfig); } catch (e) { pConfig = { enabled: false }; }
     }
 
-    if (!pConfig.enabled) {
-      return res.status(400).json({ success: false, message: 'Online payment system is currently disabled by Admin.' });
+    if (settings?.allowPaymentGateway === false || !pConfig.enabled) {
+      return res.status(400).json({ success: false, message: 'Online payment system is currently disabled for this venue.' });
     }
 
     let payableAmount = Number(booking.price) || 0;

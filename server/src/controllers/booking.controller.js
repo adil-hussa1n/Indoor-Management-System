@@ -224,7 +224,8 @@ export const createBooking = async (req, res, next) => {
     if (typeof pConfig === 'string') {
       try { pConfig = JSON.parse(pConfig); } catch (e) { pConfig = { enabled: false }; }
     }
-    const isPaymentEnabled = !!pConfig.enabled;
+    const isPaymentGatewayAllowed = settings?.allowPaymentGateway !== false;
+    const isPaymentEnabled = isPaymentGatewayAllowed && !!pConfig.enabled;
 
     let payableAmount = 0;
     let dueAmount = calculatedPrice;
