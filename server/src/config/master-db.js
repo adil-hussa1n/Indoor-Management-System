@@ -12,11 +12,14 @@ const masterSequelize = new Sequelize(
     host: process.env.DB_HOST || '127.0.0.1',
     port: process.env.DB_PORT || 3306,
     dialect: 'mysql',
-    logging: process.env.NODE_ENV === 'development' ? console.log : false,
+    dialectOptions: {
+      connectTimeout: 2000, // 2-second fast connection timeout
+    },
+    logging: false,
     pool: {
       max: 5,
       min: 0,
-      acquire: 30000,
+      acquire: 3000,
       idle: 10000,
     },
     timezone: '+00:00',
