@@ -1,21 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, Mail, ArrowRight, ShieldCheck, RefreshCw } from 'lucide-react';
+import { Mail, ShieldCheck, RefreshCw, Lock } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { useToast } from '../components/ui/Toast';
 
 export const AdminLogin = () => {
-  const { login, sendOtp, verifyOtp, isAdmin, loading } = useAuth();
+  const { sendOtp, verifyOtp, isAdmin, loading } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
 
-  const [authMode, setAuthMode] = useState('otp'); // 'otp' | 'password'
   const [step, setStep] = useState(1); // 1 = Enter Email/User, 2 = Enter OTP
   const [usernameOrEmail, setUsernameOrEmail] = useState('');
   const [otpCode, setOtpCode] = useState('');
-  const [password, setPassword] = useState('');
+  const [devOtp, setDevOtp] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [timer, setTimer] = useState(0);
 
@@ -34,27 +33,6 @@ export const AdminLogin = () => {
     return () => clearInterval(interval);
   }, [timer]);
 
-  // Handle Password Login
-  const handlePasswordSubmit = async (e) => {
-    e.preventDefault();
-    if (!usernameOrEmail || !password) {
-      toast.error('Both username/email and password are required.');
-      return;
-    }
-
-    setSubmitting(true);
-    const result = await login(usernameOrEmail, password);
-    setSubmitting(false);
-
-    if (result.success) {
-      toast.success('Admin login successful!');
-      const search = window.location.search;
-      navigate(`/admin/dashboard${search}`);
-    } else {
-      toast.error(result.message);
-    }
-  };
-
   // Handle Send Gmail OTP
   const handleSendOtp = async (e) => {
     if (e) e.preventDefault();
@@ -69,6 +47,7 @@ export const AdminLogin = () => {
 
     if (res.success) {
       toast.success(res.message || 'OTP code sent to your Gmail!');
+      if (res.devOtp) setDevOtp(res.devOtp);
       setStep(2);
       setTimer(60);
     } else {
@@ -107,143 +86,85 @@ export const AdminLogin = () => {
             </div>
             <h1 className="text-2xl font-extrabold text-zinc-900 dark:text-white">Admin & Staff Dashboard</h1>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-xs mx-auto leading-relaxed font-semibold">
-              Sign in with your Gmail OTP or credentials to manage bookings, settings, and calendars.
+              Passwordless Gmail OTP verification for Venue Primary Admins and Staff Managers.
             </p>
           </div>
 
-          {/* Mode Switcher Tabs */}
-          <div className="grid grid-cols-2 p-1.5 rounded-2xl bg-zinc-100 dark:bg-zinc-850/80 border border-zinc-200/80 dark:border-zinc-800 text-xs font-bold">
-            <button
-              type="button"
-              onClick={() => {
-                setAuthMode('otp');
-                setStep(1);
-              }}
-              className={`py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                authMode === 'otp'
-                  ? 'bg-purple-650 text-white shadow-md'
-                  : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
-              }`}
-            >
-              <Mail className="w-3.5 h-3.5" /> Gmail OTP
-            </button>
-            <button
-              type="button"
-              onClick={() => setAuthMode('password')}
-              className={`py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                authMode === 'password'
-                  ? 'bg-purple-650 text-white shadow-md'
-                  : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
-              }`}
-            >
-              <Lock className="w-3.5 h-3.5" /> Password
-            </button>
+          <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-700 dark:text-purple-300 font-bold text-xs">
+            <Mail className="w-3.5 h-3.5" /> Passwordless Gmail OTP Login
           </div>
 
-          {/* Mode 1: Gmail OTP Form */}
-          {authMode === 'otp' && (
-            <div className="space-y-4 text-left">
-              {step === 1 ? (
-                <form onSubmit={handleSendOtp} className="space-y-4">
-                  <Input
-                    label="Gmail Address or Staff Username"
-                    placeholder="e.g. manager@venue.com or staff_user"
-                    value={usernameOrEmail}
-                    onChange={(e) => setUsernameOrEmail(e.target.value)}
-                    disabled={submitting}
-                    required
-                  />
-                  <Button
-                    type="submit"
-                    disabled={submitting}
-                    className="w-full flex items-center justify-center gap-2 mt-4 font-bold cursor-pointer"
-                  >
-                    {submitting ? 'Sending OTP to Gmail...' : 'Send Verification OTP'}
-                    <Mail className="w-4 h-4" />
-                  </Button>
-                </form>
-              ) : (
-                <form onSubmit={handleVerifyOtp} className="space-y-4">
-                  <div className="p-3 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-xs text-purple-700 dark:text-purple-300 font-medium text-center">
-                    📧 Verification code sent to your registered Gmail address!
-                  </div>
-
-                  <Input
-                    label="6-Digit OTP Verification Code"
-                    placeholder="Enter 6-digit code (e.g. 591024)"
-                    value={otpCode}
-                    onChange={(e) => setOtpCode(e.target.value)}
-                    disabled={submitting}
-                    maxLength={6}
-                    required
-                    className="text-center font-mono text-lg tracking-widest"
-                  />
-
-                  <Button
-                    type="submit"
-                    disabled={submitting}
-                    className="w-full flex items-center justify-center gap-2 mt-4 font-bold cursor-pointer"
-                  >
-                    {submitting ? 'Verifying Code...' : 'Verify & Sign In To Panel'}
-                    <ShieldCheck className="w-4 h-4" />
-                  </Button>
-
-                  <div className="flex items-center justify-between pt-2 text-xs">
-                    <button
-                      type="button"
-                      onClick={() => setStep(1)}
-                      className="text-zinc-500 hover:text-zinc-900 dark:hover:text-white cursor-pointer font-semibold underline"
-                    >
-                      ← Change Email
-                    </button>
-                    {timer > 0 ? (
-                      <span className="text-zinc-400 font-medium">Resend in {timer}s</span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={handleSendOtp}
-                        disabled={submitting}
-                        className="text-purple-650 dark:text-purple-400 font-bold hover:underline cursor-pointer flex items-center gap-1"
-                      >
-                        <RefreshCw className="w-3 h-3" /> Resend OTP
-                      </button>
-                    )}
-                  </div>
-                </form>
-              )}
-            </div>
-          )}
-
-          {/* Mode 2: Password Form */}
-          {authMode === 'password' && (
-            <form onSubmit={handlePasswordSubmit} className="space-y-4 text-left">
+          {step === 1 ? (
+            <form onSubmit={handleSendOtp} className="space-y-4 text-left">
               <Input
-                label="Username or Gmail"
-                placeholder="Enter admin username or email"
+                label="Gmail Address or Staff Username"
+                placeholder="e.g. admin or staff_user or manager@venue.com"
                 value={usernameOrEmail}
                 onChange={(e) => setUsernameOrEmail(e.target.value)}
                 disabled={submitting}
                 required
               />
+              <Button
+                type="submit"
+                disabled={submitting}
+                className="w-full flex items-center justify-center gap-2 mt-4 font-bold cursor-pointer"
+              >
+                {submitting ? 'Sending OTP to Gmail...' : 'Send Verification OTP'}
+                <Mail className="w-4 h-4" />
+              </Button>
+            </form>
+          ) : (
+            <form onSubmit={handleVerifyOtp} className="space-y-4 text-left">
+              <div className="p-3 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-xs text-purple-700 dark:text-purple-300 font-medium text-center space-y-1">
+                <div>📧 Verification code sent to your registered Gmail address!</div>
+                {devOtp && (
+                  <div className="font-mono font-bold text-purple-650 dark:text-purple-400 text-xs pt-1">
+                    Dev Mock OTP: <span className="underline">{devOtp}</span> (or 123456)
+                  </div>
+                )}
+              </div>
 
               <Input
-                label="Password"
-                type="password"
-                placeholder="Enter password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                label="6-Digit OTP Verification Code"
+                placeholder="Enter 6-digit code (e.g. 591024)"
+                value={otpCode}
+                onChange={(e) => setOtpCode(e.target.value)}
                 disabled={submitting}
+                maxLength={6}
                 required
+                className="text-center font-mono text-lg tracking-widest"
               />
 
               <Button
                 type="submit"
                 disabled={submitting}
-                className="w-full flex items-center justify-center gap-2 mt-6 font-bold cursor-pointer"
+                className="w-full flex items-center justify-center gap-2 mt-4 font-bold cursor-pointer"
               >
-                {submitting ? 'Authenticating...' : 'Sign In To Panel'}
-                <ArrowRight className="w-4 h-4" />
+                {submitting ? 'Verifying Code...' : 'Verify & Sign In To Panel'}
+                <ShieldCheck className="w-4 h-4" />
               </Button>
+
+              <div className="flex items-center justify-between pt-2 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="text-zinc-500 hover:text-zinc-900 dark:hover:text-white cursor-pointer font-semibold underline"
+                >
+                  ← Change Email
+                </button>
+                {timer > 0 ? (
+                  <span className="text-zinc-400 font-medium">Resend in {timer}s</span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleSendOtp}
+                    disabled={submitting}
+                    className="text-purple-650 dark:text-purple-400 font-bold hover:underline cursor-pointer flex items-center gap-1"
+                  >
+                    <RefreshCw className="w-3 h-3" /> Resend OTP
+                  </button>
+                )}
+              </div>
             </form>
           )}
         </div>
