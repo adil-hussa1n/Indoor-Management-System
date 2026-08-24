@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Lock, User } from 'lucide-react';
+import { ArrowRight, Mail, KeyRound, Lock, ShieldCheck, RefreshCw } from 'lucide-react';
 import { MASTER_API } from '../services/api';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -10,12 +10,15 @@ export const SuperAdminLogin = () => {
   const navigate = useNavigate();
   const toast = useToast();
 
-  const [username, setUsername] = useState('');
+  const [authMode, setAuthMode] = useState('otp'); // 'otp' | 'password'
+  const [step, setStep] = useState(1); // 1 = Enter Email/User, 2 = Enter 6-digit OTP
+  const [usernameOrEmail, setUsernameOrEmail] = useState('');
+  const [otpCode, setOtpCode] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [timer, setTimer] = useState(0);
 
-  // Set page title and favicon on mount
-  React.useEffect(() => {
+  useEffect(() => {
     document.title = 'Super Admin Console | Darun Tech Private Limited';
     
     let link = document.querySelector("link[rel~='icon']");
@@ -29,28 +32,35 @@ export const SuperAdminLogin = () => {
     link.setAttribute('type', 'image/png');
 
     return () => {
-      // Revert favicon on unmount
       link.href = originalFavicon;
     };
   }, []);
 
-  // Redirect if already logged in as superadmin
-  React.useEffect(() => {
+  useEffect(() => {
     if (localStorage.getItem('superAdminToken')) {
       navigate('/superadmin/dashboard', { replace: true });
     }
   }, [navigate]);
 
-  const handleLogin = async (e) => {
+  useEffect(() => {
+    let interval = null;
+    if (timer > 0) {
+      interval = setInterval(() => setTimer((t) => t - 1), 1000);
+    }
+    return () => clearInterval(interval);
+  }, [timer]);
+
+  // Handler for Password Login
+  const handlePasswordLogin = async (e) => {
     e.preventDefault();
-    if (!username || !password) {
-      toast.error('Both fields are required.');
+    if (!usernameOrEmail || !password) {
+      toast.error('Both username/email and password are required.');
       return;
     }
 
     setLoading(true);
     try {
-      const res = await MASTER_API.post('/login', { username, password });
+      const res = await MASTER_API.post('/login', { username: usernameOrEmail, password });
       if (res.data.success) {
         localStorage.setItem('superAdminToken', res.data.token);
         toast.success('Super Admin Login Successful!');
@@ -58,6 +68,55 @@ export const SuperAdminLogin = () => {
       }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Login failed. Please check credentials.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handler for Sending Gmail OTP
+  const handleSendOtp = async (e) => {
+    if (e) e.preventDefault();
+    if (!usernameOrEmail.trim()) {
+      toast.error('Please enter your registered Gmail or Super Username.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await MASTER_API.post('/send-otp', { usernameOrEmail: usernameOrEmail.trim() });
+      if (res.data.success) {
+        toast.success(res.data.message || 'OTP code sent to your Gmail!');
+        setStep(2);
+        setTimer(60);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to send OTP code. Please check details.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handler for Verifying Gmail OTP
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    if (!otpCode || otpCode.trim().length !== 6) {
+      toast.error('Please enter the 6-digit OTP code sent to your Gmail.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await MASTER_API.post('/verify-otp', {
+        usernameOrEmail: usernameOrEmail.trim(),
+        otp: otpCode.trim(),
+      });
+      if (res.data.success) {
+        localStorage.setItem('superAdminToken', res.data.token);
+        toast.success('Gmail OTP Verified! Accessing Master Console...');
+        navigate('/superadmin/dashboard', { replace: true });
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Invalid or expired OTP code.');
     } finally {
       setLoading(false);
     }
@@ -77,37 +136,143 @@ export const SuperAdminLogin = () => {
               Super Admin Console
             </h1>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-xs mx-auto leading-relaxed font-semibold">
-              Controlled and Managed by <span className="font-bold text-purple-650 dark:text-purple-400">Darun Tech Private Limited</span>.
+              Managed by <span className="font-bold text-purple-650 dark:text-purple-400">Darun Tech Private Limited</span>.
             </p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-4 text-left">
-            <Input
-              label="Super Username"
-              placeholder="Enter super username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              disabled={loading}
-              required
-            />
-            <Input
-              label="Master Password"
-              placeholder="••••••••"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={loading}
-              required
-            />
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 mt-4 font-bold cursor-pointer animate-none"
+          {/* Auth Mode Toggle Tabs */}
+          <div className="grid grid-cols-2 p-1.5 rounded-2xl bg-zinc-100 dark:bg-zinc-850/80 border border-zinc-200/80 dark:border-zinc-800 text-xs font-bold">
+            <button
+              type="button"
+              onClick={() => {
+                setAuthMode('otp');
+                setStep(1);
+              }}
+              className={`py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                authMode === 'otp'
+                  ? 'bg-purple-650 text-white shadow-md'
+                  : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+              }`}
             >
-              {loading ? 'Authenticating...' : 'Enter Master Console'}
-              <ArrowRight className="w-4 h-4" />
-            </Button>
-          </form>
+              <Mail className="w-3.5 h-3.5" /> Gmail OTP
+            </button>
+            <button
+              type="button"
+              onClick={() => setAuthMode('password')}
+              className={`py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                authMode === 'password'
+                  ? 'bg-purple-650 text-white shadow-md'
+                  : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+              }`}
+            >
+              <Lock className="w-3.5 h-3.5" /> Password
+            </button>
+          </div>
+
+          {/* Mode 1: Gmail OTP Form */}
+          {authMode === 'otp' && (
+            <div className="space-y-4 text-left">
+              {step === 1 ? (
+                <form onSubmit={handleSendOtp} className="space-y-4">
+                  <Input
+                    label="Gmail or Super Username"
+                    placeholder="e.g. admin@daruntech.com or superadmin"
+                    value={usernameOrEmail}
+                    onChange={(e) => setUsernameOrEmail(e.target.value)}
+                    disabled={loading}
+                    required
+                  />
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full flex items-center justify-center gap-2 mt-4 font-bold cursor-pointer"
+                  >
+                    {loading ? 'Sending OTP to Gmail...' : 'Send Verification OTP'}
+                    <Mail className="w-4 h-4" />
+                  </Button>
+                </form>
+              ) : (
+                <form onSubmit={handleVerifyOtp} className="space-y-4">
+                  <div className="p-3 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-xs text-purple-700 dark:text-purple-300 font-medium text-center">
+                    📧 Verification code sent to your registered Gmail address!
+                  </div>
+
+                  <Input
+                    label="6-Digit OTP Verification Code"
+                    placeholder="Enter 6-digit code (e.g. 849201)"
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value)}
+                    disabled={loading}
+                    maxLength={6}
+                    required
+                    className="text-center font-mono text-lg tracking-widest"
+                  />
+
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full flex items-center justify-center gap-2 mt-4 font-bold cursor-pointer"
+                  >
+                    {loading ? 'Verifying Code...' : 'Verify OTP & Enter Console'}
+                    <ShieldCheck className="w-4 h-4" />
+                  </Button>
+
+                  <div className="flex items-center justify-between pt-2 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setStep(1)}
+                      className="text-zinc-500 hover:text-zinc-900 dark:hover:text-white cursor-pointer font-semibold underline"
+                    >
+                      ← Change Email
+                    </button>
+                    {timer > 0 ? (
+                      <span className="text-zinc-400 font-medium">Resend in {timer}s</span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleSendOtp}
+                        disabled={loading}
+                        className="text-purple-650 dark:text-purple-400 font-bold hover:underline cursor-pointer flex items-center gap-1"
+                      >
+                        <RefreshCw className="w-3 h-3" /> Resend OTP
+                      </button>
+                    )}
+                  </div>
+                </form>
+              )}
+            </div>
+          )}
+
+          {/* Mode 2: Password Form */}
+          {authMode === 'password' && (
+            <form onSubmit={handlePasswordLogin} className="space-y-4 text-left">
+              <Input
+                label="Super Username or Email"
+                placeholder="Enter username or email"
+                value={usernameOrEmail}
+                onChange={(e) => setUsernameOrEmail(e.target.value)}
+                disabled={loading}
+                required
+              />
+              <Input
+                label="Master Password"
+                placeholder="••••••••"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
+                required
+              />
+              <Button
+                type="submit"
+                disabled={loading}
+                className="w-full flex items-center justify-center gap-2 mt-4 font-bold cursor-pointer"
+              >
+                {loading ? 'Authenticating...' : 'Enter Master Console'}
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            </form>
+          )}
         </div>
       </div>
     </div>

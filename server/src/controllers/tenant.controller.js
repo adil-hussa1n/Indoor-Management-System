@@ -1,11 +1,15 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { Op } from 'sequelize';
 import { Tenant, SuperAdmin, SubscriptionHistory } from '../models/master/index.js';
 import { masterSequelize } from '../config/master-db.js';
 import { getTenantConnection, removeTenantConnection } from '../config/sequelize.js';
 import { createModels } from '../models/model-factory.js';
 import { clearTenantCache } from '../middlewares/tenant.js';
-import { sendLoginAlertEmail, sendStaffWelcomeEmail } from '../utils/mailer.js';
+import { sendLoginAlertEmail, sendStaffWelcomeEmail, sendEmail } from '../utils/mailer.js';
+
+// In-Memory OTP Store for Super Admin
+const superAdminOtpStore = new Map();
 
 /**
  * Super Admin Login
@@ -18,7 +22,11 @@ export const superAdminLogin = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Username and password are required' });
     }
 
-    const admin = await SuperAdmin.findOne({ where: { username } });
+    const admin = await SuperAdmin.findOne({
+      where: {
+        [Op.or]: [{ username }, { email: username }]
+      }
+    });
     if (!admin || !(await bcrypt.compare(password, admin.password))) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
@@ -40,6 +48,116 @@ export const superAdminLogin = async (req, res, next) => {
         device: req.headers['user-agent'] || 'Web Browser',
       }).catch(err => console.error('Gmail SMTP SuperAdmin Login Alert Error:', err.message));
     }
+
+    res.status(200).json({
+      success: true,
+      token,
+      admin: { id: admin.id, username: admin.username, role: admin.role },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Super Admin Send Gmail OTP
+ * POST /api/master/send-otp
+ */
+export const sendSuperAdminOTP = async (req, res, next) => {
+  try {
+    const { usernameOrEmail } = req.body;
+    if (!usernameOrEmail || !usernameOrEmail.trim()) {
+      return res.status(400).json({ success: false, message: 'Username or Gmail address is required' });
+    }
+
+    const term = usernameOrEmail.trim();
+    const admin = await SuperAdmin.findOne({
+      where: {
+        [Op.or]: [
+          { username: term },
+          { email: term }
+        ]
+      }
+    });
+
+    if (!admin) {
+      return res.status(404).json({ success: false, message: 'No Super Admin account found with these credentials.' });
+    }
+
+    const recipientEmail = admin.email || process.env.SMTP_USER || term;
+    if (!recipientEmail || !recipientEmail.includes('@')) {
+      return res.status(400).json({ success: false, message: 'No valid Gmail address associated with this account. Please use password login.' });
+    }
+
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    superAdminOtpStore.set(admin.id, {
+      code: otp,
+      expiresAt: Date.now() + 10 * 60 * 1000,
+    });
+
+    const subject = `🔑 Super Admin Verification Code: ${otp}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 24px; border: 1px solid #e4e4e7; border-radius: 16px; background-color: #ffffff; text-align: center;">
+        <h2 style="color: #7c3aed; margin-bottom: 8px;">Super Admin Console</h2>
+        <p style="color: #71717a; font-size: 13px; margin-bottom: 20px;">Darun Tech Private Limited</p>
+        <div style="background-color: #faf5ff; border: 1px dashed #c084fc; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+          <div style="font-size: 12px; color: #6b21a8; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Your Login Verification Code</div>
+          <div style="font-size: 36px; font-weight: 900; color: #7c3aed; letter-spacing: 6px; margin: 12px 0;">${otp}</div>
+          <div style="font-size: 11px; color: #9333ea;">Valid for 10 minutes. Do not share this code.</div>
+        </div>
+        <p style="color: #a1a1aa; font-size: 11px;">Requested for account: <strong>${admin.username}</strong></p>
+      </div>
+    `;
+
+    await sendEmail({ to: recipientEmail, subject, html });
+
+    res.status(200).json({
+      success: true,
+      message: `6-Digit verification code sent to ${recipientEmail.replace(/(.{2})(.*)(?=@)/, '$1***')}`,
+      email: recipientEmail,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Super Admin Verify Gmail OTP
+ * POST /api/master/verify-otp
+ */
+export const verifySuperAdminOTP = async (req, res, next) => {
+  try {
+    const { usernameOrEmail, otp } = req.body;
+    if (!usernameOrEmail || !otp) {
+      return res.status(400).json({ success: false, message: 'Username/Email and 6-digit OTP code are required.' });
+    }
+
+    const term = usernameOrEmail.trim();
+    const admin = await SuperAdmin.findOne({
+      where: {
+        [Op.or]: [
+          { username: term },
+          { email: term }
+        ]
+      }
+    });
+
+    if (!admin) {
+      return res.status(404).json({ success: false, message: 'Super Admin account not found.' });
+    }
+
+    const storedOtp = superAdminOtpStore.get(admin.id);
+    if (!storedOtp || storedOtp.code !== String(otp).trim() || Date.now() > storedOtp.expiresAt) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired OTP code. Please request a new code.' });
+    }
+
+    superAdminOtpStore.delete(admin.id);
+
+    const token = jwt.sign(
+      { id: admin.id, type: 'superadmin' },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
 
     res.status(200).json({
       success: true,

@@ -264,3 +264,137 @@ export const deleteStaff = async (req, res, next) => {
     next(error);
   }
 };
+
+// In-Memory OTP Store for Venue Admin & Staff Managers
+const adminOtpStore = new Map();
+
+/**
+ * Send Gmail OTP for Admin & Staff Login
+ * POST /api/v1/auth/send-otp
+ */
+export const sendAdminOTP = async (req, res, next) => {
+  try {
+    const { usernameOrEmail } = req.body;
+    if (!usernameOrEmail || !usernameOrEmail.trim()) {
+      return res.status(400).json({ success: false, message: 'Username or Gmail address is required' });
+    }
+
+    const { adminRepo } = req.repos;
+    const term = usernameOrEmail.trim();
+
+    let admin = await adminRepo.findByUsername(term);
+    if (!admin && term.includes('@')) {
+      const all = await adminRepo.findAll();
+      admin = all.find(a => a.email && a.email.toLowerCase() === term.toLowerCase());
+    }
+
+    if (!admin) {
+      return res.status(404).json({ success: false, message: 'No admin or staff account found with these credentials.' });
+    }
+
+    const recipientEmail = admin.email || process.env.SMTP_USER;
+    if (!recipientEmail || !recipientEmail.includes('@')) {
+      return res.status(400).json({ success: false, message: 'No registered Gmail address found for this staff member. Please use password login.' });
+    }
+
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    const key = `${req.tenant.slug}_${admin.id}`;
+    adminOtpStore.set(key, {
+      code: otp,
+      expiresAt: Date.now() + 10 * 60 * 1000,
+    });
+
+    const venueName = req.tenant?.businessName || 'Indoor Sports Arena';
+    const subject = `🔑 ${venueName} — Login Verification Code: ${otp}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 24px; border: 1px solid #e4e4e7; border-radius: 16px; background-color: #ffffff; text-align: center;">
+        <h2 style="color: #7c3aed; margin-bottom: 4px;">${venueName}</h2>
+        <p style="color: #71717a; font-size: 13px; margin-bottom: 20px;">Staff & Admin Dashboard Access</p>
+        <div style="background-color: #faf5ff; border: 1px dashed #c084fc; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+          <div style="font-size: 12px; color: #6b21a8; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Your OTP Security Code</div>
+          <div style="font-size: 36px; font-weight: 900; color: #7c3aed; letter-spacing: 6px; margin: 12px 0;">${otp}</div>
+          <div style="font-size: 11px; color: #9333ea;">Valid for 10 minutes. Do not share this code.</div>
+        </div>
+        <p style="color: #a1a1aa; font-size: 11px;">Account: <strong>${admin.username}</strong> (${admin.role === 'admin' ? 'Primary Admin' : 'Staff Manager'})</p>
+      </div>
+    `;
+
+    const { sendEmail } = await import('../utils/mailer.js');
+    await sendEmail({ to: recipientEmail, subject, html });
+
+    res.status(200).json({
+      success: true,
+      message: `6-Digit OTP code sent to ${recipientEmail.replace(/(.{2})(.*)(?=@)/, '$1***')}`,
+      email: recipientEmail,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Verify Gmail OTP for Admin & Staff Login
+ * POST /api/v1/auth/verify-otp
+ */
+export const verifyAdminOTP = async (req, res, next) => {
+  try {
+    const { usernameOrEmail, otp } = req.body;
+    if (!usernameOrEmail || !otp) {
+      return res.status(400).json({ success: false, message: 'Username/Email and 6-digit OTP code are required.' });
+    }
+
+    const { adminRepo } = req.repos;
+    const term = usernameOrEmail.trim();
+
+    let admin = await adminRepo.findByUsername(term);
+    if (!admin && term.includes('@')) {
+      const all = await adminRepo.findAll();
+      admin = all.find(a => a.email && a.email.toLowerCase() === term.toLowerCase());
+    }
+
+    if (!admin) {
+      return res.status(404).json({ success: false, message: 'Admin/Staff account not found.' });
+    }
+
+    const key = `${req.tenant.slug}_${admin.id}`;
+    const storedOtp = adminOtpStore.get(key);
+
+    if (!storedOtp || storedOtp.code !== String(otp).trim() || Date.now() > storedOtp.expiresAt) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired OTP code. Please request a new code.' });
+    }
+
+    adminOtpStore.delete(key);
+
+    const token = jwt.sign(
+      { id: admin.id, tenant: req.tenant.slug, type: 'admin' },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    );
+
+    req.admin = { id: admin.id, username: admin.username };
+    createAuditLog(req, {
+      action: 'ADMIN_OTP_LOGIN',
+      category: 'security',
+      entity: 'Admin',
+      entityId: admin.id,
+      description: `Admin user '${admin.username}' logged in via Gmail OTP`,
+    }).catch(err => console.error('Audit Log Error:', err.message));
+
+    res.status(200).json({
+      success: true,
+      token,
+      admin: {
+        id: admin.id,
+        _id: admin.id,
+        username: admin.username,
+        name: admin.name,
+        email: admin.email,
+        phone: admin.phone,
+        role: admin.role || 'admin',
+        permissions: admin.permissions || null,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};

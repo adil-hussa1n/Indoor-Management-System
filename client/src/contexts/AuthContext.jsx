@@ -85,8 +85,42 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const sendOtp = async (usernameOrEmail) => {
+    try {
+      const response = await API.post('/auth/send-otp', { usernameOrEmail });
+      return response.data;
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to send OTP code. Please try again.',
+      };
+    }
+  };
+
+  const verifyOtp = async (usernameOrEmail, otp) => {
+    try {
+      const response = await API.post('/auth/verify-otp', { usernameOrEmail, otp });
+      if (response.data.success) {
+        localStorage.setItem(getStorageKey(), response.data.token);
+        setIsAdmin(true);
+        if (response.data.admin) {
+          setAdminUser(response.data.admin);
+        } else {
+          await fetchAdminDetails();
+        }
+        return { success: true };
+      }
+      return { success: false, message: response.data.message || 'OTP verification failed' };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Invalid or expired OTP code',
+      };
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ isAdmin, adminUser, login, logout, loading }}>
+    <AuthContext.Provider value={{ isAdmin, adminUser, login, sendOtp, verifyOtp, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );

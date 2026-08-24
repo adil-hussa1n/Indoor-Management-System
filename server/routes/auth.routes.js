@@ -1,10 +1,12 @@
 import express from 'express';
-import { login, getMe, getStaff, createStaff, updateStaff, deleteStaff } from '../src/controllers/auth.controller.js';
+import { login, sendAdminOTP, verifyAdminOTP, getMe, getStaff, createStaff, updateStaff, deleteStaff } from '../src/controllers/auth.controller.js';
 import { protect, requirePrimaryAdmin } from '../src/middlewares/auth.js';
 
 const router = express.Router();
 
 router.post('/login', login);
+router.post('/send-otp', sendAdminOTP);
+router.post('/verify-otp', verifyAdminOTP);
 router.get('/me', protect, getMe);
 
 // Staff & Manager Management (Primary Admin Only)

@@ -1,6 +1,8 @@
 import express from 'express';
 import {
   superAdminLogin,
+  sendSuperAdminOTP,
+  verifySuperAdminOTP,
   createTenant,
   listTenants,
   getTenant,
@@ -13,6 +15,8 @@ const router = express.Router();
 
 // Public
 router.post('/login', superAdminLogin);
+router.post('/send-otp', sendSuperAdminOTP);
+router.post('/verify-otp', verifySuperAdminOTP);
 
 // Protected (super admin only)
 router.get('/tenants', protectSuperAdmin, listTenants);
