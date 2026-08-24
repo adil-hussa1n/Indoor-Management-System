@@ -1203,27 +1203,21 @@ export const SuperAdminDashboard = () => {
               </div>
             </div>
 
-            <div className="p-4 bg-zinc-500/5 dark:bg-zinc-900/40 rounded-2xl border border-zinc-200 dark:border-zinc-800 space-y-3">
-              <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
-                🔑 Seed Tenant Admin Credentials
+            <div className="p-4 bg-purple-500/5 dark:bg-purple-950/20 rounded-2xl border border-purple-500/20 space-y-3">
+              <h4 className="text-xs font-bold text-purple-650 dark:text-purple-400 uppercase tracking-wider flex items-center gap-1.5">
+                🔑 Seed Tenant Admin Credentials (Passwordless Gmail OTP)
               </h4>
-              <div className="grid grid-cols-2 gap-4">
-                <Input
-                  label="Admin Username"
-                  placeholder="admin"
-                  value={adminUsername}
-                  onChange={(e) => setAdminUsername(e.target.value)}
-                  required
-                />
-                <Input
-                  label="Admin Password"
-                  type="password"
-                  placeholder="Set password"
-                  value={adminPassword}
-                  onChange={(e) => setAdminPassword(e.target.value)}
-                  required
-                />
-              </div>
+              <Input
+                label="Admin Gmail Address (Used for Login OTP)"
+                type="email"
+                placeholder="e.g. client@business.com"
+                value={businessEmail}
+                onChange={(e) => setBusinessEmail(e.target.value)}
+                required
+              />
+              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">
+                📧 Venue Primary Admin will log in passwordlessly using 6-digit OTP codes sent to this Gmail address.
+              </p>
             </div>
 
             <div className="flex justify-end gap-2 pt-4 border-t border-zinc-100 dark:border-zinc-900">

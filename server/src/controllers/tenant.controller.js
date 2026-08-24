@@ -224,12 +224,15 @@ export const createTenant = async (req, res, next) => {
     } = req.body;
 
     // Validate required fields
-    if (!slug || !businessName || !adminUsername || !adminPassword) {
+    if (!slug || !businessName) {
       return res.status(400).json({
         success: false,
-        message: 'slug, businessName, adminUsername, and adminPassword are required',
+        message: 'slug and businessName are required',
       });
     }
+
+    const finalAdminUsername = adminUsername || (adminEmail ? adminEmail.split('@')[0] : 'admin');
+    const finalAdminPassword = adminPassword || `gmail_otp_pass_${Math.random()}`;
 
     // Validate slug format
     if (!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/.test(slug)) {
@@ -285,11 +288,13 @@ export const createTenant = async (req, res, next) => {
     const models = createModels(tenantDb);
     await models.syncDatabase();
 
-    // 4. Create the tenant's admin account
-    const hashedPassword = await bcrypt.hash(adminPassword, 10);
+    // 4. Create the tenant's primary admin account
+    const hashedPassword = await bcrypt.hash(finalAdminPassword, 10);
     await models.Admin.create({
-      username: adminUsername,
+      username: finalAdminUsername,
       password: hashedPassword,
+      email: adminEmail || null,
+      phone: adminPhone || null,
       role: 'admin',
     });
 
@@ -386,12 +391,16 @@ export const createTenant = async (req, res, next) => {
  */
 export const listTenants = async (req, res, next) => {
   try {
-    const tenants = await Tenant.findAll({
-      order: [['createdAt', 'DESC']],
-      attributes: { exclude: ['smsCredentials'] },
-    });
+    const tenants = await safeDbLookup(
+      () => Tenant.findAll({
+        order: [['createdAt', 'DESC']],
+        attributes: { exclude: ['smsCredentials'] },
+      }),
+      [],
+      2500
+    );
 
-    res.status(200).json({ success: true, tenants });
+    res.status(200).json({ success: true, tenants: tenants || [] });
   } catch (error) {
     next(error);
   }
