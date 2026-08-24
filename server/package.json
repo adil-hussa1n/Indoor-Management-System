@@ -23,6 +23,7 @@
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
     "mysql2": "^3.22.5",
+    "nodemailer": "^9.0.5",
     "sequelize": "^6.37.8",
     "socket.io": "^4.8.1",
     "zod": "^3.24.1"

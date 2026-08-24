@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { loginSchema } from '../../validators/auth.validator.js';
 import { createAuditLog } from '../utils/auditLogger.js';
+import { sendLoginAlertEmail, sendStaffWelcomeEmail } from '../utils/mailer.js';
 
 export const login = async (req, res, next) => {
   try {
@@ -34,6 +35,18 @@ export const login = async (req, res, next) => {
       entityId: admin.id,
       description: `Admin user '${admin.username}' logged into admin portal`,
     }).catch(err => console.error('Audit Log Error:', err.message));
+
+    // Dispatch Gmail SMTP Security Notification Alert
+    const recipientEmail = admin.email || process.env.SMTP_USER;
+    if (recipientEmail) {
+      sendLoginAlertEmail({
+        to: recipientEmail,
+        name: admin.name || admin.username,
+        role: admin.role === 'manager' ? 'Staff Manager' : 'Primary Venue Admin',
+        ipAddress: req.ip || req.headers['x-forwarded-for'] || '127.0.0.1',
+        device: req.headers['user-agent'] || 'Web Browser',
+      }).catch(err => console.error('Gmail SMTP Login Alert Error:', err.message));
+    }
 
     res.status(200).json({
       success: true,
@@ -134,6 +147,20 @@ export const createStaff = async (req, res, next) => {
       entityId: newStaff.id,
       description: `Created new manager account "${newStaff.username}" (${newStaff.name})`,
     });
+
+    // Dispatch Gmail SMTP Welcome Email to Staff Manager
+    if (newStaff.email) {
+      const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+      const loginUrl = `${clientUrl}/admin/login?tenant=${req.tenant?.slug || ''}`;
+      sendStaffWelcomeEmail({
+        to: newStaff.email,
+        name: newStaff.name,
+        username: newStaff.username,
+        tempPassword: password,
+        role: newStaff.role === 'admin' ? 'Co-Admin' : 'Staff Manager',
+        loginUrl,
+      }).catch(err => console.error('Gmail SMTP Staff Welcome Email Error:', err.message));
+    }
 
     res.status(201).json({
       success: true,
