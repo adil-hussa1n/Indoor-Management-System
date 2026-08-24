@@ -233,10 +233,13 @@ export const SuperAdminDashboard = () => {
 
   const handleCreateTenant = async (e) => {
     e.preventDefault();
-    if (!name || !slug || !adminUsername || !adminPassword) {
-      toast.error('Required fields are missing.');
+    if (!name || !slug) {
+      toast.error('Client Business Name and Subdomain Slug are required.');
       return;
     }
+
+    const finalAdminUsername = businessEmail ? businessEmail.split('@')[0] : (adminUsername || 'admin');
+    const finalAdminPassword = adminPassword || `gmail_otp_pass_${Math.floor(Math.random() * 1000000)}`;
 
     let calculatedExpiry = null;
     const now = new Date();
@@ -267,8 +270,8 @@ export const SuperAdminDashboard = () => {
         businessName: name,
         slug: slug.toLowerCase().replace(/[^a-z0-9]/g, ''), // clean slug format
         plan: 'pro',
-        adminUsername,
-        adminPassword,
+        adminUsername: finalAdminUsername,
+        adminPassword: finalAdminPassword,
         adminEmail: businessEmail,
         adminPhone: businessPhone,
         subscriptionExpiresAt: subPlan === 'lifetime' ? null : calculatedExpiry,

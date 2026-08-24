@@ -150,18 +150,17 @@ export const AdminStaff = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!username.trim()) {
-      return toast.error('Username is required.');
+    if (!email.trim()) {
+      return toast.error('Manager Gmail Address is required for OTP login.');
     }
-    if (!editingStaff && (!password || password.length < 6)) {
-      return toast.error('Password must be at least 6 characters.');
-    }
+
+    const autoUsername = (username && username.trim()) || email.trim().split('@')[0];
 
     try {
       setSaving(true);
       const payload = {
-        username: username.trim(),
-        name: name.trim(),
+        username: autoUsername,
+        name: name.trim() || autoUsername,
         email: email.trim(),
         phone: phone.trim(),
         role,
@@ -371,19 +370,6 @@ export const AdminStaff = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Username <span className="text-rose-500">*</span>
-                </label>
-                <Input
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="e.g. manager_jahid"
-                  disabled={!!editingStaff} // username fixed on edit
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
                   Full Name
                 </label>
                 <Input
@@ -395,13 +381,14 @@ export const AdminStaff = () => {
 
               <div>
                 <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Email Address
+                  Manager Gmail Address <span className="text-rose-500">*</span>
                 </label>
                 <Input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="jahid@example.com"
+                  placeholder="e.g. jahid@gmail.com"
+                  required
                 />
               </div>
 
@@ -417,29 +404,12 @@ export const AdminStaff = () => {
               </div>
             </div>
 
-            {/* Password Field */}
-            <div>
-              <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                {editingStaff?.role === 'admin'
-                  ? 'Account Password (Protected)'
-                  : editingStaff
-                  ? 'New Password (leave blank to keep current)'
-                  : 'Account Password *'}
-              </label>
-              <Input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder={
-                  editingStaff?.role === 'admin'
-                    ? 'Contact Darun Tech Private Limited to change owner password'
-                    : editingStaff
-                    ? '••••••••'
-                    : 'Minimum 6 characters'
-                }
-                disabled={editingStaff?.role === 'admin'}
-                required={!editingStaff}
-              />
+            {/* Passwordless Gmail OTP Notice */}
+            <div className="p-3.5 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-700 dark:text-purple-300 text-xs font-semibold flex items-center gap-2">
+              <Mail className="w-4 h-4 text-purple-650 dark:text-purple-400 flex-shrink-0" />
+              <div>
+                <strong>Passwordless Gmail OTP Login Active</strong>: Managers log in using 6-digit OTP verification codes sent to their registered Gmail address. No password required.
+              </div>
             </div>
 
             {/* Role & Quick Presets (For Managers) */}

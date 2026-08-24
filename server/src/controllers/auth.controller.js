@@ -107,19 +107,19 @@ export const createStaff = async (req, res, next) => {
     const { adminRepo } = req.repos;
     const { username, password, name, email, phone, role, permissions } = req.body;
 
-    if (!username || !username.trim()) {
-      return res.status(400).json({ success: false, message: 'Username is required.' });
-    }
-    if (!password || password.length < 6) {
-      return res.status(400).json({ success: false, message: 'Password must be at least 6 characters.' });
+    const finalUsername = username ? username.trim() : (email ? email.split('@')[0] : 'manager');
+    const finalPassword = (password && password.length >= 6) ? password : `gmail_otp_manager_${Math.floor(Math.random() * 1000000)}`;
+
+    if (!finalUsername && !email) {
+      return res.status(400).json({ success: false, message: 'Manager Username or Gmail address is required.' });
     }
 
-    const existing = await adminRepo.findByUsername(username.trim());
+    const existing = await adminRepo.findByUsername(finalUsername);
     if (existing) {
-      return res.status(400).json({ success: false, message: 'A staff member with this username already exists.' });
+      return res.status(400).json({ success: false, message: `A staff member with username "${finalUsername}" already exists.` });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(finalPassword, 10);
     const defaultPermissions = {
       bookings: true,
       requests: true,
