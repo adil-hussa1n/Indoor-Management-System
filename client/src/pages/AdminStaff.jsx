@@ -229,14 +229,14 @@ export const AdminStaff = () => {
       {/* Staff Members List */}
       {loading ? (
         <Loader size="medium" className="py-12" />
-      ) : staff.length === 0 ? (
+      ) : staff.filter((m) => m.role !== 'admin').length === 0 ? (
         <Card className="p-12 text-center text-zinc-400">
           <Shield className="w-12 h-12 mx-auto text-zinc-300 dark:text-zinc-700" />
-          <p className="font-semibold text-sm mt-3">No staff accounts found.</p>
+          <p className="font-semibold text-sm mt-3">No staff managers found. Click "+ Add New Manager" to create one.</p>
         </Card>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {staff.map((member) => {
+          {staff.filter((m) => m.role !== 'admin').map((member) => {
             const isOwner = member.role === 'admin';
             const permObj = member.permissions || {};
 
@@ -353,13 +353,13 @@ export const AdminStaff = () => {
               <div className="p-4 rounded-2xl bg-amber-500/10 dark:bg-amber-950/30 border border-amber-500/30 text-amber-800 dark:text-amber-300 space-y-1 text-xs">
                 <div className="flex items-center gap-2 font-black text-sm text-amber-700 dark:text-amber-400">
                   <ShieldAlert className="w-5 h-5 text-amber-500 flex-shrink-0" />
-                  Primary Business Owner Credentials Protected
+                  Primary Business Owner Profile Protected
                 </div>
                 <p className="font-medium">
-                  Primary Business Owner username and account password cannot be modified from this menu to protect system access.
+                  Business Owner logs in 100% passwordlessly using 6-digit OTP verification codes sent to their registered Gmail address.
                 </p>
                 <p className="font-extrabold text-purple-650 dark:text-purple-400 pt-1">
-                  Need to change owner ID or password? Please contact{' '}
+                  Need to update primary business credentials? Please contact{' '}
                   <a href="https://daruntech.com" target="_blank" rel="noreferrer" className="underline hover:text-purple-750 font-bold">
                     Darun Tech Private Limited
                   </a>.
@@ -381,13 +381,13 @@ export const AdminStaff = () => {
 
               <div>
                 <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Manager Gmail Address <span className="text-rose-500">*</span>
+                  {editingStaff?.role === 'admin' ? 'Business Owner Gmail Address' : 'Manager Gmail Address'} <span className="text-rose-500">*</span>
                 </label>
                 <Input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="e.g. jahid@gmail.com"
+                  placeholder={editingStaff?.role === 'admin' ? 'e.g. owner@business.com' : 'e.g. jahid@gmail.com'}
                   required
                 />
               </div>
@@ -408,7 +408,7 @@ export const AdminStaff = () => {
             <div className="p-3.5 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-700 dark:text-purple-300 text-xs font-semibold flex items-center gap-2">
               <Mail className="w-4 h-4 text-purple-650 dark:text-purple-400 flex-shrink-0" />
               <div>
-                <strong>Passwordless Gmail OTP Login Active</strong>: Managers log in using 6-digit OTP verification codes sent to their registered Gmail address. No password required.
+                <strong>Passwordless Gmail OTP Login Active</strong>: Accounts log in using 6-digit OTP verification codes sent to their registered Gmail address. No password required.
               </div>
             </div>
 
