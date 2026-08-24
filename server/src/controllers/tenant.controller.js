@@ -59,6 +59,19 @@ export const superAdminLogin = async (req, res, next) => {
   }
 };
 
+// Helper for resilient DB query with fast fallback on timeout/error
+const safeDbLookup = async (fn, fallback = null, timeoutMs = 2000) => {
+  try {
+    return await Promise.race([
+      fn(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('DB Timeout')), timeoutMs))
+    ]);
+  } catch (err) {
+    console.warn('⚠️ DB Lookup Notice (using memory fallback):', err.message);
+    return fallback;
+  }
+};
+
 /**
  * Super Admin Send Gmail OTP
  * POST /api/master/send-otp
@@ -72,27 +85,21 @@ export const sendSuperAdminOTP = async (req, res, next) => {
 
     const term = usernameOrEmail.trim().toLowerCase();
     
-    let admin = await SuperAdmin.findOne({
-      where: {
-        [Op.or]: [
-          { username: term },
-          { email: term }
-        ]
-      }
-    });
+    let admin = await safeDbLookup(
+      () => SuperAdmin.findOne({
+        where: {
+          [Op.or]: [
+            { username: term },
+            { email: term }
+          ]
+        }
+      }),
+      null,
+      2000
+    );
 
     if (!admin) {
-      admin = await SuperAdmin.findOne();
-    }
-
-    if (!admin) {
-      const hashedPassword = await bcrypt.hash('superadminpassword123', 10);
-      admin = await SuperAdmin.create({
-        username: 'superadmin',
-        password: hashedPassword,
-        email: 'daruntech.pvt.ltd@gmail.com',
-        role: 'superadmin',
-      }).catch(() => null);
+      admin = await safeDbLookup(() => SuperAdmin.findOne(), null, 1500);
     }
 
     const recipientEmail = term.includes('@') ? term : (admin?.email || process.env.SMTP_USER || 'daruntech.pvt.ltd@gmail.com');
@@ -143,17 +150,21 @@ export const verifySuperAdminOTP = async (req, res, next) => {
     }
 
     const term = usernameOrEmail.trim().toLowerCase();
-    let admin = await SuperAdmin.findOne({
-      where: {
-        [Op.or]: [
-          { username: term },
-          { email: term }
-        ]
-      }
-    });
+    let admin = await safeDbLookup(
+      () => SuperAdmin.findOne({
+        where: {
+          [Op.or]: [
+            { username: term },
+            { email: term }
+          ]
+        }
+      }),
+      null,
+      2000
+    );
 
     if (!admin) {
-      admin = await SuperAdmin.findOne();
+      admin = await safeDbLookup(() => SuperAdmin.findOne(), null, 1500);
     }
 
     const enteredOtp = String(otp).trim();
