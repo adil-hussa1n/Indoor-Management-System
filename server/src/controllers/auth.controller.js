@@ -3,6 +3,10 @@ import jwt from 'jsonwebtoken';
 import { loginSchema } from '../../validators/auth.validator.js';
 import { createAuditLog } from '../utils/auditLogger.js';
 import { sendLoginAlertEmail, sendStaffWelcomeEmail } from '../utils/mailer.js';
+import { setAuthCookie, clearAuthCookie, expiresInToMs, ONE_DAY_MS } from '../utils/authCookie.js';
+
+const ADMIN_TOKEN_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+const ADMIN_TOKEN_TTL_MS = expiresInToMs(ADMIN_TOKEN_EXPIRES_IN, 7 * ONE_DAY_MS);
 
 export const login = async (req, res, next) => {
   try {
@@ -24,8 +28,9 @@ export const login = async (req, res, next) => {
     const token = jwt.sign(
       { id: admin.id, businessId: req.businessId, type: 'admin' },
       process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+      { expiresIn: ADMIN_TOKEN_EXPIRES_IN }
     );
+    setAuthCookie(res, 'admin', token, ADMIN_TOKEN_TTL_MS);
 
     req.admin = { id: admin.id, username: admin.username };
     createAuditLog(req, {
@@ -50,7 +55,6 @@ export const login = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      token,
       admin: {
         id: admin.id,
         _id: admin.id,
@@ -73,6 +77,15 @@ export const getMe = async (req, res, next) => {
       success: true,
       admin: req.admin,
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const logout = async (req, res, next) => {
+  try {
+    clearAuthCookie(res, 'admin');
+    res.status(200).json({ success: true, message: 'Logged out successfully.' });
   } catch (error) {
     next(error);
   }
@@ -339,7 +352,7 @@ export const sendAdminOTP = async (req, res, next) => {
       success: true,
       message: `6-Digit OTP code sent to ${recipientEmail.replace(/(.{2})(.*)(?=@)/, '$1***')}`,
       email: recipientEmail,
-      devOtp: otp, // Dev mock OTP code for instant testing
+      ...(process.env.NODE_ENV !== 'production' ? { devOtp: otp } : {}),
     });
   } catch (error) {
     next(error);
@@ -375,7 +388,8 @@ export const verifyAdminOTP = async (req, res, next) => {
     const key = `${req.businessId}_${adminId}`;
     const storedOtp = adminOtpStore.get(key);
     const enteredOtp = String(otp).trim();
-    const isValid = (storedOtp && storedOtp.code === enteredOtp && Date.now() <= storedOtp.expiresAt) || enteredOtp === '123456';
+    const isValid = (storedOtp && storedOtp.code === enteredOtp && Date.now() <= storedOtp.expiresAt)
+      || (process.env.NODE_ENV !== 'production' && enteredOtp === '123456');
 
     if (!isValid) {
       return res.status(400).json({ success: false, message: 'Invalid or expired OTP code. Please request a new code.' });
@@ -386,8 +400,9 @@ export const verifyAdminOTP = async (req, res, next) => {
     const token = jwt.sign(
       { id: adminId, businessId: req.businessId, type: 'admin' },
       process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+      { expiresIn: ADMIN_TOKEN_EXPIRES_IN }
     );
+    setAuthCookie(res, 'admin', token, ADMIN_TOKEN_TTL_MS);
 
     req.admin = { id: adminId, username: admin ? admin.username : term };
     createAuditLog(req, {
@@ -400,7 +415,6 @@ export const verifyAdminOTP = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      token,
       admin: {
         id: adminId,
         _id: adminId,

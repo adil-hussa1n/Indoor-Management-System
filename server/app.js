@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
+import cookieParser from 'cookie-parser';
 
 // Routes (keep same route files, but update controller imports inside them)
 import authRoutes from './routes/auth.routes.js';
@@ -65,6 +66,7 @@ app.use(
 // Body Parsers
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(cookieParser());
 
 // Logger
 if (process.env.NODE_ENV !== 'production') {

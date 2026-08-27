@@ -4,8 +4,11 @@ import { protectUser } from '../middlewares/auth.js';
 import { sendSMS } from '../utils/sms.js';
 import { normalizePhone } from '../utils/phone.js';
 import { Op } from 'sequelize';
+import { setAuthCookie, clearAuthCookie, ONE_DAY_MS } from '../utils/authCookie.js';
 
 const router = express.Router();
+
+const USER_TOKEN_TTL_MS = 30 * ONE_DAY_MS;
 
 // POST /api/v1/user/send-otp
 router.post('/send-otp', async (req, res, next) => {
@@ -164,10 +167,10 @@ router.post('/verify-otp', async (req, res, next) => {
       process.env.JWT_SECRET,
       { expiresIn: '30d' }
     );
+    setAuthCookie(res, 'user', token, USER_TOKEN_TTL_MS);
 
     res.status(200).json({
       success: true,
-      token,
       user: { id: user.id, uuid: user.uuid, name: user.name, phone: user.phone, email: user.email },
     });
   } catch (error) {
@@ -178,6 +181,12 @@ router.post('/verify-otp', async (req, res, next) => {
 // GET /api/v1/user/me
 router.get('/me', protectUser, async (req, res) => {
   res.status(200).json({ success: true, user: req.user });
+});
+
+// POST /api/v1/user/logout
+router.post('/logout', protectUser, async (req, res) => {
+  clearAuthCookie(res, 'user');
+  res.status(200).json({ success: true, message: 'Logged out successfully.' });
 });
 
 // PATCH /api/v1/user/me

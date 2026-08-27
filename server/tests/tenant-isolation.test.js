@@ -65,7 +65,7 @@ describe('User Story 1: admin sees only their own business data', () => {
   test('Admin A booking list never contains Business B rows', async () => {
     const res = await request(app)
       .get('/api/v1/bookings')
-      .set('Authorization', `Bearer ${tokenA}`)
+      .set('Cookie', `admin_token=${tokenA}`)
       .set('Host', 'localhost');
 
     expect(res.status).toBe(200);
@@ -77,7 +77,7 @@ describe('User Story 1: admin sees only their own business data', () => {
   test('client-supplied businessId in a write body is rejected 400', async () => {
     const res = await request(app)
       .patch('/api/v1/grounds/' + groundA.id)
-      .set('Authorization', `Bearer ${tokenA}`)
+      .set('Cookie', `admin_token=${tokenA}`)
       .send({ name: 'Renamed Court', businessId: businessB.id });
 
     expect(res.status).toBe(400);
@@ -88,7 +88,7 @@ describe('User Story 1: admin sees only their own business data', () => {
   test('booking create referencing another business\'s groundId is rejected 400', async () => {
     const res = await request(app)
       .post('/api/v1/bookings')
-      .set('Authorization', `Bearer ${tokenA}`)
+      .set('Cookie', `admin_token=${tokenA}`)
       .send({
         customerName: 'Cross Tenant Attempt',
         phone: '01700000099',

@@ -36,12 +36,6 @@ export const SuperAdminLogin = () => {
   }, []);
 
   useEffect(() => {
-    if (localStorage.getItem('superAdminToken')) {
-      navigate('/superadmin/dashboard', { replace: true });
-    }
-  }, [navigate]);
-
-  useEffect(() => {
     let interval = null;
     if (timer > 0) {
       interval = setInterval(() => setTimer((t) => t - 1), 1000);
@@ -88,7 +82,6 @@ export const SuperAdminLogin = () => {
         otp: otpCode.trim(),
       });
       if (res.data.success) {
-        localStorage.setItem('superAdminToken', res.data.token);
         toast.success('Gmail OTP Verified! Accessing Master Console...');
         navigate('/superadmin/dashboard', { replace: true });
       }

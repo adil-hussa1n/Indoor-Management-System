@@ -7,6 +7,10 @@ import SubscriptionHistory from '../models/SubscriptionHistory.js';
 import { sequelize } from '../config/db.js';
 import { createModels } from '../models/model-factory.js';
 import { sendLoginAlertEmail, sendStaffWelcomeEmail, sendEmail } from '../utils/mailer.js';
+import { parsePagination, paginationMeta } from '../utils/paginate.js';
+import { setAuthCookie, clearAuthCookie, ONE_DAY_MS } from '../utils/authCookie.js';
+
+const SUPERADMIN_TOKEN_TTL_MS = ONE_DAY_MS;
 
 // In-Memory OTP Store for Super Admin
 const superAdminOtpStore = new Map();
@@ -36,6 +40,7 @@ export const superAdminLogin = async (req, res, next) => {
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
+    setAuthCookie(res, 'superadmin', token, SUPERADMIN_TOKEN_TTL_MS);
 
     // Dispatch Gmail SMTP Super Admin Login Security Alert
     const recipientEmail = admin.email || process.env.SMTP_USER;
@@ -51,9 +56,21 @@ export const superAdminLogin = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      token,
       admin: { id: admin.id, username: admin.username, role: admin.role },
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Super Admin Logout
+ * POST /api/master/logout
+ */
+export const superAdminLogout = async (req, res, next) => {
+  try {
+    clearAuthCookie(res, 'superadmin');
+    res.status(200).json({ success: true, message: 'Logged out successfully.' });
   } catch (error) {
     next(error);
   }
@@ -131,7 +148,7 @@ export const sendSuperAdminOTP = async (req, res, next) => {
       success: true,
       message: `6-Digit verification code sent to ${recipientEmail.replace(/(.{2})(.*)(?=@)/, '$1***')}`,
       email: recipientEmail,
-      devOtp: otp, // Dev mock OTP code for instant testing
+      ...(process.env.NODE_ENV !== 'production' ? { devOtp: otp } : {}),
     });
   } catch (error) {
     next(error);
@@ -171,7 +188,8 @@ export const verifySuperAdminOTP = async (req, res, next) => {
     const adminKey = admin ? admin.id : 'default_superadmin';
     const storedOtp = superAdminOtpStore.get(adminKey);
 
-    const isValid = (storedOtp && storedOtp.code === enteredOtp && Date.now() <= storedOtp.expiresAt) || enteredOtp === '123456';
+    const isValid = (storedOtp && storedOtp.code === enteredOtp && Date.now() <= storedOtp.expiresAt)
+      || (process.env.NODE_ENV !== 'production' && enteredOtp === '123456');
 
     if (!isValid) {
       return res.status(400).json({ success: false, message: 'Invalid or expired OTP code. Please request a new code.' });
@@ -188,10 +206,10 @@ export const verifySuperAdminOTP = async (req, res, next) => {
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
+    setAuthCookie(res, 'superadmin', token, SUPERADMIN_TOKEN_TTL_MS);
 
     res.status(200).json({
       success: true,
-      token,
       admin: { id: adminId, username: adminUsername, role: adminRole },
     });
   } catch (error) {
@@ -356,16 +374,31 @@ export const createTenant = async (req, res, next) => {
  */
 export const listTenants = async (req, res, next) => {
   try {
-    const tenants = await safeDbLookup(
-      () => Business.findAll({
+    const { search = '' } = req.query;
+    const { page, limit, offset } = parsePagination(req.query);
+
+    const where = {};
+    if (search) {
+      where[Op.or] = [
+        { businessName: { [Op.like]: `%${search}%` } },
+        { slug: { [Op.like]: `%${search}%` } },
+        { adminEmail: { [Op.like]: `%${search}%` } },
+      ];
+    }
+
+    const { count: total, rows: tenants } = await safeDbLookup(
+      () => Business.findAndCountAll({
+        where,
         order: [['createdAt', 'DESC']],
         attributes: { exclude: ['smsCredentials'] },
+        offset,
+        limit,
       }),
-      [],
+      { count: 0, rows: [] },
       2500
     );
 
-    res.status(200).json({ success: true, tenants: tenants || [] });
+    res.status(200).json({ success: true, tenants: tenants || [], pagination: paginationMeta(total, { page, limit }) });
   } catch (error) {
     next(error);
   }

@@ -732,6 +732,53 @@ export function createModels(sequelize) {
       type: DataTypes.TEXT,
       defaultValue: 'Dhaka, Bangladesh',
     },
+    businessAddress: {
+      type: DataTypes.JSON,
+      allowNull: true,
+      defaultValue: null,
+    },
+    contactMethods: {
+      type: DataTypes.JSON,
+      defaultValue: [],
+    },
+    registrationNo: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    taxId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    establishedDate: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+    },
+    employeeRange: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    website: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    currency: {
+      type: DataTypes.STRING,
+      defaultValue: 'BDT',
+    },
+    timezone: {
+      type: DataTypes.STRING,
+      defaultValue: 'Asia/Dhaka',
+    },
+    logoMeta: {
+      type: DataTypes.JSON,
+      allowNull: true,
+      defaultValue: null,
+    },
+    heroBannerMeta: {
+      type: DataTypes.JSON,
+      allowNull: true,
+      defaultValue: null,
+    },
     businessHours: {
       type: DataTypes.JSON,
       defaultValue: {
@@ -740,6 +787,15 @@ export function createModels(sequelize) {
         weekendStart: '08:00 AM',
         weekendEnd: '11:00 PM',
       },
+    },
+    // Per-day-of-week schedule, additive alongside the flat weekday/weekend
+    // `businessHours` above (kept as-is for backward compat with existing
+    // rows/frontend) — matches business_backend/restaurant_backend's
+    // per-day BusinessHour model granularity.
+    businessHoursDetailed: {
+      type: DataTypes.JSON,
+      allowNull: true,
+      defaultValue: null,
     },
     pricing: {
       type: DataTypes.JSON,

@@ -132,6 +132,7 @@ export const createSettingsRepository = (models) => ({
 // ── Review Repository ──
 export const createReviewRepository = (models) => ({
   findAll: (where = {}, options = {}) => models.Review.findAll({ where, ...options }),
+  findAndCountAll: (where = {}, options = {}) => models.Review.findAndCountAll({ where, ...options }),
   findById: (id) => models.Review.findByPk(id),
   create: (data) => models.Review.create(data),
   update: (id, data) => models.Review.update(data, { where: { id } }),
@@ -141,6 +142,7 @@ export const createReviewRepository = (models) => ({
 // ── Gallery Repository ──
 export const createGalleryRepository = (models) => ({
   findAll: (where = {}, options = {}) => models.Gallery.findAll({ where, order: [['order', 'ASC'], ['createdAt', 'DESC']], ...options }),
+  findAndCountAll: (where = {}, options = {}) => models.Gallery.findAndCountAll({ where, order: [['order', 'ASC'], ['createdAt', 'DESC']], ...options }),
   findById: (id) => models.Gallery.findByPk(id),
   create: (data) => models.Gallery.create(data),
   update: (id, data) => models.Gallery.update(data, { where: { id } }),
@@ -152,6 +154,7 @@ export const createGalleryRepository = (models) => ({
 // ── Contact Repository ──
 export const createContactRepository = (models) => ({
   findAll: (where = {}, options = {}) => models.Contact.findAll({ where, ...options }),
+  findAndCountAll: (where = {}, options = {}) => models.Contact.findAndCountAll({ where, ...options }),
   findById: (id) => models.Contact.findByPk(id),
   create: (data) => models.Contact.create(data),
   update: (id, data) => models.Contact.update(data, { where: { id } }),
@@ -228,6 +231,7 @@ export const createSlotLockRepository = (models) => ({
 // ── Ground Repository ──
 export const createGroundRepository = (models) => ({
   findAll: (where = {}, options = {}) => models.Ground.findAll({ where, ...options }),
+  findAndCountAll: (where = {}, options = {}) => models.Ground.findAndCountAll({ where, ...options }),
   findById: (id) => models.Ground.findByPk(id),
   create: (data) => models.Ground.create(data),
   update: (id, data) => models.Ground.update(data, { where: { id } }),
@@ -302,6 +306,7 @@ export const createBookingRequestRepository = (models) => ({
 // ── BlockedCustomer Repository ──
 export const createBlockedCustomerRepository = (models) => ({
   findAll: (where = {}, options = {}) => models.BlockedCustomer.findAll({ where, ...options }),
+  findAndCountAll: (where = {}, options = {}) => models.BlockedCustomer.findAndCountAll({ where, ...options }),
   findById: (id) => models.BlockedCustomer.findByPk(id),
   findByPhone: (phone) => {
     const normalized = normalizePhone(phone);

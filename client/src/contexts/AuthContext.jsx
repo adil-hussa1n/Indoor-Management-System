@@ -1,25 +1,15 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import API, { registerAdminLogoutCallback, getTenantSlug } from '../services/api';
+import API, { registerAdminLogoutCallback } from '../services/api';
 
 const AuthContext = createContext(null);
-
-const parseJwt = (token) => {
-  try {
-    return JSON.parse(atob(token.split('.')[1]));
-  } catch (e) {
-    return null;
-  }
-};
 
 export const AuthProvider = ({ children }) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminUser, setAdminUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const getStorageKey = () => `adminToken_${getTenantSlug()}`;
-
   const logout = () => {
-    localStorage.removeItem(getStorageKey());
+    API.post('/auth/logout').catch(() => {});
     setIsAdmin(false);
     setAdminUser(null);
   };
@@ -29,45 +19,30 @@ export const AuthProvider = ({ children }) => {
       const res = await API.get('/auth/me');
       if (res.data.success) {
         setAdminUser(res.data.admin);
+        setIsAdmin(true);
+        return true;
       }
     } catch (err) {
-      console.warn('Failed to fetch admin profile:', err);
+      setIsAdmin(false);
+      setAdminUser(null);
     }
+    return false;
   };
 
   useEffect(() => {
-    registerAdminLogoutCallback(logout);
-    const checkAuth = async () => {
-      const token = localStorage.getItem(getStorageKey());
-      if (token) {
-        const decoded = parseJwt(token);
-        if (decoded && decoded.exp * 1000 > Date.now()) {
-          setIsAdmin(true);
-          await fetchAdminDetails();
-
-          const timeRemaining = decoded.exp * 1000 - Date.now();
-          const timer = setTimeout(() => {
-            console.log('Token expired. Logging out.');
-            logout();
-          }, timeRemaining);
-
-          setLoading(false);
-          return () => clearTimeout(timer);
-        } else {
-          logout();
-        }
-      }
-      setLoading(false);
-    };
-
-    checkAuth();
+    registerAdminLogoutCallback(() => {
+      setIsAdmin(false);
+      setAdminUser(null);
+    });
+    // No client-held token to inspect — the httpOnly cookie (if any) is
+    // sent automatically, so hydrate session state from the server.
+    fetchAdminDetails().finally(() => setLoading(false));
   }, []);
 
   const login = async (username, password) => {
     try {
       const response = await API.post('/auth/login', { username, password });
       if (response.data.success) {
-        localStorage.setItem(getStorageKey(), response.data.token);
         setIsAdmin(true);
         if (response.data.admin) {
           setAdminUser(response.data.admin);
@@ -101,7 +76,6 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await API.post('/auth/verify-otp', { usernameOrEmail, otp });
       if (response.data.success) {
-        localStorage.setItem(getStorageKey(), response.data.token);
         setIsAdmin(true);
         if (response.data.admin) {
           setAdminUser(response.data.admin);
