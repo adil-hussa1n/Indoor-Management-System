@@ -4,35 +4,9 @@ import sendSMS from '../utils/sms.js';
 import { normalizePhone } from '../utils/phone.js';
 import { sanitizeFields } from '../utils/sanitize.js';
 import { createAuditLog } from '../utils/auditLogger.js';
-
-// Helper to get local date and time in Bangladesh timezone (UTC+6)
-const getBangladeshDateTime = () => {
-  const formatter = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Dhaka',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false
-  });
-  
-  const parts = formatter.formatToParts(new Date());
-  const year = parts.find(p => p.type === 'year').value;
-  const month = parts.find(p => p.type === 'month').value;
-  const day = parts.find(p => p.type === 'day').value;
-  let hour = parts.find(p => p.type === 'hour').value;
-  const minute = parts.find(p => p.type === 'minute').value;
-  
-  if (hour === '24') {
-    hour = '00';
-  }
-  
-  return {
-    dateString: `${year}-${month}-${day}`,
-    timeString: `${hour}:${minute}`
-  };
-};
+import { sequelize } from '../config/db.js';
+import { parsePagination, paginationMeta } from '../utils/paginate.js';
+import { getDhakaDateTime as getBangladeshDateTime, dhakaDateOffset, dhakaMonthBounds } from '../utils/timezone.js';
 
 // Helper: format 24h time to 12h
 const fmt12 = (t) => {
@@ -149,7 +123,7 @@ const checkDoubleBooking = async (bookingRepo, dateStr, startTime, endTime, grou
 
 // Public Booking Creation (with transaction)
 export const createBooking = async (req, res, next) => {
-  const t = await req.tenantDb.transaction();
+  const t = await sequelize.transaction();
   const { bookingRepo, settingsRepo, slotRepo, statusHistoryRepo, blockedCustomerRepo, groundRepo } = req.repos;
   try {
     const validation = bookingSchema.safeParse(req.body);
@@ -200,6 +174,16 @@ export const createBooking = async (req, res, next) => {
         targetGroundId = firstGround[0].id;
       } else {
         targetGroundId = 1;
+      }
+    } else {
+      // Cross-business FK integrity (constitution Principle III): a client
+      // may not book a ground belonging to another business. groundRepo is
+      // already business-scoped (server/src/repositories/scope.js), so a
+      // ground from another business simply won't be found here.
+      const ground = await groundRepo.findById(targetGroundId);
+      if (!ground) {
+        await t.rollback();
+        return res.status(400).json({ success: false, message: 'groundId does not belong to your business' });
       }
     }
 
@@ -301,7 +285,8 @@ export const createBooking = async (req, res, next) => {
 export const getBookings = async (req, res, next) => {
   try {
     const { bookingRepo } = req.repos;
-    const { page = 1, limit = 10, search = '', status = '', sport = '', startDate = '', endDate = '', sort = '-createdAt', groundId } = req.query;
+    const { search = '', status = '', sport = '', startDate = '', endDate = '', sort = '-createdAt', groundId } = req.query;
+    const { page, limit, offset } = parsePagination(req.query);
 
     const where = {};
 
@@ -336,8 +321,8 @@ export const getBookings = async (req, res, next) => {
 
     const { count: total, rows: bookings } = await bookingRepo.findAndCountAll(where, {
       order: [[sortField, sortDir]],
-      offset: (parseInt(page) - 1) * parseInt(limit),
-      limit: parseInt(limit),
+      offset,
+      limit,
       include: [{ model: req.models.Ground, as: 'ground' }]
     });
 
@@ -351,8 +336,8 @@ export const getBookings = async (req, res, next) => {
       let suspiciousReason = '';
       
       if (plain.userId) {
-        const suspiciousRequest = await req.tenantDb.models.BookingRequest.findOne({
-          where: { userId: plain.userId, isSuspicious: true }
+        const suspiciousRequest = await req.models.BookingRequest.findOne({
+          where: { businessId: req.businessId, userId: plain.userId, isSuspicious: true }
         });
         if (suspiciousRequest) {
           hasSuspiciousHistory = true;
@@ -360,12 +345,13 @@ export const getBookings = async (req, res, next) => {
         }
       } else if (plain.phone) {
         const local = plain.phone.replace(/^88/, '');
-        const suspiciousRequest = await req.tenantDb.models.BookingRequest.findOne({
-          where: { isSuspicious: true },
+        const suspiciousRequest = await req.models.BookingRequest.findOne({
+          where: { businessId: req.businessId, isSuspicious: true },
           include: [{
-            model: req.tenantDb.models.Booking,
+            model: req.models.Booking,
             as: 'booking',
             where: {
+              businessId: req.businessId,
               phone: [plain.phone, local]
             }
           }]
@@ -384,12 +370,7 @@ export const getBookings = async (req, res, next) => {
     res.status(200).json({
       success: true,
       bookings: mapped,
-      pagination: {
-        total,
-        page: parseInt(page),
-        limit: parseInt(limit),
-        totalPages: Math.ceil(total / parseInt(limit)),
-      },
+      pagination: paginationMeta(total, { page, limit }),
     });
   } catch (error) {
     next(error);
@@ -430,7 +411,7 @@ export const getBookingById = async (req, res, next) => {
 };
 
 export const createManualBooking = async (req, res, next) => {
-  const t = await req.tenantDb.transaction();
+  const t = await sequelize.transaction();
   const { bookingRepo, settingsRepo, slotRepo, statusHistoryRepo, groundRepo } = req.repos;
   try {
     const validation = bookingSchema.safeParse(req.body);
@@ -452,6 +433,16 @@ export const createManualBooking = async (req, res, next) => {
         targetGroundId = firstGround[0].id;
       } else {
         targetGroundId = 1;
+      }
+    } else {
+      // Cross-business FK integrity (constitution Principle III): a client
+      // may not book a ground belonging to another business. groundRepo is
+      // already business-scoped (server/src/repositories/scope.js), so a
+      // ground from another business simply won't be found here.
+      const ground = await groundRepo.findById(targetGroundId);
+      if (!ground) {
+        await t.rollback();
+        return res.status(400).json({ success: false, message: 'groundId does not belong to your business' });
       }
     }
 
@@ -739,7 +730,7 @@ export const getDashboardData = async (req, res, next) => {
   try {
     const { bookingRepo, financeRepo } = req.repos;
     const { date, startDate, endDate, groundId } = req.query;
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getBangladeshDateTime().dateString;
 
     // Build optional ground filter
     const gFilter = {};
@@ -784,16 +775,11 @@ export const getDashboardData = async (req, res, next) => {
     });
     const selectedDateOccupancy = Math.round((selectedDateCount / (14 * diffDays)) * 100);
 
-    // Tomorrow
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+    // Tomorrow (Asia/Dhaka local)
+    const tomorrowStr = dhakaDateOffset(1);
 
-    // Month boundaries
-    const now = new Date();
-    const startOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-    const endOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+    // Month boundaries (Asia/Dhaka local)
+    const { startOfMonth, endOfMonth } = dhakaMonthBounds();
 
     const todayCount = await bookingRepo.countAll({ bookingDate: todayStr, ...gFilter });
     const tomorrowCount = await bookingRepo.countAll({ bookingDate: tomorrowStr, ...gFilter });
@@ -835,10 +821,8 @@ export const getDashboardData = async (req, res, next) => {
       bookingDate: { [Op.gte]: startOfMonth, [Op.lte]: endOfMonth },
     });
 
-    // Weekly stats
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0];
+    // Weekly stats (Asia/Dhaka local)
+    const sevenDaysAgoStr = dhakaDateOffset(-7);
     const weeklyStats = await bookingRepo.getGroupedByDate(sevenDaysAgoStr, todayStr);
     const weeklyMapped = weeklyStats.map(row => ({
       _id: row.bookingDate,

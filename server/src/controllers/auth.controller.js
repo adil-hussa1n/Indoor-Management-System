@@ -22,7 +22,7 @@ export const login = async (req, res, next) => {
     }
 
     const token = jwt.sign(
-      { id: admin.id, tenant: req.tenant.slug, type: 'admin' },
+      { id: admin.id, businessId: req.businessId, type: 'admin' },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
@@ -151,7 +151,7 @@ export const createStaff = async (req, res, next) => {
     // Dispatch Gmail SMTP Welcome Email to Staff Manager
     if (newStaff.email) {
       const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
-      const loginUrl = `${clientUrl}/admin/login?tenant=${req.tenant?.slug || ''}`;
+      const loginUrl = `${clientUrl}/admin/login?tenant=${req.business?.slug || ''}`;
       sendStaffWelcomeEmail({
         to: newStaff.email,
         name: newStaff.name,
@@ -311,13 +311,13 @@ export const sendAdminOTP = async (req, res, next) => {
     const recipientEmail = term.includes('@') ? term : (admin?.email || process.env.SMTP_USER || `${adminUsername}@daruntech.com`);
 
     const otp = String(Math.floor(100000 + Math.random() * 900000));
-    const key = `${req.tenant.slug}_${adminId}`;
+    const key = `${req.businessId}_${adminId}`;
     adminOtpStore.set(key, {
       code: otp,
       expiresAt: Date.now() + 10 * 60 * 1000,
     });
 
-    const venueName = req.tenant?.businessName || 'Indoor Sports Arena';
+    const venueName = req.business?.businessName || 'Indoor Sports Arena';
     const subject = `🔑 ${venueName} — Login Verification Code: ${otp}`;
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 24px; border: 1px solid #e4e4e7; border-radius: 16px; background-color: #ffffff; text-align: center;">
@@ -372,7 +372,7 @@ export const verifyAdminOTP = async (req, res, next) => {
     }
 
     const adminId = admin ? admin.id : '1';
-    const key = `${req.tenant.slug}_${adminId}`;
+    const key = `${req.businessId}_${adminId}`;
     const storedOtp = adminOtpStore.get(key);
     const enteredOtp = String(otp).trim();
     const isValid = (storedOtp && storedOtp.code === enteredOtp && Date.now() <= storedOtp.expiresAt) || enteredOtp === '123456';
@@ -384,7 +384,7 @@ export const verifyAdminOTP = async (req, res, next) => {
     if (storedOtp) adminOtpStore.delete(key);
 
     const token = jwt.sign(
-      { id: adminId, tenant: req.tenant.slug, type: 'admin' },
+      { id: adminId, businessId: req.businessId, type: 'admin' },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );

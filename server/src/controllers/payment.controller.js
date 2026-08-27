@@ -61,7 +61,7 @@ export const initiatePayment = async (req, res, next) => {
 
           if (grantData && grantData.id_token) {
             // 2. Create Payment
-            const callbackUrl = `${req.protocol}://${req.get('host')}/api/v1/payment/bkash/callback?bookingId=${booking.id}&tenant=${req.tenant?.slug || ''}`;
+            const callbackUrl = `${req.protocol}://${req.get('host')}/api/v1/payment/bkash/callback?bookingId=${booking.id}&tenant=${req.business?.slug || ''}`;
             const createRes = await fetch(`${baseUrl}/tokenized/bKash/checkout/create`, {
               method: 'POST',
               headers: {
@@ -97,7 +97,7 @@ export const initiatePayment = async (req, res, next) => {
       }
 
       // Automated bKash Merchant Instant Checkout Callback (for test / sandbox / demo mode)
-      const mockBkashUrl = `${req.protocol}://${req.get('host')}/api/v1/payment/bkash/callback?bookingId=${booking.id}&paymentID=BKASH_TEST_${Date.now()}&status=success&tenant=${req.tenant?.slug || ''}`;
+      const mockBkashUrl = `${req.protocol}://${req.get('host')}/api/v1/payment/bkash/callback?bookingId=${booking.id}&paymentID=BKASH_TEST_${Date.now()}&status=success&tenant=${req.business?.slug || ''}`;
       return res.status(200).json({
         success: true,
         gateway: 'bkash',
@@ -120,9 +120,9 @@ export const initiatePayment = async (req, res, next) => {
         total_amount: payableAmount.toString(),
         currency: 'BDT',
         tran_id: tranId,
-        success_url: `${req.protocol}://${req.get('host')}/api/v1/payment/sslcommerz/success?bookingId=${booking.id}&tenant=${req.tenant?.slug || ''}`,
-        fail_url: `${req.protocol}://${req.get('host')}/api/v1/payment/sslcommerz/fail?tenant=${req.tenant?.slug || ''}`,
-        cancel_url: `${req.protocol}://${req.get('host')}/api/v1/payment/sslcommerz/cancel?tenant=${req.tenant?.slug || ''}`,
+        success_url: `${req.protocol}://${req.get('host')}/api/v1/payment/sslcommerz/success?bookingId=${booking.id}&tenant=${req.business?.slug || ''}`,
+        fail_url: `${req.protocol}://${req.get('host')}/api/v1/payment/sslcommerz/fail?tenant=${req.business?.slug || ''}`,
+        cancel_url: `${req.protocol}://${req.get('host')}/api/v1/payment/sslcommerz/cancel?tenant=${req.business?.slug || ''}`,
         cus_name: booking.customerName || 'Customer',
         cus_email: booking.email || 'customer@example.com',
         cus_add1: 'Dhaka',
@@ -161,7 +161,7 @@ export const initiatePayment = async (req, res, next) => {
       }
 
       // Fallback mock gateway callback URL for sandbox testing
-      const mockGatewayUrl = `${req.protocol}://${req.get('host')}/api/v1/payment/sslcommerz/success?bookingId=${booking.id}&val_id=SSL_TEST_${Date.now()}&tran_id=${tranId}&tenant=${req.tenant?.slug || ''}`;
+      const mockGatewayUrl = `${req.protocol}://${req.get('host')}/api/v1/payment/sslcommerz/success?bookingId=${booking.id}&val_id=SSL_TEST_${Date.now()}&tran_id=${tranId}&tenant=${req.business?.slug || ''}`;
       return res.status(200).json({
         success: true,
         gateway: 'sslcommerz',
@@ -326,7 +326,7 @@ export const sslcommerzSuccess = async (req, res, next) => {
         }
 
         const clientBase = process.env.CLIENT_URL || 'http://localhost:5173';
-        return res.redirect(`${clientBase}/booking/success?bookingId=${booking.id}&tenant=${req.tenant?.slug || ''}`);
+        return res.redirect(`${clientBase}/booking/success?bookingId=${booking.id}&tenant=${req.business?.slug || ''}`);
       }
     }
 
@@ -343,7 +343,7 @@ export const bkashCallback = async (req, res, next) => {
     const { paymentID, status, bookingId } = req.query;
 
     const clientBase = process.env.CLIENT_URL || 'http://localhost:5173';
-    const tenantSlug = req.tenant?.slug || '';
+    const tenantSlug = req.business?.slug || '';
 
     if (status === 'cancel' || status === 'failure') {
       return res.redirect(`${clientBase}/booking?paymentError=cancelled&tenant=${tenantSlug}`);
@@ -456,10 +456,10 @@ export const bkashCallback = async (req, res, next) => {
 
 export const sslcommerzFail = async (req, res, next) => {
   const clientBase = process.env.CLIENT_URL || 'http://localhost:5173';
-  return res.redirect(`${clientBase}/booking?paymentError=failed&tenant=${req.tenant?.slug || ''}`);
+  return res.redirect(`${clientBase}/booking?paymentError=failed&tenant=${req.business?.slug || ''}`);
 };
 
 export const sslcommerzCancel = async (req, res, next) => {
   const clientBase = process.env.CLIENT_URL || 'http://localhost:5173';
-  return res.redirect(`${clientBase}/booking?paymentError=cancelled&tenant=${req.tenant?.slug || ''}`);
+  return res.redirect(`${clientBase}/booking?paymentError=cancelled&tenant=${req.business?.slug || ''}`);
 };

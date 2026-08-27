@@ -1,6 +1,6 @@
 import { uploadToCloudinary } from '../utils/cloudinary.js';
 import { createAuditLog } from '../utils/auditLogger.js';
-import { SubscriptionHistory } from '../models/master/index.js';
+import SubscriptionHistory from '../models/SubscriptionHistory.js';
 
 export const getSettings = async (req, res, next) => {
   try {
@@ -10,7 +10,7 @@ export const getSettings = async (req, res, next) => {
     plain._id = plain.id;
 
     // Attach subscription status metadata from tenant context
-    const tenant = req.tenant;
+    const tenant = req.business;
     if (tenant) {
       const now = new Date();
       const expiry = tenant.subscriptionExpiresAt ? new Date(tenant.subscriptionExpiresAt) : null;
@@ -194,7 +194,7 @@ export const getPublicInfo = async (req, res, next) => {
       paymentConfig: pConfig,
       discounts,
       maintenanceMode,
-      allowPaymentGateway: req.tenant ? req.tenant.allowPaymentGateway !== false : true,
+      allowPaymentGateway: req.business ? req.business.allowPaymentGateway !== false : true,
     };
     res.status(200).json({ success: true, settings: publicSettings });
   } catch (error) {

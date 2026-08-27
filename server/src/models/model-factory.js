@@ -1,23 +1,42 @@
 import { DataTypes } from 'sequelize';
+import Business from './Business.js';
 
 // ── Model Factory ──
-// Creates all tenant-scoped models bound to a specific Sequelize instance.
-// This allows the same model definitions to work across different tenant databases.
+// Defines every business-owned model against the single shared-database
+// Sequelize connection (server/src/config/db.js). Historically this factory
+// was invoked once per tenant-specific connection ("createModels(tenantDb)")
+// to re-define the same schema against a different physical database per
+// tenant; per constitution Principle I and
+// specs/001-shared-db-business-tenancy/plan.md (research.md Decision 1),
+// it is now invoked exactly once at application boot against the one
+// shared connection. The per-connection cache below is retained only so
+// re-importing this module (e.g. across test files) is idempotent — it is
+// no longer a tenant cache.
 
 const modelCache = new Map();
 
 /**
- * Define all tenant-scoped models on a given Sequelize instance.
- * Results are cached per instance to avoid re-definition.
- * @param {import('sequelize').Sequelize} sequelize - The tenant's Sequelize instance
+ * Define all business-owned models on the shared Sequelize instance.
+ * Idempotent: calling this more than once against the same connection
+ * returns the already-defined models rather than redefining them.
+ * @param {import('sequelize').Sequelize} sequelize - The shared connection
  * @returns {Object} All models + sequelize instance + sync function
  */
 export function createModels(sequelize) {
-  // Return cached models if already created for this connection
   const cacheKey = sequelize.config.database;
   if (modelCache.has(cacheKey)) {
     return modelCache.get(cacheKey);
   }
+
+  // Every businessId column below is `allowNull: false` with a `RESTRICT`
+  // FK to Business — verified end-to-end against a real MySQL instance via
+  // migrations/001-create-shared-schema.js + migrations/002-business-id-
+  // not-null-and-fk.js (plan.md Phases 1 and 3). Deploying this model
+  // definition against a production database that has NOT yet had its
+  // real per-tenant data backfilled (scripts/backfill-business-data.js) and
+  // migration 002 applied will fail loudly on any write — that is the
+  // correct, safe failure mode; do not weaken this back to `allowNull: true`
+  // as a workaround. Run the migrations in order first.
 
   // ── Admin Model ──
   const Admin = sequelize.define('Admin', {
@@ -26,10 +45,13 @@ export function createModels(sequelize) {
       primaryKey: true,
       autoIncrement: true,
     },
+    businessId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
     username: {
       type: DataTypes.STRING,
       allowNull: false,
-      unique: true,
       validate: { len: [3, 50] },
     },
     password: {
@@ -59,6 +81,10 @@ export function createModels(sequelize) {
   }, {
     tableName: 'admins',
     timestamps: true,
+    indexes: [
+      { fields: ['businessId'] },
+      { unique: true, fields: ['businessId', 'username'], name: 'idx_admins_unique_business_username' },
+    ],
   });
 
   // ── Booking Model ──
@@ -67,6 +93,10 @@ export function createModels(sequelize) {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
+    },
+    businessId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
     },
     uuid: {
       type: DataTypes.UUID,
@@ -175,6 +205,7 @@ export function createModels(sequelize) {
     paranoid: true,
     version: true,
     indexes: [
+      { fields: ['businessId'] },
       { fields: ['bookingDate'] },
       { fields: ['startTime'] },
       { fields: ['status'] },
@@ -190,6 +221,10 @@ export function createModels(sequelize) {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
+    },
+    businessId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
     },
     bookingId: {
       type: DataTypes.INTEGER,
@@ -215,6 +250,9 @@ export function createModels(sequelize) {
     tableName: 'booking_status_history',
     timestamps: true,
     updatedAt: false,
+    indexes: [
+      { fields: ['businessId'] },
+    ],
   });
 
   // ── BookingRequest Model ──
@@ -223,6 +261,10 @@ export function createModels(sequelize) {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
+    },
+    businessId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
     },
     uuid: {
       type: DataTypes.UUID,
@@ -269,6 +311,7 @@ export function createModels(sequelize) {
     tableName: 'booking_requests',
     timestamps: true,
     indexes: [
+      { fields: ['businessId'] },
       { fields: ['bookingId'] },
       { fields: ['userId'] },
       { fields: ['status'] },
@@ -281,6 +324,10 @@ export function createModels(sequelize) {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
+    },
+    businessId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
     },
     name: {
       type: DataTypes.STRING,
@@ -306,6 +353,9 @@ export function createModels(sequelize) {
   }, {
     tableName: 'grounds',
     timestamps: true,
+    indexes: [
+      { fields: ['businessId'] },
+    ],
   });
 
   // ── Slot Model ──
@@ -314,6 +364,10 @@ export function createModels(sequelize) {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
+    },
+    businessId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
     },
     startTime: {
       type: DataTypes.STRING,
@@ -350,13 +404,14 @@ export function createModels(sequelize) {
     tableName: 'slots',
     timestamps: true,
     indexes: [
+      { fields: ['businessId'] },
       { fields: ['dayOfWeek'] },
       { fields: ['specificDate'] },
       { fields: ['isActive'] },
       { fields: ['groundId'] },
       {
         unique: true,
-        fields: ['startTime', 'endTime', 'dayOfWeek', 'specificDate', 'groundId'],
+        fields: ['businessId', 'startTime', 'endTime', 'dayOfWeek', 'specificDate', 'groundId'],
         name: 'idx_slots_unique_time_ground'
       }
     ],
@@ -368,6 +423,10 @@ export function createModels(sequelize) {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
+    },
+    businessId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
     },
     bookingDate: {
       type: DataTypes.STRING,
@@ -397,17 +456,22 @@ export function createModels(sequelize) {
     tableName: 'slot_locks',
     timestamps: true,
     indexes: [
+      { fields: ['businessId'] },
       { fields: ['bookingDate', 'startTime', 'endTime', 'groundId'] },
       { fields: ['expiresAt'] },
     ],
   });
 
-  // ── User Model ──
+  // ── User Model (customer) ──
   const User = sequelize.define('User', {
     id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
+    },
+    businessId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
     },
     uuid: {
       type: DataTypes.UUID,
@@ -422,7 +486,6 @@ export function createModels(sequelize) {
     phone: {
       type: DataTypes.STRING,
       allowNull: false,
-      unique: true,
       validate: { len: [7, 20] },
     },
     email: {
@@ -441,7 +504,8 @@ export function createModels(sequelize) {
     tableName: 'users',
     timestamps: true,
     indexes: [
-      { fields: ['phone'], unique: true },
+      { fields: ['businessId'] },
+      { unique: true, fields: ['businessId', 'phone'], name: 'idx_users_unique_business_phone' },
     ],
   });
 
@@ -451,6 +515,10 @@ export function createModels(sequelize) {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
+    },
+    businessId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
     },
     phone: {
       type: DataTypes.STRING,
@@ -477,6 +545,7 @@ export function createModels(sequelize) {
     timestamps: true,
     updatedAt: false,
     indexes: [
+      { fields: ['businessId'] },
       { fields: ['phone'] },
       { fields: ['expiresAt'] },
     ],
@@ -488,6 +557,10 @@ export function createModels(sequelize) {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
+    },
+    businessId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
     },
     uuid: {
       type: DataTypes.UUID,
@@ -520,6 +593,9 @@ export function createModels(sequelize) {
     tableName: 'reviews',
     timestamps: true,
     paranoid: true,
+    indexes: [
+      { fields: ['businessId'] },
+    ],
   });
 
   // ── Gallery Model ──
@@ -528,6 +604,10 @@ export function createModels(sequelize) {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
+    },
+    businessId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
     },
     uuid: {
       type: DataTypes.UUID,
@@ -558,6 +638,9 @@ export function createModels(sequelize) {
   }, {
     tableName: 'gallery',
     timestamps: true,
+    indexes: [
+      { fields: ['businessId'] },
+    ],
   });
 
   // ── Contact Model ──
@@ -566,6 +649,10 @@ export function createModels(sequelize) {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
+    },
+    businessId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
     },
     name: {
       type: DataTypes.STRING,
@@ -595,6 +682,9 @@ export function createModels(sequelize) {
   }, {
     tableName: 'contacts',
     timestamps: true,
+    indexes: [
+      { fields: ['businessId'] },
+    ],
   });
 
   // ── Settings Model ──
@@ -603,6 +693,10 @@ export function createModels(sequelize) {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
+    },
+    businessId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
     },
     logo: {
       type: DataTypes.TEXT('long'),
@@ -750,6 +844,9 @@ export function createModels(sequelize) {
     tableName: 'settings',
     timestamps: true,
     version: true,
+    indexes: [
+      { fields: ['businessId'] },
+    ],
   });
 
   // ── BlockedCustomer Model ──
@@ -759,10 +856,13 @@ export function createModels(sequelize) {
       primaryKey: true,
       autoIncrement: true,
     },
+    businessId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
     phone: {
       type: DataTypes.STRING,
       allowNull: false,
-      unique: true,
       validate: { len: [7, 20] },
     },
     reason: {
@@ -781,7 +881,8 @@ export function createModels(sequelize) {
     tableName: 'blocked_customers',
     timestamps: true,
     indexes: [
-      { fields: ['phone'], unique: true },
+      { fields: ['businessId'] },
+      { unique: true, fields: ['businessId', 'phone'], name: 'idx_blocked_customers_unique_business_phone' },
     ],
   });
 
@@ -791,6 +892,10 @@ export function createModels(sequelize) {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
+    },
+    businessId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
     },
     userId: {
       type: DataTypes.INTEGER,
@@ -836,6 +941,9 @@ export function createModels(sequelize) {
     tableName: 'audit_logs',
     timestamps: true,
     updatedAt: false,
+    indexes: [
+      { fields: ['businessId'] },
+    ],
   });
 
   // ── FinanceCategory Model ──
@@ -844,6 +952,10 @@ export function createModels(sequelize) {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
+    },
+    businessId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
     },
     name: {
       type: DataTypes.STRING,
@@ -860,6 +972,9 @@ export function createModels(sequelize) {
   }, {
     tableName: 'finance_categories',
     timestamps: true,
+    indexes: [
+      { fields: ['businessId'] },
+    ],
   });
 
   // ── FinanceEntry Model ──
@@ -868,6 +983,10 @@ export function createModels(sequelize) {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
+    },
+    businessId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
     },
     type: {
       type: DataTypes.ENUM('investment', 'expense'),
@@ -909,9 +1028,24 @@ export function createModels(sequelize) {
   }, {
     tableName: 'finance_entries',
     timestamps: true,
+    indexes: [
+      { fields: ['businessId'] },
+    ],
   });
 
   // ── Associations ──
+  for (const model of [
+    Admin, Booking, BookingStatusHistory, BookingRequest, Ground, Slot,
+    SlotLock, User, OTP, Review, Gallery, Contact, Settings, AuditLog,
+    BlockedCustomer, FinanceCategory, FinanceEntry,
+  ]) {
+    // onDelete: 'RESTRICT' (not Sequelize's default 'SET NULL') — a business
+    // must be explicitly deactivated (Business.isActive), never silently
+    // orphan its rows by cascading a null into businessId; this also keeps
+    // the FK compatible with businessId being NOT NULL (plan.md Phase 3).
+    model.belongsTo(Business, { foreignKey: 'businessId', as: 'business', onDelete: 'RESTRICT', onUpdate: 'CASCADE' });
+  }
+
   Booking.hasMany(BookingStatusHistory, { foreignKey: 'bookingId', as: 'statusHistory' });
   BookingStatusHistory.belongsTo(Booking, { foreignKey: 'bookingId', as: 'booking' });
 
@@ -939,19 +1073,21 @@ export function createModels(sequelize) {
   Ground.hasMany(FinanceEntry, { foreignKey: 'groundId', as: 'financeEntries' });
   FinanceEntry.belongsTo(Ground, { foreignKey: 'groundId', as: 'ground' });
 
-  // ── Sync function ──
+  // ── Sync function (local-dev convenience only — production applies
+  // server/migrations/ instead, per plan.md's phased rollout) ──
   const syncDatabase = async () => {
     try {
       await sequelize.sync({ alter: false });
-      console.log(`Tenant DB [${sequelize.config.database}] synced successfully`);
+      console.log(`Database [${sequelize.config.database}] synced successfully`);
     } catch (error) {
-      console.error(`Error syncing tenant DB [${sequelize.config.database}]:`, error.message);
+      console.error(`Error syncing database [${sequelize.config.database}]:`, error.message);
       throw error;
     }
   };
 
   const models = {
     sequelize,
+    Business,
     Admin,
     Ground,
     Booking,
@@ -977,7 +1113,7 @@ export function createModels(sequelize) {
 }
 
 /**
- * Clear cached models for a tenant (e.g., when connection is closed).
+ * Clear cached models (e.g. between test files against a fresh connection).
  * @param {string} dbName
  */
 export function clearModelCache(dbName) {

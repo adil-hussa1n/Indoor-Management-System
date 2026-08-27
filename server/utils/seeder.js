@@ -1,7 +1,8 @@
 import 'dotenv/config';
 import bcrypt from 'bcryptjs';
-import { masterSequelize, Tenant, SuperAdmin, syncMasterDatabase } from '../src/models/master/index.js';
-import { getTenantConnection } from '../src/config/sequelize.js';
+import { sequelize } from '../src/config/db.js';
+import Business from '../src/models/Business.js';
+import SuperAdmin from '../src/models/SuperAdmin.js';
 import { createModels } from '../src/models/model-factory.js';
 
 const defaultSlots = [
@@ -37,16 +38,24 @@ const mockContacts = [
 
 const seedDB = async () => {
   try {
-    console.log('--- STARTING DATABASE SEEDING ---');
+    console.log('--- STARTING DATABASE SEEDING (shared database) ---');
 
-    // 1. Sync the Master Database
-    console.log('Connecting to master database...');
-    await syncMasterDatabase();
-    
-    // Clear master tables
-    console.log('Clearing master tables...');
-    await SuperAdmin.destroy({ where: {} });
-    await Tenant.destroy({ where: {} });
+    await sequelize.authenticate();
+    const models = createModels(sequelize);
+    await models.syncDatabase();
+
+    // Clear tables (dev-only destructive reset)
+    console.log('Clearing tables...');
+    await SuperAdmin.destroy({ where: {}, truncate: true });
+    await models.BookingStatusHistory.destroy({ where: {}, force: true });
+    await models.Booking.destroy({ where: {}, force: true });
+    await models.Contact.destroy({ where: {}, force: true });
+    await models.Review.destroy({ where: {}, force: true });
+    await models.Slot.destroy({ where: {}, force: true });
+    await models.Gallery.destroy({ where: {}, force: true });
+    await models.Settings.destroy({ where: {}, force: true });
+    await models.Admin.destroy({ where: {}, force: true });
+    await Business.destroy({ where: {}, truncate: true, cascade: true });
 
     // Seed Super Admin
     const superAdminPassword = await bcrypt.hash('superadminpassword123', 10);
@@ -57,57 +66,55 @@ const seedDB = async () => {
     });
     console.log('✅ Super Admin seeded: superadmin / superadminpassword123');
 
-    // 2. Provision and Seed default client tenant: apexarena
+    // Provision default demo business: apexarena (a Business row, not a new database)
     const slug = 'apexarena';
-    const dbName = `db_${slug}`;
-    console.log(`\n--- PROVISIONING TENANT: ${slug} (${dbName}) ---`);
+    console.log(`\n--- PROVISIONING BUSINESS: ${slug} ---`);
 
-    // Drop and Recreate database
-    await masterSequelize.query(`DROP DATABASE IF EXISTS \`${dbName}\`;`);
-    await masterSequelize.query(`CREATE DATABASE \`${dbName}\`;`);
-    console.log(`✅ Database ${dbName} created`);
-
-    // Register in Tenant table
-    await Tenant.create({
+    const business = await Business.create({
       slug,
       businessName: 'Apex Indoor Sports Arena',
-      dbName,
       adminEmail: 'admin@apexarena.com',
       adminPhone: '+880 1712-345678',
       plan: 'pro',
     });
-    console.log(`✅ Tenant record registered in master table`);
+    console.log(`✅ Business row created (id=${business.id})`);
 
-    // Connect to tenant DB & Sync
-    const tenantDb = getTenantConnection(dbName);
-    const tenantModels = createModels(tenantDb);
-    await tenantModels.syncDatabase();
-    console.log(`✅ Tenant database tables synced`);
+    const businessId = business.id;
 
-    // Seed Tenant Admin (admin / adminpassword123)
+    // Seed Business Admin (admin / adminpassword123)
     const adminPassword = await bcrypt.hash('adminpassword123', 10);
-    await tenantModels.Admin.create({
+    await models.Admin.create({
+      businessId,
       username: 'admin',
       password: adminPassword,
       role: 'admin',
     });
-    console.log('✅ Tenant Admin seeded: admin / adminpassword123');
+    console.log('✅ Business Admin seeded: admin / adminpassword123');
+
+    // Seed default ground
+    const ground = await models.Ground.create({
+      businessId,
+      name: 'Main Arena',
+      sport: 'Football',
+      isActive: true,
+    });
 
     // Seed Default 360° image
-    await tenantModels.Gallery.create({
+    await models.Gallery.create({
+      businessId,
       imageUrl: 'https://pannellum.org/images/alma.jpg',
-      publicId: 'default_360_panorama',
       is360: true,
       mediaType: 'panorama',
     });
     console.log('✅ Default 360° gallery image seeded');
 
     // Seed Slots
-    await tenantModels.Slot.bulkCreate(defaultSlots);
+    await models.Slot.bulkCreate(defaultSlots.map((s) => ({ ...s, businessId, groundId: ground.id })));
     console.log('✅ Default slots seeded');
 
     // Seed Settings
-    await tenantModels.Settings.create({
+    await models.Settings.create({
+      businessId,
       businessName: 'Apex Indoor Sports Arena',
       contactEmail: 'info@apexindoorsports.com',
       contactPhone: '+880 1712-345678',
@@ -130,8 +137,8 @@ const seedDB = async () => {
     console.log('✅ Default Settings seeded');
 
     // Seed Reviews and Contacts
-    await tenantModels.Review.bulkCreate(mockReviews);
-    await tenantModels.Contact.bulkCreate(mockContacts);
+    await models.Review.bulkCreate(mockReviews.map((r) => ({ ...r, businessId })));
+    await models.Contact.bulkCreate(mockContacts.map((c) => ({ ...c, businessId })));
     console.log('✅ Mock reviews and contacts seeded');
 
     // Seed Bookings
@@ -233,17 +240,18 @@ const seedDB = async () => {
       }
     ];
 
-    const bookings = await tenantModels.Booking.bulkCreate(mockBookings);
-    
+    const bookings = await models.Booking.bulkCreate(mockBookings.map((b) => ({ ...b, businessId, groundId: ground.id })));
+
     // Seed status histories
     const histories = bookings.map(b => ({
+      businessId,
       bookingId: b.id,
       previousStatus: null,
       newStatus: b.status,
       changedBy: 'system',
       reason: 'Seeded booking',
     }));
-    await tenantModels.BookingStatusHistory.bulkCreate(histories);
+    await models.BookingStatusHistory.bulkCreate(histories);
     console.log('✅ Mock bookings and status histories seeded');
 
     console.log('\n--- SEEDING COMPLETED SUCCESSFULLY ---');

@@ -1,34 +1,6 @@
 import { Op } from 'sequelize';
 import { createAuditLog } from '../utils/auditLogger.js';
-
-// Helper to get local date and time in Bangladesh timezone (UTC+6)
-const getBangladeshDateTime = () => {
-  const formatter = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Dhaka',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false
-  });
-  
-  const parts = formatter.formatToParts(new Date());
-  const year = parts.find(p => p.type === 'year').value;
-  const month = parts.find(p => p.type === 'month').value;
-  const day = parts.find(p => p.type === 'day').value;
-  let hour = parts.find(p => p.type === 'hour').value;
-  const minute = parts.find(p => p.type === 'minute').value;
-  
-  if (hour === '24') {
-    hour = '00';
-  }
-  
-  return {
-    dateString: `${year}-${month}-${day}`,
-    timeString: `${hour}:${minute}`
-  };
-};
+import { getDhakaDateTime as getBangladeshDateTime } from '../utils/timezone.js';
 
 const getSlotPriceForDate = (settings, dateString, startTime, slotRateType) => {
   const parts = dateString.split('-');
@@ -246,6 +218,11 @@ export const createSlot = async (req, res, next) => {
       } else {
         targetGroundId = 1;
       }
+    } else {
+      const ground = await groundRepo.findById(targetGroundId);
+      if (!ground) {
+        return res.status(400).json({ success: false, message: 'groundId does not belong to your business' });
+      }
     }
 
     const targetDayOfWeek = dayOfWeek !== undefined ? Number(dayOfWeek) : -1;
@@ -297,13 +274,20 @@ export const createSlot = async (req, res, next) => {
 
 export const updateSlot = async (req, res, next) => {
   try {
-    const { slotRepo } = req.repos;
+    const { slotRepo, groundRepo } = req.repos;
     const { id } = req.params;
     const { startTime, endTime, isActive, dayOfWeek, specificDate, rateType, groundId } = req.body;
 
     const slot = await slotRepo.findById(id);
     if (!slot) {
       return res.status(404).json({ success: false, message: 'Slot not found' });
+    }
+
+    if (groundId !== undefined) {
+      const ground = await groundRepo.findById(Number(groundId));
+      if (!ground) {
+        return res.status(400).json({ success: false, message: 'groundId does not belong to your business' });
+      }
     }
 
     const oldValues = slot.toJSON ? slot.toJSON() : slot;

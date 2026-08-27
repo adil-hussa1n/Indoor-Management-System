@@ -24,8 +24,9 @@ import financeRoutes from './src/routes/finance.routes.js';
 
 import { errorHandler } from './src/middlewares/errorHandler.js';
 import { apiLimiter, bookingLimiter, loginLimiter, contactLimiter, otpLimiter, otpVerifyLimiter } from './src/middlewares/rateLimiter.js';
-import { tenantMiddleware } from './src/middlewares/tenant.js';
+import { businessContext } from './src/middlewares/businessContext.js';
 import { injectRepositories } from './src/middlewares/injectRepositories.js';
+import { identityGuard } from './src/middlewares/identityGuard.js';
 
 dotenv.config();
 
@@ -75,12 +76,16 @@ if (process.env.NODE_ENV !== 'production') {
 // Versioned APIs (v1)
 const apiPrefix = '/api/v1';
 
-// ── Super Admin Routes (no tenant middleware needed) ──
+// ── Super Admin Routes (platform-wide, no business context needed) ──
 app.use('/api/master', tenantRoutes);
 
-// ── Tenant-scoped Routes ──
-// All /api/v1/* routes go through tenant middleware + repository injection
-app.use(`${apiPrefix}`, tenantMiddleware, injectRepositories);
+// ── Business-scoped Routes ──
+// All /api/v1/* routes resolve req.businessId via businessContext — from
+// the JWT when a token is present (every authenticated route), or from the
+// hostname/X-Tenant-Slug header/?tenant= param when it isn't (login, and
+// public storefront routes — constitution Principle V) — then get scoped
+// repositories injected. See server/src/middlewares/businessContext.js.
+app.use(`${apiPrefix}`, businessContext, injectRepositories, identityGuard);
 
 // Specialized Rate Limiters per route
 app.use(`${apiPrefix}/booking`, bookingLimiter);

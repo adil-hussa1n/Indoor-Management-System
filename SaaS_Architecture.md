@@ -1,169 +1,125 @@
-# Subdomain Routing & Multi-Tenant Architecture
+# Shared-Database, JWT-Derived Business Tenancy
 
-This document provides a detailed technical explanation of how wildcard subdomains work in this application, and how it handles routing and database isolation for multiple businesses.
+This document explains how this application scopes data to a specific business (tenant) and how routing/authentication work together to keep every business's data isolated.
+
+> This replaces the prior per-tenant-database, subdomain-routed architecture. The authoritative source of truth is [`.specify/memory/constitution.md`](.specify/memory/constitution.md) (Principle I) and [`specs/001-shared-db-business-tenancy/`](specs/001-shared-db-business-tenancy/) — this document is a narrative walkthrough, not the spec itself.
 
 ---
 
-## 🛠️ High-Level Request Flow
-
-When a user visits a custom subdomain on your platform, the request travels through three main layers:
+## 🏗️ High-Level Request Flow
 
 ```mermaid
 graph TD
-    A[Visitor Browser] -->|DNS Resolution: *.daruntech.com| B[Nginx Server on VPS]
-    B -->|Proxy Headers: Host/X-Tenant-Slug| C[React Frontend SPA]
-    B -->|Proxy API Request| D[Node.js + Express Backend]
-    D -->|Look up Tenant by Slug| E[(Master Database)]
-    D -->|Initialize connection for tenant| F[(Tenant Database: db_cagindoor)]
-    D -->|Initialize connection for tenant| G[(Tenant Database: db_dbox)]
+    A[Visitor Browser] -->|Authenticated: Authorization Bearer JWT| B[Express App]
+    A -->|Unauthenticated: hostname / X-Tenant-Slug| B
+    B --> C[businessContext middleware]
+    C -->|JWT present| D[Decode businessId claim]
+    C -->|No JWT| E[Resolve slug via hostname/header — public routes only]
+    D --> F[req.businessId]
+    E --> F
+    F --> G[injectRepositories: businessId-scoped repos]
+    G --> H[(Single Shared MySQL Database)]
 ```
 
 ---
 
-## 📡 1. The DNS Layer (Domain Name System)
-To support dynamic client subdomains (e.g., `dbox.daruntech.com`, `cagindoor.daruntech.com`, `anyname.daruntech.com`) without adding new server configurations for each client, we use **Wildcard DNS**.
+## 📡 1. Tenant/Business Resolution
 
-* **DNS Configuration**:
-  * **Record Type**: `A`
-  * **Host**: `*` (asterisk acts as a wildcard match for any subdomain)
-  * **Value / IP**: `YOUR_VPS_IP` (e.g. `123.45.67.89`)
-  * **TTL**: `3600` (1 hour)
+There is exactly **one** mechanism that establishes `req.businessId` for the rest of the request: `server/src/middlewares/businessContext.js`.
 
-Any request matching `*.daruntech.com` is automatically resolved and routed by DNS servers to your VPS server.
+1. **`Authorization: Bearer <jwt>` present** — this is every route reachable after login. The JWT's `businessId` claim is the sole source of truth. Hostname, `X-Tenant-Slug`, and `?tenant=` are never consulted once a token is present.
+2. **No token present** — this is the login endpoints and the public, unauthenticated storefront (branding/availability lookup for an anonymous visitor). The business is resolved from the request hostname's subdomain (production) or the `X-Tenant-Slug` header / `?tenant=` query param (local dev, matching the old dev-fallback behavior).
 
----
+A token issued under the old scheme (carrying `tenant: <slug>`, no `businessId` claim) is rejected outright — the holder must log in again.
 
-## ⚙️ 2. The Nginx Layer (Web Server & Proxy)
-Once traffic arrives at the VPS, Nginx intercepts the HTTP request. We configure Nginx using a regular expression server name rule inside `client/nginx.conf` or a global Nginx block:
-
-```nginx
-server {
-    listen 80;
-    server_name ~^(?<tenantSlug>.+)\.daruntech\.com$;
-
-    # 1. Serve React Frontend SPA
-    location / {
-        root /usr/share/nginx/html;
-        try_files $uri /index.html;
-    }
-
-    # 2. Proxy API requests to Node Server
-    location /api/ {
-        proxy_pass http://server:5000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Tenant-Slug $tenantSlug; # Forward slug explicitly to backend
-    }
+```js
+// server/src/middlewares/businessContext.js (simplified)
+if (bearerTokenPresent) {
+  const decoded = jwt.verify(token, JWT_SECRET);
+  if (!decoded.businessId) return res.status(401).json(...); // old-shape token
+  req.businessId = decoded.businessId;
+} else {
+  const slug = extractSlugFromHostnameOrHeader(req);
+  const business = await Business.findOne({ where: { slug, isActive: true } });
+  req.businessId = business.id;
 }
 ```
 
-* Nginx extracts the subdomain slug (e.g. `cagindoor` from `cagindoor.daruntech.com`) and puts it into the variables.
-* It forwards the request to our backend server, injecting the `X-Tenant-Slug` header so the API server knows which tenant is making the request.
-
 ---
 
-## ⚛️ 3. The React Frontend Layer
-The React Single Page Application (SPA) is dynamically customized based on the active URL:
+## 🔌 2. The Database Layer (Single Shared Database)
 
-1. **Subdomain Identification**: On initial mount, React evaluates the hostname:
-   ```javascript
-   // client/src/services/api.js
-   export const getTenantSlug = () => {
-     const hostname = window.location.hostname;
-     const parts = hostname.split('.');
-     if (parts.length >= 3) {
-       return parts[0]; // Returns "cagindoor" from cagindoor.daruntech.com
-     }
-     // Local development fallback (?tenant=cagindoor or header injection)
-     return new URLSearchParams(window.location.search).get('tenant') || 'dbox';
-   };
-   ```
-2. **Dynamic UI/Settings Rendering**:
-   React requests public parameters using `/api/v1/info` with the tenant slug attached. The backend returns customized parameters (Business Name, Colors, Hero Banner media type, logo url).
-   * React caches these settings in `localStorage` to prevent layout flashing.
-   * If a user visits `cagindoor.daruntech.com`, they see the Cage logo and Futsal courts.
-   * If a user visits `dbox.daruntech.com`, they see the D-Box branding and Cricket net options.
+There is one MySQL database for the whole service (`server/src/config/db.js`). Every business-owned table — `bookings`, `grounds`, `slots`, `admins`, `finance_entries`, etc. — carries a required `businessId` column with a `RESTRICT` foreign key to `businesses.id`. The `businesses` table (`server/src/models/Business.js`) replaces the old master-DB `Tenant` registry as an ordinary table in this same database.
 
----
+### Scoped Repositories
 
-## 🔌 4. The Backend Layer (Database Isolation)
-The backend routes database queries to isolated containers per business using a Master/Tenant pattern.
+Controllers never write a `businessId` filter by hand. `server/src/repositories/scope.js`'s `withBusinessScope()` wraps every repository method (`server/src/repositories/repository-factory.js`) so that:
 
-### The Master Schema (`indoor_master_db`)
-Maintains a registry of all active tenants, subscription timelines, and SMS credentials.
-```sql
-CREATE TABLE Tenants (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  businessName VARCHAR(255) NOT NULL,
-  slug VARCHAR(255) UNIQUE NOT NULL, -- e.g. "cagindoor"
-  dbName VARCHAR(255) UNIQUE NOT NULL, -- e.g. "db_cagindoor"
-  allowPaymentGateway BOOLEAN DEFAULT TRUE, -- Super Admin master switch
-  isActive BOOLEAN DEFAULT TRUE,
-  subscriptionExpiresAt DATETIME,
-  smsCredentials JSON
-);
+- Every `find*`/`count*`/`sum*`/`get*` call has `{ businessId }` merged into its `where` clause, **and** its result is independently checked to actually belong to that business before being returned (defense in depth — a second, independent guarantee beyond the query filter).
+- Every `create*` call has `{ businessId }` merged into the data being inserted.
+
+```js
+// server/src/middlewares/injectRepositories.js
+req.repos = withBusinessScope(createRepositories(models), req.businessId);
 ```
 
-### Request Context Switcher Middleware (tenantMiddleware)
-For every incoming API call:
-1. **Extract Slug**: The backend reads the subdomain (or the fallback header `X-Tenant-Slug`).
-2. **Registry Check**: Looks up the tenant database registry inside the master schema.
-   * If not found or `isActive = false`, it returns `404 Tenant Not Found`.
-   * If the current system time is past `subscriptionExpiresAt`, it returns `403 Tenant Suspended (Subscription Expired)`.
-3. **Sequelize Connection Injection**: It requests a cached database connection for `dbName` or opens a new one using a dynamic connection manager.
-4. **Instantiate Repositories**: The server binds models to the connection and attaches them to `req.repos` and `req.models`.
-   ```javascript
-   // Controllers simply use the injected models
-   const bookings = await req.repos.bookingRepo.findAll();
-   ```
-   This ensures that no code queries data from another business.
+### Identifier Guard
+
+`server/src/middlewares/identityGuard.js` rejects (`400`) any `POST`/`PUT`/`PATCH` request body containing `businessId`, `tenantId`, `adminId`, or `userId` — these are never client-suppliable, only ever derived server-side from the JWT.
+
+### Cross-Business FK Validation
+
+Where one business-owned record references another (e.g. a `Booking`'s `groundId`), the referenced row is looked up through the same business-scoped repository before being accepted — a `groundId` belonging to a different business simply won't be found, and the write is rejected `400`.
 
 ---
 
-## 🚀 5. How It Works When Creating a New Client
+## 🔑 3. Session Isolation & JWT Claims
 
-When a new business owner signs up and gets provisioned in the Super Admin dashboard:
+| | Before | Now |
+|---|---|---|
+| Admin/manager login | `{ id, tenant: <slug>, type: 'admin' }` | `{ id, businessId, type: 'admin' }` |
+| Customer OTP login | `{ id, tenant: <slug>, type: 'user' }` | `{ id, businessId, type: 'user' }` |
+| Replay check | `decoded.tenant === req.tenant.slug` | `decoded.businessId === req.businessId` |
 
-1. **Information Seeding**: Super Admin fills in the form: Business Name `Apex Arena` and subdomain `apexarena`.
-2. **Master Registry Write**: Super Admin inserts client info into the master database:
-   ```json
-   {
-     "businessName": "Apex Arena",
-     "slug": "apexarena",
-     "dbName": "db_apexarena"
-   }
-   ```
-3. **Database Creation Query**: The Express backend issues an admin DDL command:
-   ```sql
-   CREATE DATABASE db_apexarena;
-   ```
-4. **Table Migrations & Compilation**: The connection pool initializes `db_apexarena` and runs the schema compiler (`models.syncDatabase()`), creating all relational tables (`Bookings`, `Users`, `Slots`, `Settings`, `StatusHistories`, `AuditLogs`, `Grounds`, `FinanceCategories`, `FinanceEntries`). Auto-migrations ensure schema column additions (such as `discounts` and `maintenanceMode` JSON on `Settings`, `groundId` on `Bookings`, or `groundId` on `FinanceEntries`) apply seamlessly without manual DB interventions.
-5. **Initial Seeding**: The system automatically inserts standard shifts pricing, provisions active playing courts, initializes discount rule lists, provisions their custom tenant admin credentials (`admin` / `adminpassword123`), and uploads default placeholders.
-6. **Website Ready**: The business site is immediately active. Visiting `apexarena.daruntech.com` connects dynamically to the fresh database.
+`protect`/`protectUser` middleware (`server/src/middlewares/auth.js`) consume the identity already decoded by `businessContext`, then look up the admin/user via the business-scoped repositories.
 
 ---
 
-## 🛡️ 6. Role-Based Access Control (RBAC) & Multi-Manager Security
+## 🚀 4. Provisioning a New Business (Super Admin)
 
-The platform supports **Multi-Manager Accounts** per tenant space with granular feature restriction middleware:
+Provisioning no longer creates a physical database. `POST /api/master/tenants` (`server/src/controllers/tenant.controller.js`) now:
+
+1. Creates one `Business` row in the shared database.
+2. Creates that business's first `Admin` row (`businessId` set to the new business).
+3. Creates default `Settings` for the business.
+4. Records initial `SubscriptionHistory`.
+
+No `CREATE DATABASE`, no per-tenant schema sync — the new business is immediately usable.
+
+---
+
+## 🛡️ 5. Role-Based Access Control (RBAC) & Multi-Manager Security
+
+Unchanged in behavior from the prior architecture, and preserved as a strength of this product relative to its sibling repos in this workspace (`business_backend`, `restaurant_backend` have no equivalent RBAC layer):
 
 ```mermaid
 graph TD
-    A[Primary Tenant Owner] -->|Access /admin/settings?tab=staff| B[Staff & Manager Access Control UI]
-    B -->|Configures 12-Module Permission Matrix| C[(admins Table in Tenant Database)]
-    D[Staff Manager Login] -->|Receives JWT with role & permissions| E[Express API Middleware]
+    A[Primary Business Owner] -->|Access /admin/settings?tab=staff| B[Staff & Manager Access Control UI]
+    B -->|Configures 12-Module Permission Matrix| C[(admins table, scoped by businessId)]
+    D[Staff Manager Login] -->|Receives JWT with businessId + role + permissions| E[Express API Middleware]
     E -->|Check req.admin.role === 'admin'| F[Allow Unrestricted Access]
-    E -->|Check req.admin.permissions[key]| G[Grant or Deny Access]
+    E -->|Check req.admin.permissions key| G[Grant or Deny Access]
 ```
 
-### RBAC Authorization Rules:
-1. **Primary Business Owner (`role = 'admin'`)**:
-   - Holds full unrestricted access across all admin portal modules.
-   - Primary owner credentials (`username`, `password`) are protected against accidental lockouts/edits inside the staff menu.
-   - Only the primary owner can access `/api/v1/auth/staff` to create, edit, or delete manager accounts.
-2. **Staff Manager (`role = 'manager'`)**:
-   - Access is restricted to the specific feature keys toggled by the primary admin (`bookings`, `calendar`, `finances`, `slots`, `grounds`, `requests`, `blacklist`, `reviews`, `messages`, `gallery`, `settings`, `auditLogs`).
-   - UI navigation tabs filter dynamically based on `user.permissions` in `AdminLayout.jsx`.
-   - Middleware `requirePermission(permissionKey)` enforces permissions on the backend, returning `403 Forbidden` if an unauthorized API call is attempted.
+Every `Admin` row (including managers) is itself scoped by `businessId` — a manager account created under one business can never authenticate against or act on another business's data, regardless of role or permission grants (verified in `server/tests/tenant-isolation.test.js`).
 
+### RBAC Authorization Rules
+
+1. **Primary Business Owner (`role = 'admin'`)**: unrestricted access across all admin portal modules for their own business; only they can manage staff accounts.
+2. **Staff Manager (`role = 'manager'`)**: restricted to the specific feature keys toggled by the primary admin (`bookings`, `calendar`, `finances`, `slots`, `grounds`, `requests`, `blacklist`, `reviews`, `messages`, `gallery`, `settings`, `auditLogs`); enforced server-side by `requirePermission(permissionKey)`.
+
+---
+
+## 📖 Migrating Existing Production Data
+
+If you are cutting an existing deployment over from the old per-tenant-database architecture, see `specs/001-shared-db-business-tenancy/quickstart.md` and the migration/backfill scripts under `server/migrations/` and `server/scripts/` — this is a live-data operation and must be run deliberately, not inferred from this document.
