@@ -1,6 +1,8 @@
+import { Op } from 'sequelize';
 import { contactSchema } from '../../validators/contact.validator.js';
 import { sanitizeFields } from '../utils/sanitize.js';
 import { createAuditLog } from '../utils/auditLogger.js';
+import { parsePagination, paginationMeta } from '../utils/paginate.js';
 
 export const submitContact = async (req, res, next) => {
   try {
@@ -34,9 +36,20 @@ export const submitContact = async (req, res, next) => {
 export const getMessages = async (req, res, next) => {
   try {
     const { contactRepo } = req.repos;
-    const messages = await contactRepo.findAll();
+    const { search = '' } = req.query;
+    const { page, limit, offset } = parsePagination(req.query);
+
+    const where = {};
+    if (search) {
+      where[Op.or] = [
+        { name: { [Op.like]: `%${search}%` } },
+        { email: { [Op.like]: `%${search}%` } },
+      ];
+    }
+
+    const { count: total, rows: messages } = await contactRepo.findAndCountAll(where, { offset, limit });
     const mapped = messages.map(m => { const p = m.toJSON(); p._id = p.id; return p; });
-    res.status(200).json({ success: true, messages: mapped });
+    res.status(200).json({ success: true, messages: mapped, pagination: paginationMeta(total, { page, limit }) });
   } catch (error) {
     next(error);
   }

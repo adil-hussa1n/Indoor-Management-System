@@ -23,16 +23,18 @@ const checkSuspiciousActivity = async (req, userId) => {
   const fiveMinsAgo = new Date(now.getTime() - 5 * 60 * 1000);
 
   // 1. Check for change/cancel requests in the last 24 hours
-  const recentRequestsCount = await req.tenantDb.models.BookingRequest.count({
+  const recentRequestsCount = await req.models.BookingRequest.count({
     where: {
+      businessId: req.businessId,
       userId,
       createdAt: { [Op.gt]: dayAgo }
     }
   });
 
   // 2. Check for cancelled bookings in the last 24 hours
-  const recentCancellationsCount = await req.tenantDb.models.Booking.count({
+  const recentCancellationsCount = await req.models.Booking.count({
     where: {
+      businessId: req.businessId,
       userId,
       status: 'Cancelled',
       updatedAt: { [Op.gt]: dayAgo }
@@ -40,8 +42,9 @@ const checkSuspiciousActivity = async (req, userId) => {
   });
 
   // 3. Check for high frequency (spamming) in the last 5 minutes
-  const rapidRequestsCount = await req.tenantDb.models.BookingRequest.count({
+  const rapidRequestsCount = await req.models.BookingRequest.count({
     where: {
+      businessId: req.businessId,
       userId,
       createdAt: { [Op.gt]: fiveMinsAgo }
     }

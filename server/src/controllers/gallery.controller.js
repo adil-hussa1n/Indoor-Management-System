@@ -1,12 +1,14 @@
 import { v2 as cloudinary } from 'cloudinary';
 import { createAuditLog } from '../utils/auditLogger.js';
+import { parsePagination, paginationMeta } from '../utils/paginate.js';
 
 export const getGallery = async (req, res, next) => {
   try {
     const { galleryRepo } = req.repos;
-    const images = await galleryRepo.findAll();
+    const { page, limit, offset } = parsePagination(req.query);
+    const { count: total, rows: images } = await galleryRepo.findAndCountAll({}, { offset, limit });
     const mapped = images.map(i => { const p = i.toJSON(); p._id = p.id; return p; });
-    res.status(200).json({ success: true, images: mapped });
+    res.status(200).json({ success: true, images: mapped, pagination: paginationMeta(total, { page, limit }) });
   } catch (error) {
     next(error);
   }

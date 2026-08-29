@@ -8,11 +8,16 @@
     "start": "nodemon server.js",
     "dev": "nodemon server.js",
     "seed": "node utils/seeder.js",
-    "test:api": "node utils/test_api.js"
+    "test:api": "node utils/test_api.js",
+    "test": "cross-env NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand",
+    "migrate": "node migrations/run.js",
+    "migrate:backfill": "node scripts/backfill-business-data.js",
+    "migrate:verify-backfill": "node scripts/verify-backfill.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cloudinary": "^2.5.1",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
@@ -29,7 +34,10 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "cross-env": "^7.0.3",
+    "jest": "^29.7.0",
     "nodemon": "^3.1.9",
-    "sequelize-cli": "^6.6.5"
+    "sequelize-cli": "^6.6.5",
+    "supertest": "^7.0.0"
   }
 }

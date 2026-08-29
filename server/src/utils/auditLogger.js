@@ -13,13 +13,14 @@
 export async function createAuditLog(req, { action, category = 'general', entity = 'System', entityId = null, description, oldValue = null, newValue = null }) {
   try {
     const models = req.tenantModels || req.models || (req.repos ? req.repos.models : null);
-    if (!models || !models.AuditLog) return;
+    if (!models || !models.AuditLog || !req.businessId) return;
 
     const adminUsername = req.user?.username || req.user?.name || req.admin?.username || 'Admin';
     const ipAddress = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || req.ip || null;
 
     try {
       await models.AuditLog.create({
+        businessId: req.businessId,
         adminUsername,
         action,
         category,
@@ -32,6 +33,7 @@ export async function createAuditLog(req, { action, category = 'general', entity
       });
     } catch (err1) {
       await models.AuditLog.create({
+        businessId: req.businessId,
         action,
         entity,
         entityId,

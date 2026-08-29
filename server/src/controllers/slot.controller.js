@@ -1,34 +1,7 @@
 import { Op } from 'sequelize';
 import { createAuditLog } from '../utils/auditLogger.js';
-
-// Helper to get local date and time in Bangladesh timezone (UTC+6)
-const getBangladeshDateTime = () => {
-  const formatter = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Dhaka',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false
-  });
-  
-  const parts = formatter.formatToParts(new Date());
-  const year = parts.find(p => p.type === 'year').value;
-  const month = parts.find(p => p.type === 'month').value;
-  const day = parts.find(p => p.type === 'day').value;
-  let hour = parts.find(p => p.type === 'hour').value;
-  const minute = parts.find(p => p.type === 'minute').value;
-  
-  if (hour === '24') {
-    hour = '00';
-  }
-  
-  return {
-    dateString: `${year}-${month}-${day}`,
-    timeString: `${hour}:${minute}`
-  };
-};
+import { getDhakaDateTime as getBangladeshDateTime } from '../utils/timezone.js';
+import { assertSameBusiness } from '../utils/validateSameBusiness.js';
 
 const getSlotPriceForDate = (settings, dateString, startTime, slotRateType) => {
   const parts = dateString.split('-');
@@ -246,6 +219,8 @@ export const createSlot = async (req, res, next) => {
       } else {
         targetGroundId = 1;
       }
+    } else {
+      await assertSameBusiness(req.models.Ground, targetGroundId, req.businessId, 'groundId');
     }
 
     const targetDayOfWeek = dayOfWeek !== undefined ? Number(dayOfWeek) : -1;
@@ -304,6 +279,10 @@ export const updateSlot = async (req, res, next) => {
     const slot = await slotRepo.findById(id);
     if (!slot) {
       return res.status(404).json({ success: false, message: 'Slot not found' });
+    }
+
+    if (groundId !== undefined) {
+      await assertSameBusiness(req.models.Ground, Number(groundId), req.businessId, 'groundId');
     }
 
     const oldValues = slot.toJSON ? slot.toJSON() : slot;

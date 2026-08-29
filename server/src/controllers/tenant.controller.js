@@ -1,12 +1,16 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { Op } from 'sequelize';
-import { Tenant, SuperAdmin, SubscriptionHistory } from '../models/master/index.js';
-import { masterSequelize } from '../config/master-db.js';
-import { getTenantConnection, removeTenantConnection } from '../config/sequelize.js';
+import Business from '../models/Business.js';
+import SuperAdmin from '../models/SuperAdmin.js';
+import SubscriptionHistory from '../models/SubscriptionHistory.js';
+import { sequelize } from '../config/db.js';
 import { createModels } from '../models/model-factory.js';
-import { clearTenantCache } from '../middlewares/tenant.js';
 import { sendLoginAlertEmail, sendStaffWelcomeEmail, sendEmail } from '../utils/mailer.js';
+import { parsePagination, paginationMeta } from '../utils/paginate.js';
+import { setAuthCookie, clearAuthCookie, ONE_DAY_MS } from '../utils/authCookie.js';
+
+const SUPERADMIN_TOKEN_TTL_MS = ONE_DAY_MS;
 
 // In-Memory OTP Store for Super Admin
 const superAdminOtpStore = new Map();
@@ -36,6 +40,7 @@ export const superAdminLogin = async (req, res, next) => {
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
+    setAuthCookie(res, 'superadmin', token, SUPERADMIN_TOKEN_TTL_MS);
 
     // Dispatch Gmail SMTP Super Admin Login Security Alert
     const recipientEmail = admin.email || process.env.SMTP_USER;
@@ -51,9 +56,21 @@ export const superAdminLogin = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      token,
       admin: { id: admin.id, username: admin.username, role: admin.role },
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Super Admin Logout
+ * POST /api/master/logout
+ */
+export const superAdminLogout = async (req, res, next) => {
+  try {
+    clearAuthCookie(res, 'superadmin');
+    res.status(200).json({ success: true, message: 'Logged out successfully.' });
   } catch (error) {
     next(error);
   }
@@ -84,7 +101,7 @@ export const sendSuperAdminOTP = async (req, res, next) => {
     }
 
     const term = usernameOrEmail.trim().toLowerCase();
-    
+
     let admin = await safeDbLookup(
       () => SuperAdmin.findOne({
         where: {
@@ -105,7 +122,7 @@ export const sendSuperAdminOTP = async (req, res, next) => {
     const recipientEmail = term.includes('@') ? term : (admin?.email || process.env.SMTP_USER || 'daruntech.pvt.ltd@gmail.com');
     const otp = String(Math.floor(100000 + Math.random() * 900000));
     const adminKey = admin ? admin.id : 'default_superadmin';
-    
+
     superAdminOtpStore.set(adminKey, {
       code: otp,
       expiresAt: Date.now() + 10 * 60 * 1000,
@@ -131,7 +148,7 @@ export const sendSuperAdminOTP = async (req, res, next) => {
       success: true,
       message: `6-Digit verification code sent to ${recipientEmail.replace(/(.{2})(.*)(?=@)/, '$1***')}`,
       email: recipientEmail,
-      devOtp: otp, // Dev mock OTP code for instant testing
+      ...(process.env.NODE_ENV !== 'production' ? { devOtp: otp } : {}),
     });
   } catch (error) {
     next(error);
@@ -171,7 +188,8 @@ export const verifySuperAdminOTP = async (req, res, next) => {
     const adminKey = admin ? admin.id : 'default_superadmin';
     const storedOtp = superAdminOtpStore.get(adminKey);
 
-    const isValid = (storedOtp && storedOtp.code === enteredOtp && Date.now() <= storedOtp.expiresAt) || enteredOtp === '123456';
+    const isValid = (storedOtp && storedOtp.code === enteredOtp && Date.now() <= storedOtp.expiresAt)
+      || (process.env.NODE_ENV !== 'production' && enteredOtp === '123456');
 
     if (!isValid) {
       return res.status(400).json({ success: false, message: 'Invalid or expired OTP code. Please request a new code.' });
@@ -188,10 +206,10 @@ export const verifySuperAdminOTP = async (req, res, next) => {
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
+    setAuthCookie(res, 'superadmin', token, SUPERADMIN_TOKEN_TTL_MS);
 
     res.status(200).json({
       success: true,
-      token,
       admin: { id: adminId, username: adminUsername, role: adminRole },
     });
   } catch (error) {
@@ -199,15 +217,29 @@ export const verifySuperAdminOTP = async (req, res, next) => {
   }
 };
 
+const planNameFor = (subscriptionPlan, plan) => {
+  const sp = subscriptionPlan || '1_month';
+  if (sp === 'free_trial' || sp === '7_days_trial' || sp === 'trial' || plan === 'free') return '7 Days Free Trial';
+  if (sp === '1_month') return '1 Month Subscription Plan';
+  if (sp === '3_months') return '3 Month Subscription Plan';
+  if (sp === '6_months') return '6 Month Subscription Plan';
+  if (sp === '1_year') return '1 Year Subscription Plan';
+  if (sp === 'custom' || sp === 'custom_date') return 'Custom Date Range Plan';
+  return '1 Month Subscription Plan';
+};
+
 /**
- * Create a new tenant (business)
+ * Create a new business (tenant)
  * POST /api/master/tenants
  * Body: { slug, businessName, adminUsername, adminPassword, adminEmail, adminPhone, plan }
+ *
+ * Per constitution Principle IV: provisioning a business is a plain row
+ * insert against the single shared database — no new physical database is
+ * created, no per-tenant schema sync runs.
  */
 export const createTenant = async (req, res, next) => {
-  let createdTenant = null;
-  let dbCreated = false;
-  let dbName = null;
+  let createdBusiness = null;
+  const t = await sequelize.transaction();
   try {
     const {
       slug,
@@ -223,55 +255,38 @@ export const createTenant = async (req, res, next) => {
       paymentStatus,
     } = req.body;
 
-    // Validate required fields
     if (!slug || !businessName) {
+      await t.rollback();
       return res.status(400).json({
         success: false,
         message: 'slug and businessName are required',
       });
     }
 
-    const finalAdminUsername = adminUsername || (adminEmail ? adminEmail.split('@')[0] : 'admin');
-    const finalAdminPassword = adminPassword || `gmail_otp_pass_${Math.random()}`;
-
-    // Validate slug format
     if (!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/.test(slug)) {
+      await t.rollback();
       return res.status(400).json({
         success: false,
         message: 'Slug must be lowercase alphanumeric with optional hyphens (valid subdomain)',
       });
     }
 
-    // Check if slug already exists
-    const existing = await Tenant.findOne({ where: { slug } });
+    const existing = await Business.findOne({ where: { slug } });
     if (existing) {
-      return res.status(409).json({ success: false, message: `Tenant with slug "${slug}" already exists` });
+      await t.rollback();
+      return res.status(409).json({ success: false, message: `A business with slug "${slug}" already exists` });
     }
 
-    dbName = `db_${slug.replace(/-/g, '_')}`;
-
-    // Defense-in-depth: validate dbName contains only safe characters before raw SQL
-    if (!/^[a-z0-9_]+$/.test(dbName)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Generated database name contains invalid characters.',
-      });
-    }
-
-    // 1. Create the tenant database
-    await masterSequelize.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\`;`);
-    dbCreated = true;
-    console.log(`Created database: ${dbName}`);
-
+    const finalAdminUsername = adminUsername || (adminEmail ? adminEmail.split('@')[0] : 'admin');
+    const finalAdminPassword = adminPassword || `gmail_otp_pass_${Math.random()}`;
     const initialPrice = subscriptionPrice !== undefined ? Number(subscriptionPrice) : 0;
     const initialStatus = paymentStatus || 'paid';
     const totalRev = initialStatus === 'paid' ? initialPrice : 0;
 
-    // 2. Register tenant in master DB
-    createdTenant = await Tenant.create({
+    // 1. Create the Business row
+    createdBusiness = await Business.create({
       slug,
       businessName,
-      dbName,
       adminEmail: adminEmail || null,
       adminPhone: adminPhone || null,
       plan: plan || 'pro',
@@ -281,60 +296,51 @@ export const createTenant = async (req, res, next) => {
       totalRevenueCollected: totalRev,
       paymentStatus: initialStatus,
       lastPaymentDate: initialStatus === 'paid' ? new Date() : null,
-    });
+    }, { transaction: t });
 
-    // 3. Initialize tenant database (create all tables)
-    const tenantDb = getTenantConnection(dbName);
-    const models = createModels(tenantDb);
-    await models.syncDatabase();
-
-    // 4. Create the tenant's primary admin account
+    // 2. Create the business's primary admin account, scoped by businessId
+    const models = createModels(sequelize);
     const hashedPassword = await bcrypt.hash(finalAdminPassword, 10);
     await models.Admin.create({
+      businessId: createdBusiness.id,
       username: finalAdminUsername,
       password: hashedPassword,
       email: adminEmail || null,
       phone: adminPhone || null,
       role: 'admin',
-    });
+    }, { transaction: t });
 
-    // 5. Create default settings
+    // 3. Create default settings for the business
     await models.Settings.create({
+      businessId: createdBusiness.id,
       businessName,
       contactEmail: adminEmail || 'info@example.com',
       contactPhone: adminPhone || '+880-1234-567890',
-    });
+    }, { transaction: t });
 
-    // 6. Record Initial Subscription History
+    // 4. Record Initial Subscription History
     try {
-      const sp = createdTenant.subscriptionPlan || '1_month';
-      let planName = '1 Month Subscription Plan';
-      if (sp === 'free_trial' || sp === '7_days_trial' || sp === 'trial' || createdTenant.plan === 'free') planName = '7 Days Free Trial';
-      else if (sp === '1_month') planName = '1 Month Subscription Plan';
-      else if (sp === '3_months') planName = '3 Month Subscription Plan';
-      else if (sp === '6_months') planName = '6 Month Subscription Plan';
-      else if (sp === '1_year') planName = '1 Year Subscription Plan';
-      else if (sp === 'custom' || sp === 'custom_date') planName = 'Custom Date Range Plan';
-
       await SubscriptionHistory.create({
-        tenantId: createdTenant.id,
-        tenantSlug: createdTenant.slug,
-        plan: sp,
-        planName,
+        tenantId: createdBusiness.id,
+        tenantSlug: createdBusiness.slug,
+        plan: createdBusiness.subscriptionPlan,
+        planName: planNameFor(createdBusiness.subscriptionPlan, createdBusiness.plan),
         amount: initialPrice,
         paymentStatus: initialStatus,
         startDate: new Date(),
         expiryDate: subscriptionExpiresAt || null,
-        notes: 'Initial tenant provisioned & plan activated',
-      });
+        notes: 'Initial business provisioned & plan activated',
+      }, { transaction: t });
     } catch (hErr) {
       console.error('Subscription history record error:', hErr.message);
     }
 
+    await t.commit();
+
     // Dispatch Gmail SMTP Welcome Email to Business Admin
     if (adminEmail) {
       const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
-      const loginUrl = `${clientUrl}/admin/login?tenant=${createdTenant.slug}`;
+      const loginUrl = `${clientUrl}/admin/login?tenant=${createdBusiness.slug}`;
       sendStaffWelcomeEmail({
         to: adminEmail,
         name: businessName,
@@ -347,74 +353,66 @@ export const createTenant = async (req, res, next) => {
 
     res.status(201).json({
       success: true,
-      message: `Tenant "${slug}" created successfully`,
+      message: `Business "${slug}" created successfully`,
       tenant: {
-        id: createdTenant.id,
-        slug: createdTenant.slug,
-        businessName: createdTenant.businessName,
-        dbName: createdTenant.dbName,
-        plan: createdTenant.plan,
-        isActive: createdTenant.isActive,
+        id: createdBusiness.id,
+        slug: createdBusiness.slug,
+        businessName: createdBusiness.businessName,
+        plan: createdBusiness.plan,
+        isActive: createdBusiness.isActive,
       },
     });
   } catch (error) {
-    console.error('Tenant provisioning failed. Starting cleanup...', error);
-    
-    // Clean up master Tenant record
-    if (createdTenant) {
-      try {
-        await Tenant.destroy({ where: { id: createdTenant.id } });
-        console.log(`Successfully cleaned up Tenant record for: ${createdTenant.slug}`);
-      } catch (cleanupErr) {
-        console.error('Failed to clean up Tenant record:', cleanupErr.message);
-      }
-    }
-    
-    // Clean up created database
-    if (dbCreated && dbName) {
-      try {
-        await removeTenantConnection(dbName);
-        await masterSequelize.query(`DROP DATABASE IF EXISTS \`${dbName}\`;`);
-        console.log(`Successfully dropped database: ${dbName}`);
-      } catch (cleanupErr) {
-        console.error('Failed to drop database during cleanup:', cleanupErr.message);
-      }
-    }
-
+    await t.rollback().catch(() => {});
     next(error);
   }
 };
 
 /**
- * List all tenants
+ * List all businesses
  * GET /api/master/tenants
  */
 export const listTenants = async (req, res, next) => {
   try {
-    const tenants = await safeDbLookup(
-      () => Tenant.findAll({
+    const { search = '' } = req.query;
+    const { page, limit, offset } = parsePagination(req.query);
+
+    const where = {};
+    if (search) {
+      where[Op.or] = [
+        { businessName: { [Op.like]: `%${search}%` } },
+        { slug: { [Op.like]: `%${search}%` } },
+        { adminEmail: { [Op.like]: `%${search}%` } },
+      ];
+    }
+
+    const { count: total, rows: tenants } = await safeDbLookup(
+      () => Business.findAndCountAll({
+        where,
         order: [['createdAt', 'DESC']],
         attributes: { exclude: ['smsCredentials'] },
+        offset,
+        limit,
       }),
-      [],
+      { count: 0, rows: [] },
       2500
     );
 
-    res.status(200).json({ success: true, tenants: tenants || [] });
+    res.status(200).json({ success: true, tenants: tenants || [], pagination: paginationMeta(total, { page, limit }) });
   } catch (error) {
     next(error);
   }
 };
 
 /**
- * Get tenant details
+ * Get business details
  * GET /api/master/tenants/:id
  */
 export const getTenant = async (req, res, next) => {
   try {
-    const tenant = await Tenant.findByPk(req.params.id);
+    const tenant = await Business.findByPk(req.params.id);
     if (!tenant) {
-      return res.status(404).json({ success: false, message: 'Tenant not found' });
+      return res.status(404).json({ success: false, message: 'Business not found' });
     }
 
     res.status(200).json({ success: true, tenant });
@@ -424,14 +422,14 @@ export const getTenant = async (req, res, next) => {
 };
 
 /**
- * Update a tenant
+ * Update a business
  * PATCH /api/master/tenants/:id
  */
 export const updateTenant = async (req, res, next) => {
   try {
-    const tenant = await Tenant.findByPk(req.params.id);
+    const tenant = await Business.findByPk(req.params.id);
     if (!tenant) {
-      return res.status(404).json({ success: false, message: 'Tenant not found' });
+      return res.status(404).json({ success: false, message: 'Business not found' });
     }
 
     const allowedFields = [
@@ -466,25 +464,17 @@ export const updateTenant = async (req, res, next) => {
       updateData.lastPaymentDate = new Date();
     }
 
-    await Tenant.update(updateData, { where: { id: req.params.id } });
+    await Business.update(updateData, { where: { id: req.params.id } });
 
     // Record Subscription Renewal History if plan, price, or expiry changed
     if (req.body.subscriptionPlan || req.body.subscriptionExpiresAt || req.body.recordPayment) {
       try {
         const sp = updateData.subscriptionPlan || tenant.subscriptionPlan || '1_month';
-        let planName = '1 Month Subscription Plan';
-        if (sp === 'free_trial' || sp === '7_days_trial' || sp === 'trial' || tenant.plan === 'free') planName = '7 Days Free Trial';
-        else if (sp === '1_month') planName = '1 Month Subscription Plan';
-        else if (sp === '3_months') planName = '3 Month Subscription Plan';
-        else if (sp === '6_months') planName = '6 Month Subscription Plan';
-        else if (sp === '1_year') planName = '1 Year Subscription Plan';
-        else if (sp === 'custom' || sp === 'custom_date') planName = 'Custom Date Range Plan';
-
         await SubscriptionHistory.create({
           tenantId: tenant.id,
           tenantSlug: tenant.slug,
           plan: sp,
-          planName,
+          planName: planNameFor(sp, tenant.plan),
           amount: Number(updateData.subscriptionPrice || tenant.subscriptionPrice || 0),
           paymentStatus: updateData.paymentStatus || tenant.paymentStatus || 'paid',
           startDate: new Date(),
@@ -496,15 +486,14 @@ export const updateTenant = async (req, res, next) => {
       }
     }
 
-    // Handle updating tenant admin credentials inside the tenant's isolated DB
+    // Handle updating the business's admin credentials (shared DB, scoped by businessId)
     const { adminUsername, adminPassword } = req.body;
     if (adminUsername || adminPassword) {
-      const tenantDb = getTenantConnection(tenant.dbName);
-      const models = createModels(tenantDb);
-      
-      let adminUser = await models.Admin.findOne({ where: { role: 'admin' } });
+      const models = createModels(sequelize);
+
+      let adminUser = await models.Admin.findOne({ where: { businessId: tenant.id, role: 'admin' } });
       if (!adminUser) {
-        adminUser = await models.Admin.findOne();
+        adminUser = await models.Admin.findOne({ where: { businessId: tenant.id } });
       }
 
       const adminUpdate = {};
@@ -516,22 +505,20 @@ export const updateTenant = async (req, res, next) => {
       }
 
       if (adminUser) {
-        await models.Admin.update(adminUpdate, { where: { id: adminUser.id } });
-        console.log(`Updated admin credentials for tenant database: ${tenant.dbName}`);
+        await models.Admin.update(adminUpdate, { where: { id: adminUser.id, businessId: tenant.id } });
+        console.log(`Updated admin credentials for business: ${tenant.slug}`);
       } else {
         await models.Admin.create({
+          businessId: tenant.id,
           username: adminUsername || 'admin',
           password: await bcrypt.hash(adminPassword || 'adminpassword123', 10),
           role: 'admin',
         });
-        console.log(`Created new admin credentials for tenant database: ${tenant.dbName}`);
+        console.log(`Created new admin credentials for business: ${tenant.slug}`);
       }
     }
 
-    // Clear tenant cache so changes take effect immediately
-    clearTenantCache(tenant.slug);
-
-    const updated = await Tenant.findByPk(req.params.id);
+    const updated = await Business.findByPk(req.params.id);
     res.status(200).json({ success: true, tenant: updated });
   } catch (error) {
     next(error);
@@ -539,28 +526,24 @@ export const updateTenant = async (req, res, next) => {
 };
 
 /**
- * Delete a tenant (and its database)
+ * Delete a business
  * DELETE /api/master/tenants/:id
+ *
+ * No physical database to drop anymore (constitution Principle IV) — this
+ * deactivates the business row. A genuine permanent purge of a business's
+ * rows is a separate, deliberately-manual operational task, not an
+ * automatic side effect of this endpoint.
  */
 export const deleteTenant = async (req, res, next) => {
   try {
-    const tenant = await Tenant.findByPk(req.params.id);
+    const tenant = await Business.findByPk(req.params.id);
     if (!tenant) {
-      return res.status(404).json({ success: false, message: 'Tenant not found' });
+      return res.status(404).json({ success: false, message: 'Business not found' });
     }
 
-    // Close and remove cached connection
-    await removeTenantConnection(tenant.dbName);
-    clearTenantCache(tenant.slug);
+    await tenant.update({ isActive: false });
 
-    // Drop the tenant's database
-    await masterSequelize.query(`DROP DATABASE IF EXISTS \`${tenant.dbName}\`;`);
-    console.log(`Dropped database: ${tenant.dbName}`);
-
-    // Delete tenant record
-    await Tenant.destroy({ where: { id: req.params.id } });
-
-    res.status(200).json({ success: true, message: `Tenant "${tenant.slug}" deleted` });
+    res.status(200).json({ success: true, message: `Business "${tenant.slug}" deactivated` });
   } catch (error) {
     next(error);
   }

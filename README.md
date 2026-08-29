@@ -1,21 +1,31 @@
 # Apex Arena — Multi-Tenant SaaS Indoor Sports Booking System
 
-A premium, production-grade **Multi-Tenant SaaS Indoor Sports Booking System** built with **React 19 + Vite**, **Node.js + Express**, and **MySQL + Sequelize ORM**. Designed to provision and manage multiple isolated client tenants under a wildcard subdomain architecture (e.g., `*.daruntech.com`), with SMS OTP customer authentication, scheduling requests, custom pricing grids, and a master Super Admin Control Panel.
+A premium, production-grade **Multi-Tenant SaaS Indoor Sports Booking System** built with **React 19 + Vite**, **Node.js + Express**, and **MySQL + Sequelize ORM**. Serves multiple client venues from a **single shared database**, with SMS OTP customer authentication, scheduling requests, custom pricing grids, and a master Super Admin Control Panel.
+
+> **Architecture note**: this repo was migrated from a per-tenant-database
+> model to a shared-database, JWT-derived tenancy model to match this
+> workspace's sibling products (`business_backend`, `restaurant_backend`).
+> The authoritative source for this architecture is
+> [`.specify/memory/constitution.md`](.specify/memory/constitution.md)
+> (Principle I) and [`specs/001-shared-db-business-tenancy/`](specs/001-shared-db-business-tenancy/).
+> Where this README or `SaaS_Architecture.md`/`Subdomain_and_DNS_Configuration.md`
+> conflict with the constitution, the constitution governs.
 
 ---
 
 ## 🏗️ SaaS Architecture & Multi-Tenancy
 
-### 1. Dynamic Database Routing
-* **Tenant Middleware**: Resolves the target tenant based on the hostname subdomain (production) or the `X-Tenant-Slug` header / `tenant` query param (local development).
-* **Connection Pooling**: Dynamically instantiates and caches database connection instances using `getTenantConnection()`. Connections are established on-demand, preventing pre-allocation overhead.
-* **Factory Model Compilation**: Models are defined using factories and compiled dynamically per request: `createModels(tenantDb)`.
-* **Database Isolation**: Each tenant has a completely separate database (e.g. `db_apexarena`, `db_dbox`), ensuring absolute data isolation, compliance, and easier client migration/backups.
+### 1. Shared-Database, JWT-Derived Business Scoping
+* **One Database**: All businesses (tenants) live in a single shared MySQL database. There is no per-tenant physical database (`db_apexarena`, `db_dbox`, etc. — retired) and no separate master-registry database — a `Business` table inside the shared database replaces the old `Tenant` master-DB model.
+* **`businessId` on Every Table**: Every business-owned table (bookings, grounds, slots, admins, finance entries, …) carries a required `businessId` foreign key to `businesses.id`.
+* **`businessContext` Middleware**: The single source of truth for tenant scope on every authenticated request. It decodes the JWT and reads its `businessId` claim — hostname/`X-Tenant-Slug`/`?tenant=` are consulted **only** when no token is present (login, and public/unauthenticated storefront routes), never for scoping an authenticated request. See `server/src/middlewares/businessContext.js`.
+* **Scoped Repositories**: `server/src/repositories/scope.js`'s `withBusinessScope()` wrapper injects `businessId` into every repository read/write automatically, with a post-fetch ownership check as a second, independent layer of defense.
 
 ### 2. Session Isolation & Cross-Tenant Security
-* **JWT Claims Scoping**: Tokens generated for both Admins and Users are stamped with a `tenant` slug claim.
-* **Header Validation Middleware**: The backend verifies token claims `decoded.tenant === req.tenant.slug` on every route. A token from one tenant domain cannot be replayed or used on another.
-* **Storage Namespacing**: Tokens in `localStorage` are stored under client-scoped keys (e.g., `adminToken_${tenantSlug}` and `userToken_${tenantSlug}`), isolating active dashboard sessions and preventing unintended auto-logins when testing different domains.
+* **JWT Claims Scoping**: Tokens generated for both Admins and Users are stamped with a `businessId` claim (the prior `tenant` slug claim is retired; old-shape tokens are rejected, forcing re-login).
+* **Business Mismatch Check**: `protect` middleware verifies `decoded.businessId === req.businessId` as a defense-in-depth replay check.
+* **Identifier Guard**: `server/src/middlewares/identityGuard.js` rejects any client-supplied `businessId`/`tenantId`/`adminId`/`userId` in a write request body, platform-wide.
+* **Cross-Business FK Validation**: Foreign keys between business-owned records (e.g. a booking's `groundId`) are validated at write time to belong to the same business.
 
 ---
 
@@ -23,7 +33,7 @@ A premium, production-grade **Multi-Tenant SaaS Indoor Sports Booking System** b
 
 ### 👑 Super Admin Control Panel (`/superadmin`)
 * **Master Tenant Orchestration**: Super admins log in with master credentials (`superadmin` / `superadminpassword123`) to list, provision, suspend, or wipe tenant clients.
-* **Instant Client Provisioning**: Provisions new database schemas, syncs Sequelize tables, and seeds initial parameters (branding, pricing, slot configurations, and custom admin credentials) in under 5 seconds.
+* **Instant Client Provisioning**: Creates a `Business` row and its primary `Admin` account in the shared database and seeds initial parameters (branding, pricing, slot configurations) — no new physical database or schema sync required.
 * **Master Online Payment Gateway Switch (`allowPaymentGateway`)**: Super Admin can globally enable or disable online payment gateway capabilities (bKash, Nagad, SSLCommerz) per tenant. Disabling it automatically forces offline pay-at-venue mode across client backend APIs and displays a disabled switch with direct contact links (`https://www.daruntech.com/`) in venue admin settings.
 * **Subscription & Lifecycle Management**:
   * Set precise expiry dates using a custom calendar picker or presets (1 Month, 3 Months, 6 Months, 1 Year, or Lifetime).

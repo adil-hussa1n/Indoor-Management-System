@@ -1,6 +1,6 @@
 import { uploadToCloudinary } from '../utils/cloudinary.js';
 import { createAuditLog } from '../utils/auditLogger.js';
-import { SubscriptionHistory } from '../models/master/index.js';
+import SubscriptionHistory from '../models/SubscriptionHistory.js';
 
 export const getSettings = async (req, res, next) => {
   try {
@@ -10,7 +10,7 @@ export const getSettings = async (req, res, next) => {
     plain._id = plain.id;
 
     // Attach subscription status metadata from tenant context
-    const tenant = req.tenant;
+    const tenant = req.business;
     if (tenant) {
       const now = new Date();
       const expiry = tenant.subscriptionExpiresAt ? new Date(tenant.subscriptionExpiresAt) : null;
@@ -94,17 +94,19 @@ export const updateSettings = async (req, res, next) => {
     // Process file uploads
     if (req.files) {
       if (req.files.logo && req.files.logo[0]) {
-        const logoUrl = await uploadToCloudinary(req.files.logo[0].buffer, 'settings-logo', req.files.logo[0].mimetype);
-        body.logo = logoUrl;
+        const file = req.files.logo[0];
+        body.logo = await uploadToCloudinary(file.buffer, 'settings-logo', file.mimetype);
+        body.logoMeta = { filename: file.originalname, size: file.size, mimeType: file.mimetype };
       }
       if (req.files.heroBanner && req.files.heroBanner[0]) {
-        const bannerUrl = await uploadToCloudinary(req.files.heroBanner[0].buffer, 'settings-banner', req.files.heroBanner[0].mimetype);
-        body.heroBanner = bannerUrl;
+        const file = req.files.heroBanner[0];
+        body.heroBanner = await uploadToCloudinary(file.buffer, 'settings-banner', file.mimetype);
+        body.heroBannerMeta = { filename: file.originalname, size: file.size, mimeType: file.mimetype };
       }
     }
 
     // Parse stringified JSON fields
-    const jsonFields = ['businessHours', 'pricing', 'socialLinks', 'seo', 'availableSports', 'holidays', 'maintenanceDays', 'weekendDays', 'hero', 'rules', 'theme', 'paymentConfig', 'discounts', 'maintenanceMode'];
+    const jsonFields = ['businessHours', 'businessHoursDetailed', 'businessAddress', 'contactMethods', 'logoMeta', 'heroBannerMeta', 'pricing', 'socialLinks', 'seo', 'availableSports', 'holidays', 'maintenanceDays', 'weekendDays', 'hero', 'rules', 'theme', 'paymentConfig', 'discounts', 'maintenanceMode'];
     for (const field of jsonFields) {
       if (body[field]) {
         try {
@@ -178,7 +180,19 @@ export const getPublicInfo = async (req, res, next) => {
       contactEmail: settings.contactEmail,
       contactPhone: settings.contactPhone,
       contactAddress: settings.contactAddress,
+      businessAddress: settings.businessAddress,
+      contactMethods: settings.contactMethods,
+      registrationNo: settings.registrationNo,
+      taxId: settings.taxId,
+      establishedDate: settings.establishedDate,
+      employeeRange: settings.employeeRange,
+      website: settings.website,
+      currency: settings.currency,
+      timezone: settings.timezone,
       businessHours: settings.businessHours,
+      businessHoursDetailed: settings.businessHoursDetailed,
+      logoMeta: settings.logoMeta,
+      heroBannerMeta: settings.heroBannerMeta,
       pricing: settings.pricing,
       socialLinks: settings.socialLinks,
       seo: settings.seo,
@@ -194,7 +208,7 @@ export const getPublicInfo = async (req, res, next) => {
       paymentConfig: pConfig,
       discounts,
       maintenanceMode,
-      allowPaymentGateway: req.tenant ? req.tenant.allowPaymentGateway !== false : true,
+      allowPaymentGateway: req.business ? req.business.allowPaymentGateway !== false : true,
     };
     res.status(200).json({ success: true, settings: publicSettings });
   } catch (error) {

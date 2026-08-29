@@ -1,11 +1,25 @@
+import { Op } from 'sequelize';
 import { normalizePhone } from '../utils/phone.js';
 import { createAuditLog } from '../utils/auditLogger.js';
+import { parsePagination, paginationMeta } from '../utils/paginate.js';
 
 export const getBlockedCustomers = async (req, res, next) => {
   try {
     const { blockedCustomerRepo } = req.repos;
-    const list = await blockedCustomerRepo.findAll({}, { order: [['createdAt', 'DESC']] });
-    
+    const { search = '' } = req.query;
+    const { page, limit, offset } = parsePagination(req.query);
+
+    const where = {};
+    if (search) {
+      where.phone = { [Op.like]: `%${search}%` };
+    }
+
+    const { count: total, rows: list } = await blockedCustomerRepo.findAndCountAll(where, {
+      order: [['createdAt', 'DESC']],
+      offset,
+      limit,
+    });
+
     // Convert Sequelize models to plain objects with _id alias
     const mapped = list.map(item => {
       const plain = item.toJSON();
@@ -13,7 +27,7 @@ export const getBlockedCustomers = async (req, res, next) => {
       return plain;
     });
 
-    res.status(200).json({ success: true, blockedCustomers: mapped });
+    res.status(200).json({ success: true, blockedCustomers: mapped, pagination: paginationMeta(total, { page, limit }) });
   } catch (error) {
     next(error);
   }

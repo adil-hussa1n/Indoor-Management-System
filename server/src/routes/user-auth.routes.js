@@ -1,10 +1,14 @@
 import express from 'express';
+import jwt from 'jsonwebtoken';
 import { protectUser } from '../middlewares/auth.js';
 import { sendSMS } from '../utils/sms.js';
 import { normalizePhone } from '../utils/phone.js';
 import { Op } from 'sequelize';
+import { setAuthCookie, clearAuthCookie, ONE_DAY_MS } from '../utils/authCookie.js';
 
 const router = express.Router();
+
+const USER_TOKEN_TTL_MS = 30 * ONE_DAY_MS;
 
 // POST /api/v1/user/send-otp
 router.post('/send-otp', async (req, res, next) => {
@@ -34,7 +38,7 @@ router.post('/send-otp', async (req, res, next) => {
 
     // Send OTP via SMS API (BulkSMSBD / SSLWireless / Mock fallback)
     const smsMessage = `Your OTP for login is ${code}. It is valid for 5 minutes.`;
-    const customCredentials = req.tenant?.smsCredentials;
+    const customCredentials = req.business?.smsCredentials;
     
     await sendSMS(normalizedPhone, smsMessage, customCredentials);
 
@@ -86,8 +90,9 @@ router.post('/verify-otp', async (req, res, next) => {
 
     // Find matching users (could be multiple due to historical phone formats)
     const localPhone = normalizedPhone.replace(/^88/, '');
-    const matchingUsers = await req.tenantDb.models.User.findAll({
+    const matchingUsers = await req.models.User.findAll({
       where: {
+        businessId: req.businessId,
         phone: [normalizedPhone, localPhone]
       }
     });
@@ -110,16 +115,16 @@ router.post('/verify-otp', async (req, res, next) => {
         const duplicates = matchingUsers.filter(u => u.id !== user.id);
         for (const dup of duplicates) {
           // Re-link bookings from duplicate userId to main user.id
-          await req.tenantDb.models.Booking.update(
+          await req.models.Booking.update(
             { userId: user.id },
-            { where: { userId: dup.id } }
+            { where: { businessId: req.businessId, userId: dup.id } }
           );
-          await req.tenantDb.models.BookingRequest.update(
+          await req.models.BookingRequest.update(
             { userId: user.id },
-            { where: { userId: dup.id } }
+            { where: { businessId: req.businessId, userId: dup.id } }
           );
           // Delete duplicate user
-          await req.tenantDb.models.User.destroy({ where: { id: dup.id } });
+          await req.models.User.destroy({ where: { id: dup.id, businessId: req.businessId } });
         }
       } else {
         // None are normalized, take the first one and normalize it
@@ -133,9 +138,10 @@ router.post('/verify-otp', async (req, res, next) => {
     }
 
     // Link any bookings matching this user's phone formats to their user ID
-    const bookingsToUpdate = await req.tenantDb.models.Booking.findAll({
+    const bookingsToUpdate = await req.models.Booking.findAll({
       attributes: ['id'],
       where: {
+        businessId: req.businessId,
         [Op.or]: [
           { phone: normalizedPhone },
           { phone: localPhone },
@@ -145,27 +151,26 @@ router.post('/verify-otp', async (req, res, next) => {
 
     if (bookingsToUpdate.length > 0) {
       const bookingIds = bookingsToUpdate.map(b => b.id);
-      await req.tenantDb.models.Booking.update(
+      await req.models.Booking.update(
         { userId: user.id, phone: normalizedPhone },
-        { where: { id: { [Op.in]: bookingIds } } }
+        { where: { businessId: req.businessId, id: { [Op.in]: bookingIds } } }
       );
-      await req.tenantDb.models.BookingRequest.update(
+      await req.models.BookingRequest.update(
         { userId: user.id },
-        { where: { bookingId: { [Op.in]: bookingIds } } }
+        { where: { businessId: req.businessId, bookingId: { [Op.in]: bookingIds } } }
       );
     }
 
     // Generate JWT
-    const jwt = await import('jsonwebtoken');
-    const token = jwt.default.sign(
-      { id: user.id, tenant: req.tenant.slug, type: 'user' },
+    const token = jwt.sign(
+      { id: user.id, businessId: req.businessId, type: 'user' },
       process.env.JWT_SECRET,
       { expiresIn: '30d' }
     );
+    setAuthCookie(res, 'user', token, USER_TOKEN_TTL_MS);
 
     res.status(200).json({
       success: true,
-      token,
       user: { id: user.id, uuid: user.uuid, name: user.name, phone: user.phone, email: user.email },
     });
   } catch (error) {
@@ -176,6 +181,12 @@ router.post('/verify-otp', async (req, res, next) => {
 // GET /api/v1/user/me
 router.get('/me', protectUser, async (req, res) => {
   res.status(200).json({ success: true, user: req.user });
+});
+
+// POST /api/v1/user/logout
+router.post('/logout', protectUser, async (req, res) => {
+  clearAuthCookie(res, 'user');
+  res.status(200).json({ success: true, message: 'Logged out successfully.' });
 });
 
 // PATCH /api/v1/user/me

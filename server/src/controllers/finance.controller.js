@@ -1,5 +1,6 @@
 import { Op } from 'sequelize';
 import { createAuditLog } from '../utils/auditLogger.js';
+import { assertSameBusiness } from '../utils/validateSameBusiness.js';
 
 // ── Category Handlers ──
 
@@ -189,9 +190,11 @@ export const createEntry = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Transaction date is required.' });
     }
 
-    const category = await financeRepo.findCategoryById(categoryId);
-    if (!category) {
-      return res.status(404).json({ success: false, message: 'Selected category does not exist.' });
+    // Cross-business FK integrity (constitution Principle III): categoryId
+    // and groundId (when supplied) must belong to this business.
+    await assertSameBusiness(req.models.FinanceCategory, categoryId, req.businessId, 'categoryId');
+    if (groundId) {
+      await assertSameBusiness(req.models.Ground, groundId, req.businessId, 'groundId');
     }
 
     const entry = await financeRepo.createEntry({
@@ -236,8 +239,16 @@ export const updateEntry = async (req, res, next) => {
 
     const updateData = {};
     if (type && ['investment', 'expense'].includes(type)) updateData.type = type;
-    if (categoryId) updateData.categoryId = Number(categoryId);
-    if (groundId !== undefined) updateData.groundId = groundId ? Number(groundId) : null;
+    if (categoryId) {
+      await assertSameBusiness(req.models.FinanceCategory, categoryId, req.businessId, 'categoryId');
+      updateData.categoryId = Number(categoryId);
+    }
+    if (groundId !== undefined) {
+      if (groundId) {
+        await assertSameBusiness(req.models.Ground, groundId, req.businessId, 'groundId');
+      }
+      updateData.groundId = groundId ? Number(groundId) : null;
+    }
     if (amount !== undefined && !isNaN(Number(amount))) updateData.amount = Number(amount);
     if (date) updateData.date = date;
     if (paymentMethod) updateData.paymentMethod = paymentMethod;

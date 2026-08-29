@@ -1,43 +1,49 @@
 import jwt from 'jsonwebtoken';
+import SuperAdmin from '../models/SuperAdmin.js';
+import { extractToken } from '../utils/authCookie.js';
 
 /**
- * Protect admin routes — verifies JWT and attaches req.admin.
- * Uses tenant-scoped models from req.repos (set by injectRepositories middleware).
+ * Protect admin routes — attaches req.admin from the identity already
+ * decoded by businessContext (server/src/middlewares/businessContext.js,
+ * which must run first and sets req.jwtDecoded + req.businessId).
+ * Uses business-scoped repositories from req.repos (injectRepositories).
  */
 export const protect = async (req, res, next) => {
-  let token;
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-    try {
-      token = req.headers.authorization.split(' ')[1];
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  const decoded = req.jwtDecoded;
+  if (!decoded) {
+    return res.status(401).json({ success: false, message: 'Not authorized, no token' });
+  }
 
-      // Validate tenant scope to prevent cross-tenant session hijack / tab overlap
-      if (decoded.tenant !== req.tenant.slug) {
-        return res.status(401).json({ success: false, message: 'Not authorized, token tenant mismatch' });
-      }
-
-      // Use tenant-scoped admin repository
-      const admin = await req.repos.adminRepo.findById(decoded.id);
-      if (!admin) {
-        return res.status(401).json({ success: false, message: 'Not authorized, admin not found' });
-      }
-      req.admin = {
-        id: admin.id,
-        _id: admin.id,
-        username: admin.username,
-        name: admin.name,
-        email: admin.email,
-        phone: admin.phone,
-        role: admin.role || 'admin',
-        permissions: admin.permissions || null,
-      };
-      next();
-    } catch (error) {
-      console.error(error);
-      res.status(401).json({ success: false, message: 'Not authorized, token failed' });
+  try {
+    if (decoded.type !== 'admin') {
+      return res.status(401).json({ success: false, message: 'Not authorized, invalid token type' });
     }
-  } else {
-    res.status(401).json({ success: false, message: 'Not authorized, no token' });
+
+    // Defense-in-depth replay check: the business the token names must
+    // match the business businessContext already resolved from that same
+    // token (research.md — mirrors the old tenant-mismatch check).
+    if (decoded.businessId !== req.businessId) {
+      return res.status(401).json({ success: false, message: 'Not authorized, token business mismatch' });
+    }
+
+    const admin = await req.repos.adminRepo.findById(decoded.id);
+    if (!admin) {
+      return res.status(401).json({ success: false, message: 'Not authorized, admin not found' });
+    }
+    req.admin = {
+      id: admin.id,
+      _id: admin.id,
+      username: admin.username,
+      name: admin.name,
+      email: admin.email,
+      phone: admin.phone,
+      role: admin.role || 'admin',
+      permissions: admin.permissions || null,
+    };
+    next();
+  } catch (error) {
+    console.error(error);
+    res.status(401).json({ success: false, message: 'Not authorized, token failed' });
   }
 };
 
@@ -64,7 +70,7 @@ export const requirePermission = (permissionKey) => {
 };
 
 /**
- * Restrict endpoints to primary tenant admins (owners) only.
+ * Restrict endpoints to primary business owners (owners) only.
  */
 export const requirePrimaryAdmin = (req, res, next) => {
   if (!req.admin) {
@@ -80,73 +86,69 @@ export const requirePrimaryAdmin = (req, res, next) => {
 };
 
 /**
- * Protect user routes — verifies JWT and attaches req.user.
- * Uses tenant-scoped models from req.repos.
+ * Protect user (customer) routes — attaches req.user from the identity
+ * already decoded by businessContext.
+ * Uses business-scoped repositories from req.repos.
  */
 export const protectUser = async (req, res, next) => {
-  let token;
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-    try {
-      token = req.headers.authorization.split(' ')[1];
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  const decoded = req.jwtDecoded;
+  if (!decoded) {
+    return res.status(401).json({ success: false, message: 'Not authorized, no token' });
+  }
 
-      if (decoded.type !== 'user') {
-        return res.status(401).json({ success: false, message: 'Not authorized, invalid token type' });
-      }
-
-      // Validate tenant scope to prevent cross-tenant session hijack
-      if (decoded.tenant !== req.tenant.slug) {
-        return res.status(401).json({ success: false, message: 'Not authorized, token tenant mismatch' });
-      }
-
-      const user = await req.repos.userRepo.findById(decoded.id);
-      if (!user) {
-        return res.status(401).json({ success: false, message: 'Not authorized, user not found' });
-      }
-
-      // Check if user's phone number is blocked
-      const isBlocked = await req.repos.blockedCustomerRepo.isBlocked(user.phone);
-      if (isBlocked) {
-        return res.status(401).json({ success: false, message: 'Not authorized, this phone number has been suspended.' });
-      }
-
-      req.user = { id: user.id, uuid: user.uuid, name: user.name, phone: user.phone, email: user.email };
-      next();
-    } catch (error) {
-      console.error(error);
-      res.status(401).json({ success: false, message: 'Not authorized, token failed' });
+  try {
+    if (decoded.type !== 'user') {
+      return res.status(401).json({ success: false, message: 'Not authorized, invalid token type' });
     }
-  } else {
-    res.status(401).json({ success: false, message: 'Not authorized, no token' });
+
+    if (decoded.businessId !== req.businessId) {
+      return res.status(401).json({ success: false, message: 'Not authorized, token business mismatch' });
+    }
+
+    const user = await req.repos.userRepo.findById(decoded.id);
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'Not authorized, user not found' });
+    }
+
+    const isBlocked = await req.repos.blockedCustomerRepo.isBlocked(user.phone);
+    if (isBlocked) {
+      return res.status(401).json({ success: false, message: 'Not authorized, this phone number has been suspended.' });
+    }
+
+    req.user = { id: user.id, uuid: user.uuid, name: user.name, phone: user.phone, email: user.email };
+    next();
+  } catch (error) {
+    console.error(error);
+    res.status(401).json({ success: false, message: 'Not authorized, token failed' });
   }
 };
 
 /**
  * Protect super admin routes — verifies JWT with superadmin type.
+ * Unrelated to per-business scoping (Super Admin is platform-wide), so this
+ * continues to decode its own JWT directly rather than going through
+ * businessContext, which is only mounted under /api/v1 (see app.js).
  */
 export const protectSuperAdmin = async (req, res, next) => {
-  let token;
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-    try {
-      token = req.headers.authorization.split(' ')[1];
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  const token = extractToken(req, 'superadmin');
+  if (!token) {
+    return res.status(401).json({ success: false, message: 'Not authorized, no token' });
+  }
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      if (decoded.type !== 'superadmin') {
-        return res.status(401).json({ success: false, message: 'Not authorized, requires super admin access' });
-      }
-
-      const { SuperAdmin } = await import('../models/master/index.js');
-      const superAdmin = await SuperAdmin.findByPk(decoded.id);
-      if (!superAdmin) {
-        return res.status(401).json({ success: false, message: 'Not authorized, super admin not found' });
-      }
-      req.superAdmin = { id: superAdmin.id, username: superAdmin.username, role: superAdmin.role };
-      next();
-    } catch (error) {
-      console.error(error);
-      res.status(401).json({ success: false, message: 'Not authorized, token failed' });
+    if (decoded.type !== 'superadmin') {
+      return res.status(401).json({ success: false, message: 'Not authorized, requires super admin access' });
     }
-  } else {
-    res.status(401).json({ success: false, message: 'Not authorized, no token' });
+
+    const superAdmin = await SuperAdmin.findByPk(decoded.id);
+    if (!superAdmin) {
+      return res.status(401).json({ success: false, message: 'Not authorized, super admin not found' });
+    }
+    req.superAdmin = { id: superAdmin.id, username: superAdmin.username, role: superAdmin.role };
+    next();
+  } catch (error) {
+    console.error(error);
+    res.status(401).json({ success: false, message: 'Not authorized, token failed' });
   }
 };
