@@ -178,12 +178,6 @@ export const SuperAdminDashboard = () => {
     toast.success('Financial report exported to CSV!');
   };
 
-  const checkAuth = () => {
-    if (!localStorage.getItem('superAdminToken')) {
-      navigate('/superadmin/login', { replace: true });
-    }
-  };
-
   const fetchTenants = async () => {
     try {
       const res = await MASTER_API.get('/tenants');
@@ -199,7 +193,6 @@ export const SuperAdminDashboard = () => {
   };
 
   useEffect(() => {
-    checkAuth();
     fetchTenants();
   }, []);
 
@@ -454,7 +447,7 @@ export const SuperAdminDashboard = () => {
   };
 
   const logout = () => {
-    localStorage.removeItem('superAdminToken');
+    MASTER_API.post('/logout').catch(() => {});
     navigate('/superadmin/login', { replace: true });
   };
 

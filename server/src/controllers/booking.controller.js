@@ -7,6 +7,7 @@ import { createAuditLog } from '../utils/auditLogger.js';
 import { sequelize } from '../config/db.js';
 import { parsePagination, paginationMeta } from '../utils/paginate.js';
 import { getDhakaDateTime as getBangladeshDateTime, dhakaDateOffset, dhakaMonthBounds } from '../utils/timezone.js';
+import { assertSameBusiness } from '../utils/validateSameBusiness.js';
 
 // Helper: format 24h time to 12h
 const fmt12 = (t) => {
@@ -177,14 +178,8 @@ export const createBooking = async (req, res, next) => {
       }
     } else {
       // Cross-business FK integrity (constitution Principle III): a client
-      // may not book a ground belonging to another business. groundRepo is
-      // already business-scoped (server/src/repositories/scope.js), so a
-      // ground from another business simply won't be found here.
-      const ground = await groundRepo.findById(targetGroundId);
-      if (!ground) {
-        await t.rollback();
-        return res.status(400).json({ success: false, message: 'groundId does not belong to your business' });
-      }
+      // may not book a ground belonging to another business.
+      await assertSameBusiness(req.models.Ground, targetGroundId, req.businessId, 'groundId');
     }
 
     const isBooked = await checkDoubleBooking(bookingRepo, data.bookingDate, data.startTime, data.endTime, targetGroundId, t);
@@ -436,14 +431,8 @@ export const createManualBooking = async (req, res, next) => {
       }
     } else {
       // Cross-business FK integrity (constitution Principle III): a client
-      // may not book a ground belonging to another business. groundRepo is
-      // already business-scoped (server/src/repositories/scope.js), so a
-      // ground from another business simply won't be found here.
-      const ground = await groundRepo.findById(targetGroundId);
-      if (!ground) {
-        await t.rollback();
-        return res.status(400).json({ success: false, message: 'groundId does not belong to your business' });
-      }
+      // may not book a ground belonging to another business.
+      await assertSameBusiness(req.models.Ground, targetGroundId, req.businessId, 'groundId');
     }
 
     const isBooked = await checkDoubleBooking(bookingRepo, data.bookingDate, data.startTime, data.endTime, targetGroundId, t);
@@ -520,6 +509,12 @@ export const updateBooking = async (req, res, next) => {
       const eTime = updateData.endTime || booking.endTime;
       const gId = updateData.groundId !== undefined ? Number(updateData.groundId) : booking.groundId;
 
+      // Cross-business FK integrity (constitution Principle III): a client
+      // may not repoint this booking at another business's ground.
+      if (updateData.groundId !== undefined) {
+        await assertSameBusiness(req.models.Ground, gId, req.businessId, 'groundId');
+      }
+
       // Check overlaps excluding current booking ID
       const dateString = bDate.split('T')[0];
       const overlaps = await bookingRepo.findOverlapping(dateString, sTime, eTime, gId);
@@ -530,8 +525,6 @@ export const updateBooking = async (req, res, next) => {
 
       updateData.price = await calculatePrice(settingsRepo, slotRepo, bDate, sTime, eTime, gId);
     }
-
-    await booking.update(updateData);
 
     await booking.update(updateData);
 

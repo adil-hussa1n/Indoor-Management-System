@@ -1,36 +1,34 @@
+import { Op } from 'sequelize';
+import { parsePagination, paginationMeta } from '../utils/paginate.js';
+
 export const getAuditLogs = async (req, res, next) => {
   try {
-    const models = req.tenantModels || req.models;
-    if (!models || !models.AuditLog) {
+    const { auditLogRepo } = req.repos;
+    if (!auditLogRepo) {
       return res.status(200).json({ success: true, logs: [], total: 0 });
     }
 
-    const { category, search, page = 1, limit = 50 } = req.query;
-    const { Op } = models.sequelize || {};
-
-    const hasCategory = !!models.AuditLog.rawAttributes.category;
-    const hasAdminUsername = !!models.AuditLog.rawAttributes.adminUsername;
-    const hasDescription = !!models.AuditLog.rawAttributes.description;
+    const { category, search } = req.query;
+    const { page, limit, offset } = parsePagination(req.query);
 
     const where = {};
-    if (category && category !== 'all' && hasCategory) {
+    if (category && category !== 'all') {
       where.category = category;
     }
 
-    if (search && Op) {
+    if (search) {
       const q = `%${search.trim()}%`;
-      const searchConditions = [{ action: { [Op.like]: q } }];
-      if (hasDescription) searchConditions.push({ description: { [Op.like]: q } });
-      if (hasAdminUsername) searchConditions.push({ adminUsername: { [Op.like]: q } });
-      where[Op.or] = searchConditions;
+      where[Op.or] = [
+        { action: { [Op.like]: q } },
+        { description: { [Op.like]: q } },
+        { adminUsername: { [Op.like]: q } },
+      ];
     }
 
-    const offset = (Number(page) - 1) * Number(limit);
-    const { rows, count } = await models.AuditLog.findAndCountAll({
-      where,
+    const { count, rows } = await auditLogRepo.findAndCountAll(where, {
       order: [['createdAt', 'DESC']],
-      limit: Number(limit),
       offset,
+      limit,
     });
 
     const logs = (rows || []).map(item => {
@@ -53,9 +51,7 @@ export const getAuditLogs = async (req, res, next) => {
     res.status(200).json({
       success: true,
       logs,
-      total: count,
-      page: Number(page),
-      totalPages: Math.ceil(count / Number(limit)) || 1,
+      ...paginationMeta(count, { page, limit }),
     });
   } catch (error) {
     console.error('[AuditLog Controller Error]:', error);

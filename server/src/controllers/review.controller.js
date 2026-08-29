@@ -1,13 +1,26 @@
+import { Op } from 'sequelize';
 import { reviewSchema } from '../../validators/review.validator.js';
 import { sanitizeFields } from '../utils/sanitize.js';
 import { createAuditLog } from '../utils/auditLogger.js';
+import { parsePagination, paginationMeta } from '../utils/paginate.js';
 
 export const getApprovedReviews = async (req, res, next) => {
   try {
     const { reviewRepo } = req.repos;
-    const reviews = await reviewRepo.findAll({ isApproved: true });
+    const { search = '' } = req.query;
+    const { page, limit, offset } = parsePagination(req.query);
+
+    const where = { isApproved: true };
+    if (search) {
+      where[Op.or] = [
+        { customerName: { [Op.like]: `%${search}%` } },
+        { comment: { [Op.like]: `%${search}%` } },
+      ];
+    }
+
+    const { count: total, rows: reviews } = await reviewRepo.findAndCountAll(where, { offset, limit });
     const mapped = reviews.map(r => { const p = r.toJSON(); p._id = p.id; return p; });
-    res.status(200).json({ success: true, reviews: mapped });
+    res.status(200).json({ success: true, reviews: mapped, pagination: paginationMeta(total, { page, limit }) });
   } catch (error) {
     next(error);
   }
@@ -45,9 +58,20 @@ export const createReview = async (req, res, next) => {
 export const getAllReviews = async (req, res, next) => {
   try {
     const { reviewRepo } = req.repos;
-    const reviews = await reviewRepo.findAll();
+    const { search = '' } = req.query;
+    const { page, limit, offset } = parsePagination(req.query);
+
+    const where = {};
+    if (search) {
+      where[Op.or] = [
+        { customerName: { [Op.like]: `%${search}%` } },
+        { comment: { [Op.like]: `%${search}%` } },
+      ];
+    }
+
+    const { count: total, rows: reviews } = await reviewRepo.findAndCountAll(where, { offset, limit });
     const mapped = reviews.map(r => { const p = r.toJSON(); p._id = p.id; return p; });
-    res.status(200).json({ success: true, reviews: mapped });
+    res.status(200).json({ success: true, reviews: mapped, pagination: paginationMeta(total, { page, limit }) });
   } catch (error) {
     next(error);
   }

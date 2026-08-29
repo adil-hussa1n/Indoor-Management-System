@@ -1,6 +1,7 @@
 import { Op } from 'sequelize';
 import { createAuditLog } from '../utils/auditLogger.js';
 import { getDhakaDateTime as getBangladeshDateTime } from '../utils/timezone.js';
+import { assertSameBusiness } from '../utils/validateSameBusiness.js';
 
 const getSlotPriceForDate = (settings, dateString, startTime, slotRateType) => {
   const parts = dateString.split('-');
@@ -219,10 +220,7 @@ export const createSlot = async (req, res, next) => {
         targetGroundId = 1;
       }
     } else {
-      const ground = await groundRepo.findById(targetGroundId);
-      if (!ground) {
-        return res.status(400).json({ success: false, message: 'groundId does not belong to your business' });
-      }
+      await assertSameBusiness(req.models.Ground, targetGroundId, req.businessId, 'groundId');
     }
 
     const targetDayOfWeek = dayOfWeek !== undefined ? Number(dayOfWeek) : -1;
@@ -274,7 +272,7 @@ export const createSlot = async (req, res, next) => {
 
 export const updateSlot = async (req, res, next) => {
   try {
-    const { slotRepo, groundRepo } = req.repos;
+    const { slotRepo } = req.repos;
     const { id } = req.params;
     const { startTime, endTime, isActive, dayOfWeek, specificDate, rateType, groundId } = req.body;
 
@@ -284,10 +282,7 @@ export const updateSlot = async (req, res, next) => {
     }
 
     if (groundId !== undefined) {
-      const ground = await groundRepo.findById(Number(groundId));
-      if (!ground) {
-        return res.status(400).json({ success: false, message: 'groundId does not belong to your business' });
-      }
+      await assertSameBusiness(req.models.Ground, Number(groundId), req.businessId, 'groundId');
     }
 
     const oldValues = slot.toJSON ? slot.toJSON() : slot;

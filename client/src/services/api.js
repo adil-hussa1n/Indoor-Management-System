@@ -1,10 +1,14 @@
 import axios from 'axios';
 
+// withCredentials: true — auth is carried in an httpOnly cookie set by the
+// server (see server/src/utils/authCookie.js), never read/written by this
+// client. Matches the business_backend/restaurant_backend frontend convention.
 const API = axios.create({
   baseURL: import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:5000/api/v1' : '/api/v1'),
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true,
 });
 
 export const MASTER_API = axios.create({
@@ -12,27 +16,12 @@ export const MASTER_API = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true,
 });
-
-MASTER_API.interceptors.request.use(
-  (config) => {
-    const superAdminToken = localStorage.getItem('superAdminToken');
-    if (superAdminToken) {
-      config.headers.Authorization = `Bearer ${superAdminToken}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
 
 MASTER_API.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response && error.response.status === 401) {
-      localStorage.removeItem('superAdminToken');
-    }
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 // Helper to extract the active tenant slug
@@ -90,41 +79,23 @@ export const getTenantSlug = () => {
   return tenantSlug.split('/')[0].split('?')[0].trim();
 };
 
-// Inject token and tenant slug into headers
+// Inject tenant slug — still consumed pre-auth (login, public storefront
+// routes) by businessContext.js; ignored once a cookie carries a valid
+// JWT (see constitution Principle V / businessContext.js).
 API.interceptors.request.use(
   (config) => {
-    // 1. Inject Tenant Slug
     const tenantSlug = getTenantSlug();
-
     if (tenantSlug) {
       config.headers['X-Tenant-Slug'] = tenantSlug;
     }
-
-    // 2. Inject Authorization token — pick the right token based on endpoint
-    const adminToken = localStorage.getItem(`adminToken_${tenantSlug}`);
-    const userToken = localStorage.getItem(`userToken_${tenantSlug}`);
-
-    // User-facing endpoints must use the user token
-    const url = config.url || '';
-    const isUserEndpoint =
-      url.startsWith('/user/') ||
-      (url.startsWith('/booking-requests/') && (url.endsWith('/change') || url.endsWith('/cancel'))) ||
-      url === '/booking';
-
-    if (isUserEndpoint && userToken) {
-      config.headers.Authorization = `Bearer ${userToken}`;
-    } else if (adminToken) {
-      config.headers.Authorization = `Bearer ${adminToken}`;
-    } else if (userToken) {
-      config.headers.Authorization = `Bearer ${userToken}`;
-    }
-
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// Global response interceptor for token expiry
+// Global response interceptor for auth expiry — no client-held token to
+// clear (it lives in an httpOnly cookie the server controls), so this only
+// notifies the relevant auth context to update its state/redirect.
 let adminLogoutCallback = null;
 let userLogoutCallback = null;
 
@@ -140,8 +111,7 @@ API.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
-      console.warn('Unauthorized request - Token expired or invalid');
-      const tenantSlug = getTenantSlug();
+      console.warn('Unauthorized request - session expired or invalid');
       const url = error.config?.url || '';
       const isUserEndpoint =
         url.startsWith('/user/') ||
@@ -149,17 +119,9 @@ API.interceptors.response.use(
         url === '/booking';
 
       if (isUserEndpoint) {
-        // Only remove user token on user endpoint 401
-        localStorage.removeItem(`userToken_${tenantSlug}`);
-        if (userLogoutCallback) {
-          userLogoutCallback();
-        }
+        if (userLogoutCallback) userLogoutCallback();
       } else {
-        // Only remove admin token on admin endpoint 401
-        localStorage.removeItem(`adminToken_${tenantSlug}`);
-        if (adminLogoutCallback) {
-          adminLogoutCallback();
-        }
+        if (adminLogoutCallback) adminLogoutCallback();
       }
     }
     return Promise.reject(error);

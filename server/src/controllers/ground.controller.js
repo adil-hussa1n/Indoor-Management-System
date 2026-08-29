@@ -1,12 +1,26 @@
 import { Op } from 'sequelize';
 import { createAuditLog } from '../utils/auditLogger.js';
+import { parsePagination, paginationMeta } from '../utils/paginate.js';
 
 // Get all grounds/arenas
 export const getGrounds = async (req, res, next) => {
   try {
     const { groundRepo } = req.repos;
-    const grounds = await groundRepo.findAll({}, { order: [['order', 'ASC'], ['id', 'ASC']] });
-    res.status(200).json({ success: true, grounds });
+    const { search = '' } = req.query;
+    const { page, limit, offset } = parsePagination(req.query);
+
+    const where = {};
+    if (search) {
+      where.name = { [Op.like]: `%${search}%` };
+    }
+
+    const { count: total, rows: grounds } = await groundRepo.findAndCountAll(where, {
+      order: [['order', 'ASC'], ['id', 'ASC']],
+      offset,
+      limit,
+    });
+
+    res.status(200).json({ success: true, grounds, pagination: paginationMeta(total, { page, limit }) });
   } catch (error) {
     next(error);
   }

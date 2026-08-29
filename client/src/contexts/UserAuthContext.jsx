@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import API, { registerUserLogoutCallback, getTenantSlug } from '../services/api';
+import API, { registerUserLogoutCallback } from '../services/api';
 
 const UserAuthContext = createContext(null);
 
@@ -7,29 +7,23 @@ export const UserAuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const getStorageKey = () => `userToken_${getTenantSlug()}`;
-
   const logout = () => {
-    localStorage.removeItem(getStorageKey());
+    API.post('/user/logout').catch(() => {});
     setUser(null);
   };
 
-  // Check auth status on mount
+  // Check auth status on mount — no client-held token to inspect, the
+  // httpOnly cookie (if any) is sent automatically.
   useEffect(() => {
-    registerUserLogoutCallback(logout);
+    registerUserLogoutCallback(() => setUser(null));
     const checkUserAuth = async () => {
-      const token = localStorage.getItem(getStorageKey());
-      if (token) {
-        try {
-          const res = await API.get('/user/me');
-          if (res.data.success) {
-            setUser(res.data.user);
-          } else {
-            localStorage.removeItem(getStorageKey());
-          }
-        } catch (e) {
-          localStorage.removeItem(getStorageKey());
+      try {
+        const res = await API.get('/user/me');
+        if (res.data.success) {
+          setUser(res.data.user);
         }
+      } catch (e) {
+        setUser(null);
       }
       setLoading(false);
     };
@@ -53,7 +47,6 @@ export const UserAuthProvider = ({ children }) => {
     try {
       const res = await API.post('/user/verify-otp', { phone, code });
       if (res.data.success) {
-        localStorage.setItem(getStorageKey(), res.data.token);
         setUser(res.data.user);
         return { success: true };
       }

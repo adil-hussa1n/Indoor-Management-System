@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import Business from '../models/Business.js';
+import { extractToken } from '../utils/authCookie.js';
 
 // ── Business Context Middleware ──
 // Replaces server/src/middlewares/tenant.js's subdomain/X-Tenant-Slug
@@ -11,11 +12,14 @@ import Business from '../models/Business.js';
 // pure "JWT only, ever" reading of Principle I.3 runs into a chicken-and-
 // egg problem at login — there is no JWT yet to derive business scope
 // from). The resolution:
-//   1. A valid `Authorization: Bearer <jwt>` is present → businessId comes
-//      EXCLUSIVELY from the token's `businessId` claim. Hostname/header/
-//      query are never consulted once a token is present — this is the
-//      authenticated path Principle I.3 governs, and it is what every
-//      route reachable after login uses.
+//   1. A valid JWT is present — read from the httpOnly `token` cookie
+//      (browser clients, matching business_backend/restaurant_backend's
+//      convention) or, as a fallback, an `Authorization: Bearer <jwt>`
+//      header (non-browser clients) — see utils/authCookie.js's
+//      extractToken(). businessId comes EXCLUSIVELY from the token's
+//      `businessId` claim; hostname/header/query are never consulted once
+//      a token is present. This is the authenticated path Principle I.3
+//      governs, and it is what every route reachable after login uses.
 //   2. No token present (pre-auth: login endpoints, and public storefront
 //      routes under Principle V) → businessId is resolved from the request
 //      hostname/`X-Tenant-Slug` header/`?tenant=` query param, exactly as
@@ -50,12 +54,26 @@ const checkSubscriptionGrace = (business) => {
   return now <= graceCutoff;
 };
 
+// Admin and customer sessions can both be live in the same browser at once
+// (e.g. an admin also testing the public storefront as a customer), so both
+// admin_token and user_token cookies may be present on the same request.
+// Prefer whichever type actually owns the endpoint being hit, mirroring the
+// client's own admin-vs-user token selection in services/api.js.
+const isUserPath = (req) => {
+  const p = req.path || '';
+  return (
+    p.startsWith('/user/') ||
+    (p.startsWith('/booking-requests/') && (p.endsWith('/change') || p.endsWith('/cancel'))) ||
+    p === '/booking'
+  );
+};
+
 export const businessContext = async (req, res, next) => {
   try {
-    const authHeader = req.headers.authorization;
+    const tokenOrder = isUserPath(req) ? ['user', 'admin'] : ['admin', 'user'];
+    const token = extractToken(req, tokenOrder);
 
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.split(' ')[1];
+    if (token) {
       let decoded;
       try {
         decoded = jwt.verify(token, process.env.JWT_SECRET);

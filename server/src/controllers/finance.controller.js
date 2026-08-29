@@ -1,5 +1,6 @@
 import { Op } from 'sequelize';
 import { createAuditLog } from '../utils/auditLogger.js';
+import { assertSameBusiness } from '../utils/validateSameBusiness.js';
 
 // ── Category Handlers ──
 
@@ -170,7 +171,7 @@ export const getEntries = async (req, res, next) => {
 
 export const createEntry = async (req, res, next) => {
   try {
-    const { financeRepo, groundRepo } = req.repos;
+    const { financeRepo } = req.repos;
     const { type, categoryId, groundId, amount, date, paymentMethod, title, description, referenceNo } = req.body;
 
     if (!type || !['investment', 'expense'].includes(type)) {
@@ -190,18 +191,10 @@ export const createEntry = async (req, res, next) => {
     }
 
     // Cross-business FK integrity (constitution Principle III): categoryId
-    // and groundId (when supplied) must belong to this business — both
-    // repos are already business-scoped (server/src/repositories/scope.js),
-    // so a cross-business id simply won't be found.
-    const category = await financeRepo.findCategoryById(categoryId);
-    if (!category) {
-      return res.status(404).json({ success: false, message: 'Selected category does not exist.' });
-    }
+    // and groundId (when supplied) must belong to this business.
+    await assertSameBusiness(req.models.FinanceCategory, categoryId, req.businessId, 'categoryId');
     if (groundId) {
-      const ground = await groundRepo.findById(Number(groundId));
-      if (!ground) {
-        return res.status(400).json({ success: false, message: 'groundId does not belong to your business' });
-      }
+      await assertSameBusiness(req.models.Ground, groundId, req.businessId, 'groundId');
     }
 
     const entry = await financeRepo.createEntry({
@@ -235,7 +228,7 @@ export const createEntry = async (req, res, next) => {
 
 export const updateEntry = async (req, res, next) => {
   try {
-    const { financeRepo, groundRepo } = req.repos;
+    const { financeRepo } = req.repos;
     const { id } = req.params;
     const { type, categoryId, groundId, amount, date, paymentMethod, title, description, referenceNo } = req.body;
 
@@ -247,18 +240,12 @@ export const updateEntry = async (req, res, next) => {
     const updateData = {};
     if (type && ['investment', 'expense'].includes(type)) updateData.type = type;
     if (categoryId) {
-      const category = await financeRepo.findCategoryById(categoryId);
-      if (!category) {
-        return res.status(404).json({ success: false, message: 'Selected category does not exist.' });
-      }
+      await assertSameBusiness(req.models.FinanceCategory, categoryId, req.businessId, 'categoryId');
       updateData.categoryId = Number(categoryId);
     }
     if (groundId !== undefined) {
       if (groundId) {
-        const ground = await groundRepo.findById(Number(groundId));
-        if (!ground) {
-          return res.status(400).json({ success: false, message: 'groundId does not belong to your business' });
-        }
+        await assertSameBusiness(req.models.Ground, groundId, req.businessId, 'groundId');
       }
       updateData.groundId = groundId ? Number(groundId) : null;
     }
